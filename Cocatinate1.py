@@ -71,7 +71,7 @@ query_string = " OR ".join(queries)
 # Retrieve and store all search results
 results = []
 
-# google cstome search API only returns upto 10 results. 
+# google custome search API only returns upto 10 results. 
 #  so need to paginate to get 100 results (10 results per page) 
 for i in range(1, 101, 10):  
     results_batch = google_search(query_string, API_KEY, CX, num_results=10, start=i)
@@ -88,5 +88,4 @@ print(df)
 
 # optional graph new
 df['title'].value_counts().plot(kind='bar')
-plt.show()
-   
+plt.show() 
