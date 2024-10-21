@@ -10,8 +10,8 @@ CX = 'd2806f352318d45d7'
 
 term_1 = [
     "Request for Proposal",
-    "RFP",
-    "Request for Bid",
+    "RFP",b     
+    "Request for Bid", 
     "RFB",
     "Request for Quotation",       
     "RFQ",
@@ -89,3 +89,4 @@ print(df)
 # optional graph new
 df['title'].value_counts().plot(kind='bar')
 plt.show()
+   
