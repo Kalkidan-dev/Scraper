@@ -13,14 +13,28 @@ api_key = '121c5367'
 # Initialize sentiment analyzer
 analyzer = SentimentIntensityAnalyzer()
 
-# Function to get movie data from OMDb 
+# Function to get movie data from OMDb with error handling
 def get_movie_data(title):
     params = {
         't': title,
         'apikey': api_key
     }
-    response = requests.get('http://www.omdbapi.com/', params=params)
-    return response.json()
+    try:
+        response = requests.get('http://www.omdbapi.com/', params=params)
+        response.raise_for_status()  # Raise an error for bad status codes (e.g., 404 or 500)
+        
+        data = response.json()
+        
+        # Check if the API response was successful
+        if data.get('Response') == 'True':
+            return data
+        else:
+            print(f"Error: No data found for title '{title}' - Reason: {data.get('Error')}")
+            return None  # Return None if the movie wasn't found or another issue occurred
+
+    except requests.exceptions.RequestException as e:
+        print(f"Request error for title '{title}': {e}")
+        return None
 
 # Function to analyze the sentiment of the movie genre
 def analyze_genre_sentiment(genre):
@@ -35,11 +49,11 @@ movie_titles = [
     'Fight Club', 'Forrest Gump'
 ]
 
-# Fetch data for each movie
+# Fetch data for each movie with error handling
 movie_data = []
 for title in movie_titles:
     data = get_movie_data(title)
-    if data['Response'] == 'True':
+    if data:  # Only append if data was successfully retrieved
         movie_data.append(data)
 
 # Create DataFrame
