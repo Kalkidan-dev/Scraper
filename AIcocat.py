@@ -89,6 +89,15 @@ df['Rating'] = df['imdbRating'].astype(float)
 # Convert 'Released' column to datetime
 df['Release_Date'] = pd.to_datetime(df['Released'], errors='coerce')
 
+# Create Day of the Week feature
+df['Day_of_Week'] = df['Release_Date'].dt.day_name()
+
+# If you want to create a binary feature for weekend vs. weekday
+df['Is_Weekend'] = df['Day_of_Week'].isin(['Saturday', 'Sunday']).astype(int)
+
+# One-hot encode the day of the week if needed
+df = pd.get_dummies(df, columns=['Day_of_Week'], drop_first=True)
+
 # Analyze the sentiment of the movie genres
 df['Genre_Sentiment'] = df['Genre'].apply(analyze_genre_sentiment)
 
@@ -101,9 +110,9 @@ df['Year'] = df['Year'].astype(int)
 df['Genre_Sentiment'] = df['Genre_Sentiment'].astype(float)
 
 # Features we will use to predict IMDb Rating
-features = ['Year', 'Genre_Sentiment', 'Is_Holiday_Release']
+features = ['Year', 'Genre_Sentiment', 'Is_Holiday_Release', 'Is_Weekend']
 
-# X = feature set (Year, Genre_Sentiment, Is_Holiday_Release)
+# X = feature set (Year, Genre_Sentiment, Is_Holiday_Release, Is_Weekend)
 X = df[features]
 
 # y = target variable (IMDb Rating)
@@ -131,12 +140,12 @@ comparison = pd.DataFrame({'Actual Rating': y_test, 'Predicted Rating': y_pred})
 print(comparison.head())
 
 # Make a prediction for a new movie
-def predict_rating(year, genre_sentiment, holiday_release):
-    return model.predict(np.array([[year, genre_sentiment, holiday_release]]))[0]
+def predict_rating(year, genre_sentiment, holiday_release, is_weekend):
+    return model.predict(np.array([[year, genre_sentiment, holiday_release, is_weekend]]))[0]
 
 # Example
-predicted_rating = predict_rating(2024, 0.5, 1)  # Predict the rating for a movie in 2024 with holiday release and neutral genre sentiment
-print(f'Predicted Rating for a movie in 2024 with holiday release: {predicted_rating:.2f}')
+predicted_rating = predict_rating(2024, 0.5, 1, 1)  # Predict the rating for a movie in 2024 with holiday release and weekend release
+print(f'Predicted Rating for a movie in 2024 with holiday release and weekend release: {predicted_rating:.2f}')
 
 # Continue with your existing plots and CSV saving
 # Save to CSV
@@ -155,7 +164,7 @@ rt_df = pd.DataFrame(rt_data)
 combined_df = pd.merge(df, rt_df, on='Title', how='inner')
 
 # Correlation between IMDb, Rotten Tomatoes, Genre Sentiment, and Holiday Release
-correlation_matrix = combined_df[['Rating', 'RT_Rating', 'Genre_Sentiment', 'Is_Holiday_Release']].astype(float).corr()
+correlation_matrix = combined_df[['Rating', 'RT_Rating', 'Genre_Sentiment', 'Is_Holiday_Release', 'Is_Weekend']].astype(float).corr()
 print(correlation_matrix)
 
 # Scatter plot to compare IMDb and Rotten Tomatoes ratings
