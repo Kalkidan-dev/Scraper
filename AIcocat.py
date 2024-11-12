@@ -8,6 +8,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score
 import numpy as np
 import os  # To access environment variables
+from datetime import datetime
 
 # Load OMDb API key from environment variable
 api_key = os.getenv("OMDB_API_KEY")
@@ -53,6 +54,16 @@ def analyze_genre_sentiment(genre):
     sentiment_score = analyzer.polarity_scores(genre)
     return sentiment_score['compound']  # Use the compound score for overall sentiment
 
+# Function to create a holiday release indicator
+def is_holiday_release(date):
+    # List of specific holiday dates
+    holiday_dates = [
+        '12-25',  # Christmas
+        '11-26',  # Example: Thanksgiving (date changes yearly, consider using date ranges)
+        # Add more holiday dates or use a more dynamic method
+    ]
+    return int(date.strftime('%m-%d') in holiday_dates)
+
 # List of top-rated movie titles to fetch as Example
 movie_titles = [
     'The Shawshank Redemption', 'The Godfather', 'The Dark Knight',
@@ -72,11 +83,17 @@ for title in movie_titles:
 df = pd.DataFrame(movie_data)
 
 # Select relevant columns and rename for clarity
-df = df[['Title', 'Year', 'imdbRating', 'Genre', 'Director']]
+df = df[['Title', 'Year', 'imdbRating', 'Genre', 'Director', 'Released']]  # Added 'Released' column
 df['Rating'] = df['imdbRating'].astype(float)
+
+# Convert 'Released' column to datetime
+df['Release_Date'] = pd.to_datetime(df['Released'], errors='coerce')
 
 # Analyze the sentiment of the movie genres
 df['Genre_Sentiment'] = df['Genre'].apply(analyze_genre_sentiment)
+
+# Apply the holiday release indicator
+df['Is_Holiday_Release'] = df['Release_Date'].apply(is_holiday_release)
 
 # Step 2: Prepare the data for prediction
 # Convert Year to a numeric feature and ensure Genre_Sentiment is float
@@ -84,9 +101,9 @@ df['Year'] = df['Year'].astype(int)
 df['Genre_Sentiment'] = df['Genre_Sentiment'].astype(float)
 
 # Features we will use to predict IMDb Rating
-features = ['Year', 'Genre_Sentiment']
+features = ['Year', 'Genre_Sentiment', 'Is_Holiday_Release']
 
-# X = feature set (Year, Genre_Sentiment)
+# X = feature set (Year, Genre_Sentiment, Is_Holiday_Release)
 X = df[features]
 
 # y = target variable (IMDb Rating)
@@ -114,16 +131,16 @@ comparison = pd.DataFrame({'Actual Rating': y_test, 'Predicted Rating': y_pred})
 print(comparison.head())
 
 # Make a prediction for a new movie
-def predict_rating(year, genre_sentiment):
-    return model.predict(np.array([[year, genre_sentiment]]))[0]
+def predict_rating(year, genre_sentiment, holiday_release):
+    return model.predict(np.array([[year, genre_sentiment, holiday_release]]))[0]
 
 # Example
-predicted_rating = predict_rating(2024, 0.5)  # Predict the rating for a movie in 2024 with neutral genre sentiment
-print(f'Predicted Rating for a movie in 2024 with genre sentiment 0.5: {predicted_rating:.2f}')
+predicted_rating = predict_rating(2024, 0.5, 1)  # Predict the rating for a movie in 2024 with holiday release and neutral genre sentiment
+print(f'Predicted Rating for a movie in 2024 with holiday release: {predicted_rating:.2f}')
 
 # Continue with your existing plots and CSV saving
 # Save to CSV
-df.to_csv('omdb_top_movies_with_sentiment.csv', index=False)
+df.to_csv('omdb_top_movies_with_sentiment_and_holiday.csv', index=False)
 
 # Rotten Tomatoes data as Example
 rt_data = {
@@ -137,8 +154,8 @@ rt_df = pd.DataFrame(rt_data)
 # Merge IMDb and Rotten Tomatoes data on the movie title
 combined_df = pd.merge(df, rt_df, on='Title', how='inner')
 
-# Correlation between IMDb, Rotten Tomatoes, and Genre Sentiment
-correlation_matrix = combined_df[['Rating', 'RT_Rating', 'Genre_Sentiment']].astype(float).corr()
+# Correlation between IMDb, Rotten Tomatoes, Genre Sentiment, and Holiday Release
+correlation_matrix = combined_df[['Rating', 'RT_Rating', 'Genre_Sentiment', 'Is_Holiday_Release']].astype(float).corr()
 print(correlation_matrix)
 
 # Scatter plot to compare IMDb and Rotten Tomatoes ratings
