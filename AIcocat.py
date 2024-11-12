@@ -1,4 +1,5 @@
 import requests
+import time
 import pandas as pd
 import matplotlib.pyplot as plt
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
@@ -12,41 +13,47 @@ import os  # To access environment variables
 api_key = os.getenv("OMDB_API_KEY")
 
 if not api_key:
-    print("Error: API key not found. Please set the OMDB_API_KEY environment variable.")
+    print("Ooops: API key not found. Please set the OMDB_API_KEY environment variable.")
     exit(1)
 
 # Initialize sentiment analyzer
 analyzer = SentimentIntensityAnalyzer()
 
-# Function to get movie data from OMDb with error handling
-def get_movie_data(title):
+# Function to get movie data from OMDb with retry logic
+def get_movie_data(title, retries=3, delay=5):
+    """Fetch movie data with retries in case of connection errors."""
     params = {
         't': title,
         'apikey': api_key
     }
-    try:
-        response = requests.get('http://www.omdbapi.com/', params=params)
-        response.raise_for_status()  # Raise an error for bad status codes (e.g., 404 or 500)
-        
-        data = response.json()
-        
-        # Check if the API response was successful
-        if data.get('Response') == 'True':
-            return data
-        else:
-            print(f"Error: No data found for title '{title}' - Reason: {data.get('Error')}")
-            return None  # Return None if the movie wasn't found or another issue occurred
-
-    except requests.exceptions.RequestException as e:
-        print(f"Request error for title '{title}': {e}")
-        return None
+    
+    for attempt in range(retries):
+        try:
+            response = requests.get('http://www.omdbapi.com/', params=params)
+            response.raise_for_status()  # Raise an error for bad status codes (like 404 or 500)
+            
+            data = response.json()
+            
+            if data.get('Response') == 'True':
+                return data
+            else:
+                print(f"Error: No data found for title '{title}' - {data.get('Error')}")
+                return None
+        except requests.exceptions.RequestException as e:
+            print(f"Attempt {attempt + 1}: Request error for title '{title}': {e}")
+            if attempt < retries - 1:
+                print("Retrying...")
+                time.sleep(delay)  # Wait before retrying
+            else:
+                print("Failed to fetch data after multiple attempts.")
+                return None
 
 # Function to analyze the sentiment of the movie genre
 def analyze_genre_sentiment(genre):
     sentiment_score = analyzer.polarity_scores(genre)
     return sentiment_score['compound']  # Use the compound score for overall sentiment
 
-# Example list of top-rated movie titles to fetch
+# List of top-rated movie titles to fetch as Example
 movie_titles = [
     'The Shawshank Redemption', 'The Godfather', 'The Dark Knight',
     '12 Angry Men', 'Schindler\'s List', 'Pulp Fiction',
@@ -54,7 +61,7 @@ movie_titles = [
     'Fight Club', 'Forrest Gump'
 ]
 
-# Fetch data for each movie with error handling
+# Fetch data for each movie with error handling and retry logic
 movie_data = []
 for title in movie_titles:
     data = get_movie_data(title)
@@ -106,11 +113,11 @@ print(f'R-squared: {r2}')  # R-squared tells us how well the model explains the 
 comparison = pd.DataFrame({'Actual Rating': y_test, 'Predicted Rating': y_pred})
 print(comparison.head())
 
-# Bonus: Make a prediction for a new movie
+# Make a prediction for a new movie
 def predict_rating(year, genre_sentiment):
     return model.predict(np.array([[year, genre_sentiment]]))[0]
 
-# Example usage
+# Example
 predicted_rating = predict_rating(2024, 0.5)  # Predict the rating for a movie in 2024 with neutral genre sentiment
 print(f'Predicted Rating for a movie in 2024 with genre sentiment 0.5: {predicted_rating:.2f}')
 
@@ -118,7 +125,7 @@ print(f'Predicted Rating for a movie in 2024 with genre sentiment 0.5: {predicte
 # Save to CSV
 df.to_csv('omdb_top_movies_with_sentiment.csv', index=False)
 
-# Example Rotten Tomatoes data
+# Rotten Tomatoes data as Example
 rt_data = {
     'Title': ['The Shawshank Redemption', 'The Godfather', 'The Dark Knight', '12 Angry Men', 'Schindler\'s List',
               'Pulp Fiction', 'The Lord of the Rings: The Return of the King', 'The Good, the Bad and the Ugly',

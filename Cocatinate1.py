@@ -10,7 +10,7 @@ CX = 'd2806f352318d45d7'
 
 term_1 = [
     "Request for Proposal",
-    "RFP",b     
+    "RFP",     
     "Request for Bid", 
     "RFB",
     "Request for Quotation",       
