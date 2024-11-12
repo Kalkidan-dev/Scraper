@@ -1,0 +1,11 @@
+Title,Year,imdbRating,Genre,Director,Released,Rating,Release_Date,Is_Weekend,Day_of_Week_Wednesday,Genre_Sentiment,Is_Holiday_Release
+The Shawshank Redemption,1994,9.3,Drama,Frank Darabont,14 Oct 1994,9.3,1994-10-14,0,False,0.0,0
+The Godfather,1972,9.2,"Crime, Drama",Francis Ford Coppola,24 Mar 1972,9.2,1972-03-24,0,False,-0.5423,0
+The Dark Knight,2008,9.0,"Action, Crime, Drama",Christopher Nolan,18 Jul 2008,9.0,2008-07-18,0,False,-0.5423,0
+12 Angry Men,1957,9.0,"Crime, Drama",Sidney Lumet,10 Apr 1957,9.0,1957-04-10,0,True,-0.5423,0
+Schindler's List,1993,9.0,"Biography, Drama, History",Steven Spielberg,04 Feb 1994,9.0,1994-02-04,0,False,0.0,0
+Pulp Fiction,1994,8.9,"Crime, Drama",Quentin Tarantino,14 Oct 1994,8.9,1994-10-14,0,False,-0.5423,0
+The Lord of the Rings: The Return of the King,2003,9.0,"Action, Adventure, Drama",Peter Jackson,17 Dec 2003,9.0,2003-12-17,0,True,0.3182,0
+"The Good, the Bad and the Ugly",1966,8.8,"Adventure, Drama, Western",Sergio Leone,29 Dec 1967,8.8,1967-12-29,0,False,0.3182,0
+Fight Club,1999,8.8,Drama,David Fincher,15 Oct 1999,8.8,1999-10-15,0,False,0.0,0
+Forrest Gump,1994,8.8,"Drama, Romance",Robert Zemeckis,06 Jul 1994,8.8,1994-07-06,0,True,0.5574,0
