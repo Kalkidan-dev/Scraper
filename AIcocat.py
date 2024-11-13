@@ -102,12 +102,29 @@ df['Genre_Sentiment'] = df['Genre'].apply(analyze_genre_sentiment)
 # Apply the holiday release indicator
 df['Is_Holiday_Release'] = df['Release_Date'].apply(is_holiday_release)
 
+# Add a Director Popularity Score (example scores)
+director_popularity = {
+    'Frank Darabont': 9,
+    'Francis Ford Coppola': 10,
+    'Christopher Nolan': 10,
+    'Sidney Lumet': 8,
+    'Steven Spielberg': 10,
+    'Quentin Tarantino': 9,
+    'Peter Jackson': 10,
+    'Sergio Leone': 9,
+    'David Fincher': 8,
+    'Robert Zemeckis': 8
+}
+
+# Map the popularity scores to the DataFrame
+df['Director_Popularity'] = df['Director'].map(director_popularity).fillna(5)  # Fill missing with average score
+
 # Prepare the data for prediction
 df['Year'] = df['Year'].astype(int)
 df['Genre_Sentiment'] = df['Genre_Sentiment'].astype(float)
 
-# Features for the model, including Runtime
-features = ['Year', 'Genre_Sentiment', 'Is_Holiday_Release', 'Is_Weekend', 'Runtime_Minutes']
+# Features for the model, including Runtime and Director Popularity
+features = ['Year', 'Genre_Sentiment', 'Is_Holiday_Release', 'Is_Weekend', 'Runtime_Minutes', 'Director_Popularity']
 X = df[features]
 y = df['Rating'].astype(float)
 
@@ -133,11 +150,11 @@ comparison = pd.DataFrame({'Actual Rating': y_test, 'Predicted Rating': y_pred})
 print(comparison.head())
 
 # Example of predicting the rating for a new movie
-def predict_rating(year, genre_sentiment, holiday_release, is_weekend, runtime):
-    return model.predict(np.array([[year, genre_sentiment, holiday_release, is_weekend, runtime]]))[0]
+def predict_rating(year, genre_sentiment, holiday_release, is_weekend, runtime, director_popularity):
+    return model.predict(np.array([[year, genre_sentiment, holiday_release, is_weekend, runtime, director_popularity]]))[0]
 
 # Example
-predicted_rating = predict_rating(2024, 0.5, 1, 1, 120)
+predicted_rating = predict_rating(2024, 0.5, 1, 1, 120, 9)
 print(f'Predicted Rating for a movie in 2024: {predicted_rating:.2f}')
 
 # Merge with Rotten Tomatoes data for analysis
@@ -149,7 +166,7 @@ rt_df = pd.DataFrame(rt_data)
 combined_df = pd.merge(df, rt_df, on='Title', how='inner')
 
 # Correlation matrix
-correlation_matrix = combined_df[['Rating', 'RT_Rating', 'Genre_Sentiment', 'Is_Holiday_Release', 'Is_Weekend']].astype(float).corr()
+correlation_matrix = combined_df[['Rating', 'RT_Rating', 'Genre_Sentiment', 'Is_Holiday_Release', 'Is_Weekend', 'Director_Popularity']].astype(float).corr()
 print(correlation_matrix)
 
 # Scatter plots for analysis
