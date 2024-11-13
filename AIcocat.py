@@ -136,12 +136,29 @@ budget_data = {
 # Map the budget values to the DataFrame
 df['Budget'] = df['Title'].map(budget_data).fillna(10)  # Fill missing with average budget
 
+# Create a new feature for the release month
+df['Release_Month'] = df['Release_Date'].dt.month
+
+# Optionally, create categories for months such as "Summer", "Holiday", etc.
+def categorize_month(month):
+    if month in [6, 7, 8]:  # Summer months
+        return 'Summer'
+    elif month in [11, 12]:  # Holiday months
+        return 'Holiday'
+    else:
+        return 'Other'
+
+df['Release_Season'] = df['Release_Month'].apply(categorize_month)
+
+# One-hot encode the 'Release_Season' feature (to treat it as categorical data)
+df = pd.get_dummies(df, columns=['Release_Season'], drop_first=True)
+
 # Prepare the data for prediction
 df['Year'] = df['Year'].astype(int)
 df['Genre_Sentiment'] = df['Genre_Sentiment'].astype(float)
 
-# Features for the model, including Runtime, Director Popularity, and Budget
-features = ['Year', 'Genre_Sentiment', 'Is_Holiday_Release', 'Is_Weekend', 'Runtime_Minutes', 'Director_Popularity', 'Budget']
+# Features for the model, including Runtime, Director Popularity, Budget, and Release Month
+features = ['Year', 'Genre_Sentiment', 'Is_Holiday_Release', 'Is_Weekend', 'Runtime_Minutes', 'Director_Popularity', 'Budget', 'Release_Month', 'Release_Season_Summer', 'Release_Season_Holiday']
 X = df[features]
 y = df['Rating'].astype(float)
 
@@ -198,25 +215,6 @@ plt.figure(figsize=(10, 6))
 plt.scatter(combined_df['Rating'], combined_df['Genre_Sentiment'], alpha=0.5, color='green')
 plt.xlabel('IMDb Rating')
 plt.ylabel('Genre Sentiment')
-plt.title('IMDb Rating vs Genre Sentiment')
+plt.title('IMDb Rating vs. Genre Sentiment')
 plt.show()
 
-# Top 10 movies by rating
-top_10_movies = df.sort_values(by='Rating', ascending=False).head(10)
-print(top_10_movies)
-
-# Histogram of IMDb ratings
-plt.hist(df['Rating'], bins=20, edgecolor='k')
-plt.xlabel('Rating')
-plt.ylabel('Frequency')
-plt.title('Distribution of IMDb Ratings')
-plt.show()
-
-# Bar plot of top 10 movies
-plt.figure(figsize=(10, 6))
-plt.barh(top_10_movies['Title'], top_10_movies['Rating'], color='skyblue')
-plt.xlabel('IMDb Rating')
-plt.ylabel('Movie Title')
-plt.title('Top 10 IMDb Movies by Rating')
-plt.gca().invert_yaxis()
-plt.show()
