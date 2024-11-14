@@ -139,7 +139,7 @@ df['Budget'] = df['Title'].map(budget_data).fillna(10)  # Fill missing with aver
 # Create a new feature for the release month
 df['Release_Month'] = df['Release_Date'].dt.month
 
-# Optionally, create categories for months such as "Summer", "Holiday", etc.
+# Categorize the release month into seasons
 def categorize_month(month):
     if month in [6, 7, 8]:  # Summer months
         return 'Summer'
@@ -150,15 +150,24 @@ def categorize_month(month):
 
 df['Release_Season'] = df['Release_Month'].apply(categorize_month)
 
-# One-hot encode the 'Release_Season' feature (to treat it as categorical data)
+# One-hot encode the 'Release_Season' feature
 df = pd.get_dummies(df, columns=['Release_Season'], drop_first=True)
+
+# Ensure all expected columns are present in the DataFrame
+for col in ['Release_Season_Summer', 'Release_Season_Holiday']:
+    if col not in df.columns:
+        df[col] = 0  # Add the missing column with default value 0
 
 # Prepare the data for prediction
 df['Year'] = df['Year'].astype(int)
 df['Genre_Sentiment'] = df['Genre_Sentiment'].astype(float)
 
-# Features for the model, including Runtime, Director Popularity, Budget, and Release Month
-features = ['Year', 'Genre_Sentiment', 'Is_Holiday_Release', 'Is_Weekend', 'Runtime_Minutes', 'Director_Popularity', 'Budget', 'Release_Month', 'Release_Season_Summer', 'Release_Season_Holiday']
+# Features for the model
+features = [
+    'Year', 'Genre_Sentiment', 'Is_Holiday_Release', 'Is_Weekend', 
+    'Runtime_Minutes', 'Director_Popularity', 'Budget', 
+    'Release_Month', 'Release_Season_Summer', 'Release_Season_Holiday'
+]
 X = df[features]
 y = df['Rating'].astype(float)
 
@@ -184,37 +193,10 @@ comparison = pd.DataFrame({'Actual Rating': y_test, 'Predicted Rating': y_pred})
 print(comparison.head())
 
 # Example of predicting the rating for a new movie
-def predict_rating(year, genre_sentiment, holiday_release, is_weekend, runtime, director_popularity, budget):
-    return model.predict(np.array([[year, genre_sentiment, holiday_release, is_weekend, runtime, director_popularity, budget]]))[0]
+def predict_rating(year, genre_sentiment, holiday_release, is_weekend, runtime, director_popularity, budget, release_month, summer_season, holiday_season):
+    # Ensure the input is a 2D array with the same number of features as the model
+    return model.predict(np.array([[year, genre_sentiment, holiday_release, is_weekend, runtime, director_popularity, budget, release_month, summer_season, holiday_season]]))[0]
 
-# Example
-predicted_rating = predict_rating(2024, 0.5, 1, 1, 120, 9, 100)
-print(f'Predicted Rating for a movie in 2024: {predicted_rating:.2f}')
-
-# Merge with Rotten Tomatoes data for analysis
-rt_data = {
-    'Title': movie_titles,
-    'RT_Rating': [91, 98, 94, 100, 97, 92, 95, 97, 79, 71]
-}
-rt_df = pd.DataFrame(rt_data)
-combined_df = pd.merge(df, rt_df, on='Title', how='inner')
-
-# Correlation matrix
-correlation_matrix = combined_df[['Rating', 'RT_Rating', 'Genre_Sentiment', 'Is_Holiday_Release', 'Is_Weekend', 'Director_Popularity', 'Budget']].astype(float).corr()
-print(correlation_matrix)
-
-# Scatter plots for analysis
-plt.figure(figsize=(10, 6))
-plt.scatter(combined_df['Rating'], combined_df['RT_Rating'], alpha=0.5)
-plt.xlabel('IMDb Rating')
-plt.ylabel('Rotten Tomatoes Rating')
-plt.title('Comparison of IMDb and Rotten Tomatoes Ratings')
-plt.show()
-
-plt.figure(figsize=(10, 6))
-plt.scatter(combined_df['Rating'], combined_df['Genre_Sentiment'], alpha=0.5, color='green')
-plt.xlabel('IMDb Rating')
-plt.ylabel('Genre Sentiment')
-plt.title('IMDb Rating vs. Genre Sentiment')
-plt.show()
-
+# Example prediction with all 10 features
+predicted_rating = predict_rating(2024, 0.5, 1, 1, 120, 9, 100, 12, 0, 1)
+print(f'Predicted Rating for a movie in 2024: {predicted_rating}')
