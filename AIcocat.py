@@ -40,10 +40,13 @@ def get_movie_data(title, retries=3, delay=5):
                     runtime = 0  # Default to 0 if conversion fails
                 data['Runtime_Minutes'] = runtime
 
-                # Extract the number of awards won
+                # Extract the number of awards and nominations
                 awards_str = data.get('Awards', '')
-                num_awards = sum(int(s) for s in awards_str.split() if s.isdigit())
+                num_awards = sum(int(s) for s in awards_str.split() if s.isdigit() and "award" in awards_str.lower())
+                num_nominations = sum(int(s) for s in awards_str.split() if s.isdigit() and "nomination" in awards_str.lower())
+                
                 data['Number_of_Awards'] = num_awards
+                data['Number_of_Nominations'] = num_nominations
 
                 return data
             else:
@@ -87,7 +90,7 @@ for title in movie_titles:
 df = pd.DataFrame(movie_data)
 
 # Select relevant columns and rename for clarity
-df = df[['Title', 'Year', 'imdbRating', 'Genre', 'Director', 'Released', 'Runtime_Minutes', 'Number_of_Awards']]
+df = df[['Title', 'Year', 'imdbRating', 'Genre', 'Director', 'Released', 'Runtime_Minutes', 'Number_of_Awards', 'Number_of_Nominations']]
 df['Rating'] = df['imdbRating'].astype(float)
 
 # Convert 'Released' column to datetime
@@ -168,11 +171,11 @@ for col in ['Release_Season_Summer', 'Release_Season_Holiday']:
 df['Year'] = df['Year'].astype(int)
 df['Genre_Sentiment'] = df['Genre_Sentiment'].astype(float)
 
-# Features for the model (including 'Number_of_Awards')
+# Features for the model (including 'Number_of_Awards' and 'Number_of_Nominations')
 features = [
     'Year', 'Genre_Sentiment', 'Is_Holiday_Release', 'Is_Weekend', 
     'Runtime_Minutes', 'Director_Popularity', 'Budget', 
-    'Release_Month', 'Release_Season_Summer', 'Release_Season_Holiday', 'Number_of_Awards'
+    'Release_Month', 'Release_Season_Summer', 'Release_Season_Holiday', 'Number_of_Awards', 'Number_of_Nominations'
 ]
 X = df[features]
 y = df['Rating'].astype(float)
@@ -199,10 +202,10 @@ comparison = pd.DataFrame({'Actual Rating': y_test, 'Predicted Rating': y_pred})
 print(comparison.head())
 
 # Example of predicting the rating for a new movie
-def predict_rating(year, genre_sentiment, holiday_release, is_weekend, runtime, director_popularity, budget, release_month, summer_season, holiday_season, num_awards):
+def predict_rating(year, genre_sentiment, holiday_release, is_weekend, runtime, director_popularity, budget, release_month, summer_season, holiday_season, num_awards, num_nominations):
     # Ensure the input is a 2D array with the same number of features as the model
-    return model.predict(np.array([[year, genre_sentiment, holiday_release, is_weekend, runtime, director_popularity, budget, release_month, summer_season, holiday_season, num_awards]]))[0]
+    return model.predict(np.array([[year, genre_sentiment, holiday_release, is_weekend, runtime, director_popularity, budget, release_month, summer_season, holiday_season, num_awards, num_nominations]]))[0]
 
-# Example prediction with all 11 features (including "Number_of_Awards")
-predicted_rating = predict_rating(2024, 0.5, 1, 1, 120, 9, 100, 12, 0, 1, 5)
+# Example prediction with all 12 features
+predicted_rating = predict_rating(2024, 0.5, 1, 1, 120, 9, 100, 12, 0, 1, 5, 10)
 print(f'Predicted Rating for a movie in 2024: {predicted_rating}')
