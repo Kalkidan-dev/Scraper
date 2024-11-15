@@ -39,23 +39,6 @@ def get_movie_data(title, retries=3, delay=5):
                 except ValueError:
                     runtime = 0  # Default to 0 if conversion fails
                 data['Runtime_Minutes'] = runtime
-
-                # Extract the number of awards and nominations
-                awards_str = data.get('Awards', '')
-                num_awards = sum(int(s) for s in awards_str.split() if s.isdigit() and "award" in awards_str.lower())
-                num_nominations = sum(int(s) for s in awards_str.split() if s.isdigit() and "nomination" in awards_str.lower())
-                
-                data['Number_of_Awards'] = num_awards
-                data['Number_of_Nominations'] = num_nominations
-
-                # Convert Box Office revenue to a numeric value
-                box_office_str = data.get('BoxOffice', '$0').replace('$', '').replace(',', '')
-                try:
-                    box_office_revenue = int(box_office_str)
-                except ValueError:
-                    box_office_revenue = 0  # Default to 0 if conversion fails
-                data['Box_Office_Revenue'] = box_office_revenue
-
                 return data
             else:
                 print(f"Error: No data found for title '{title}' - {data.get('Error')}")
@@ -98,7 +81,7 @@ for title in movie_titles:
 df = pd.DataFrame(movie_data)
 
 # Select relevant columns and rename for clarity
-df = df[['Title', 'Year', 'imdbRating', 'Genre', 'Director', 'Released', 'Runtime_Minutes', 'Number_of_Awards', 'Number_of_Nominations', 'Production', 'Actors', 'Box_Office_Revenue']]
+df = df[['Title', 'Year', 'imdbRating', 'Genre', 'Director', 'Released', 'Runtime_Minutes']]
 df['Rating'] = df['imdbRating'].astype(float)
 
 # Convert 'Released' column to datetime
@@ -132,9 +115,7 @@ director_popularity = {
     'David Fincher': 8,
     'Robert Zemeckis': 8
 }
-
-# Map the popularity scores to the DataFrame
-df['Director_Popularity'] = df['Director'].map(director_popularity).fillna(5)  # Fill missing with average score
+df['Director_Popularity'] = df['Director'].map(director_popularity).fillna(5)
 
 # Add the new "Budget" feature (in millions of dollars)
 budget_data = {
@@ -149,44 +130,7 @@ budget_data = {
     'Fight Club': 63,
     'Forrest Gump': 55
 }
-
-# Map the budget values to the DataFrame
-df['Budget'] = df['Title'].map(budget_data).fillna(10)  # Fill missing with average budget
-
-# Add Production Studio Popularity (example scores)
-production_popularity = {
-    'Warner Bros.': 10,
-    'Paramount Pictures': 9,
-    '20th Century Fox': 8,
-    'Universal Pictures': 10,
-    'Columbia Pictures': 8,
-    'Miramax': 7,
-    'New Line Cinema': 7,
-    'United Artists': 6,
-    'DreamWorks': 9,
-    'Metro-Goldwyn-Mayer': 7
-}
-
-# Map the popularity scores to the DataFrame
-df['Production_Studio_Popularity'] = df['Production'].map(production_popularity).fillna(5)  # Fill missing with average score
-
-# Add Main Actor/Actress Popularity (example scores)
-actor_popularity = {
-    'Morgan Freeman': 10,
-    'Marlon Brando': 10,
-    'Christian Bale': 9,
-    'Henry Fonda': 8,
-    'Liam Neeson': 9,
-    'John Travolta': 8,
-    'Elijah Wood': 8,
-    'Clint Eastwood': 10,
-    'Brad Pitt': 10,
-    'Tom Hanks': 10
-}
-
-# Extract the first actor/actress from the 'Actors' field
-df['Main_Actor'] = df['Actors'].apply(lambda x: x.split(',')[0] if pd.notna(x) else None)
-df['Main_Actor_Popularity'] = df['Main_Actor'].map(actor_popularity).fillna(5)  # Fill missing with average score
+df['Budget'] = df['Title'].map(budget_data).fillna(10)
 
 # Create a new feature for the release month
 df['Release_Month'] = df['Release_Date'].dt.month
@@ -199,20 +143,40 @@ def categorize_month(month):
         return 'Holiday'
     else:
         return 'Other'
-
 df['Release_Season'] = df['Release_Month'].apply(categorize_month)
 
 # One-hot encode the 'Release_Season' feature
 df = pd.get_dummies(df, columns=['Release_Season'], drop_first=True)
 
-# Ensure all expected columns are present in the DataFrame
-for col in ['Release_Season_Summer', 'Release_Season_Holiday']:
-    if col not in df.columns:
-        df[col] = 0  # Add the missing column with default value 0
+# Add a new feature: Director Age at Release
+# For this, let's assume we have a dictionary with director birth years
+director_birth_years = {
+    'Frank Darabont': 1959,
+    'Francis Ford Coppola': 1939,
+    'Christopher Nolan': 1970,
+    'Sidney Lumet': 1924,
+    'Steven Spielberg': 1946,
+    'Quentin Tarantino': 1963,
+    'Peter Jackson': 1961,
+    'Sergio Leone': 1929,
+    'David Fincher': 1962,
+    'Robert Zemeckis': 1952
+}
+df['Director_Birth_Year'] = df['Director'].map(director_birth_years)
 
-# Prepare the data for prediction
-df['Year'] = df['Year'].astype(int)
-X = df[['Year', 'Genre_Sentiment', 'Is_Holiday_Release', 'Is_Weekend', 'Runtime_Minutes', 'Director_Popularity', 'Budget', 'Release_Month', 'Release_Season_Summer', 'Release_Season_Holiday', 'Number_of_Awards', 'Number_of_Nominations', 'Production_Studio_Popularity', 'Main_Actor_Popularity', 'Box_Office_Revenue']]
+# Convert 'Director_Birth_Year' to numeric and handle errors
+df['Director_Birth_Year'] = pd.to_numeric(df['Director_Birth_Year'], errors='coerce')
+df['Director_Birth_Year'].fillna(0, inplace=True)  # Fill missing values if any
+df['Director_Age_At_Release'] = df['Year'] - df['Director_Birth_Year']
+
+# Features for the model
+features = [
+    'Year', 'Genre_Sentiment', 'Is_Holiday_Release', 'Is_Weekend', 
+    'Runtime_Minutes', 'Director_Popularity', 'Budget', 
+    'Release_Month', 'Release_Season_Summer', 'Release_Season_Holiday',
+    'Director_Age_At_Release'
+]
+X = df[features]
 y = df['Rating'].astype(float)
 
 # Split the data into training and testing sets
@@ -237,10 +201,10 @@ comparison = pd.DataFrame({'Actual Rating': y_test, 'Predicted Rating': y_pred})
 print(comparison.head())
 
 # Example of predicting the rating for a new movie
-def predict_rating(year, genre_sentiment, holiday_release, is_weekend, runtime, director_popularity, budget, release_month, summer_season, holiday_season, num_awards, num_nominations, studio_popularity, actor_popularity, box_office_revenue):
+def predict_rating(year, genre_sentiment, holiday_release, is_weekend, runtime, director_popularity, budget, release_month, summer_season, holiday_season, director_age):
     # Ensure the input is a 2D array with the same number of features as the model
-    return model.predict(np.array([[year, genre_sentiment, holiday_release, is_weekend, runtime, director_popularity, budget, release_month, summer_season, holiday_season, num_awards, num_nominations, studio_popularity, actor_popularity, box_office_revenue]]))[0]
+    return model.predict(np.array([[year, genre_sentiment, holiday_release, is_weekend, runtime, director_popularity, budget, release_month, summer_season, holiday_season, director_age]]))[0]
 
-# Example prediction with all 15 features
-predicted_rating = predict_rating(2024, 0.5, 1, 1, 120, 9, 100, 12, 0, 1, 5, 10, 8, 9, 200000000)
+# Example prediction with all features
+predicted_rating = predict_rating(2024, 0.5, 1, 1, 120, 9, 100, 12, 0, 1, 54)
 print(f'Predicted Rating for a movie in 2024: {predicted_rating}')
