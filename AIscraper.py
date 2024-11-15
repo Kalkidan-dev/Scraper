@@ -66,24 +66,26 @@ df['Rating'] = df['imdbRating'].astype(float)
 # Analyze the sentiment of the movie genres
 df['Genre_Sentiment'] = df['Genre'].apply(analyze_genre_sentiment)
 
-# Step 2: Prepare the data for prediction
 # Convert Year to a numeric feature and ensure Genre_Sentiment is float
 df['Year'] = df['Year'].astype(int)
 df['Genre_Sentiment'] = df['Genre_Sentiment'].astype(float)
 
-# Features we will use to predict IMDb Rating
-features = ['Year', 'Genre_Sentiment']
+# Calculate Director Popularity based on the number of movies directed in the dataset
+df['Director_Popularity'] = df['Director'].map(df['Director'].value_counts())
 
-# X = feature set (Year, Genre_Sentiment)
+# Features we will use to predict IMDb Rating
+features = ['Year', 'Genre_Sentiment', 'Director_Popularity']
+
+# X = feature set (Year, Genre_Sentiment, Director_Popularity)
 X = df[features]
 
 # y = target variable (IMDb Rating)
 y = df['Rating'].astype(float)
 
-# Step 3: Split the data into training and testing sets
+# Split the data into training and testing sets
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Step 4: Train the Linear Regression model
+# Train the Linear Regression model
 model = LinearRegression()
 model.fit(X_train, y_train)
 
@@ -102,16 +104,15 @@ comparison = pd.DataFrame({'Actual Rating': y_test, 'Predicted Rating': y_pred})
 print(comparison.head())
 
 # Bonus: Make a prediction for a new movie
-def predict_rating(year, genre_sentiment):
-    return model.predict(np.array([[year, genre_sentiment]]))[0]
+def predict_rating(year, genre_sentiment, director_popularity):
+    return model.predict(np.array([[year, genre_sentiment, director_popularity]]))[0]
 
 # Example usage
-predicted_rating = predict_rating(2024, 0.5)  # Predict the rating for a movie in 2024 with neutral genre sentiment
-print(f'Predicted Rating for a movie in 2024 with genre sentiment 0.5: {predicted_rating:.2f}')
+predicted_rating = predict_rating(2024, 0.5, 3)  # Predict rating for a movie in 2024 with neutral genre sentiment and director popularity of 3
+print(f'Predicted Rating for a movie in 2024 with genre sentiment 0.5 and director popularity 3: {predicted_rating:.2f}')
 
-# Continue with your existing plots and CSV saving
 # Save to CSV
-df.to_csv('omdb_top_movies_with_sentiment.csv', index=False)
+df.to_csv('omdb_top_movies_with_sentiment_and_director_popularity.csv', index=False)
 
 # Example Rotten Tomatoes data
 rt_data = {
@@ -126,7 +127,7 @@ rt_df = pd.DataFrame(rt_data)
 combined_df = pd.merge(df, rt_df, on='Title', how='inner')
 
 # Correlation between IMDb, Rotten Tomatoes, and Genre Sentiment
-correlation_matrix = combined_df[['Rating', 'RT_Rating', 'Genre_Sentiment']].astype(float).corr()
+correlation_matrix = combined_df[['Rating', 'RT_Rating', 'Genre_Sentiment', 'Director_Popularity']].astype(float).corr()
 print(correlation_matrix)
 
 # Scatter plot to compare IMDb and Rotten Tomatoes ratings
