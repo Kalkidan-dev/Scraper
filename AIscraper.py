@@ -1,4 +1,4 @@
-import requests 
+import requests
 import pandas as pd
 import matplotlib.pyplot as plt
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
@@ -49,6 +49,20 @@ movie_titles = [
     'Fight Club', 'Forrest Gump'
 ]
 
+# Example budget data (in millions) for the movies
+budget_data = {
+    'The Shawshank Redemption': 25,
+    'The Godfather': 6,
+    'The Dark Knight': 185,
+    '12 Angry Men': 0.35,
+    'Schindler\'s List': 22,
+    'Pulp Fiction': 8,
+    'The Lord of the Rings: The Return of the King': 94,
+    'The Good, the Bad and the Ugly': 1.2,
+    'Fight Club': 63,
+    'Forrest Gump': 55
+}
+
 # Fetch data for each movie with error handling
 movie_data = []
 for title in movie_titles:
@@ -56,11 +70,24 @@ for title in movie_titles:
     if data:  # Only append if data was successfully retrieved
         movie_data.append(data)
 
+# Check if we successfully fetched data before processing
+if not movie_data:
+    print("No movie data was retrieved. Exiting...")
+    exit()
+
 # Create DataFrame
 df = pd.DataFrame(movie_data)
 
+# Check if required columns are present
+required_columns = ['Title', 'Year', 'imdbRating', 'Genre', 'Director', 'Runtime']
+missing_columns = [col for col in required_columns if col not in df.columns]
+
+if missing_columns:
+    print(f"Error: Missing columns in data: {missing_columns}")
+    exit()
+
 # Select relevant columns and rename for clarity
-df = df[['Title', 'Year', 'imdbRating', 'Genre', 'Director', 'Runtime']]
+df = df[required_columns]
 df['Rating'] = df['imdbRating'].astype(float)
 
 # Analyze the sentiment of the movie genres
@@ -76,10 +103,13 @@ df['Director_Popularity'] = df['Director'].map(df['Director'].value_counts())
 # Convert Runtime from "X min" format to numeric (int)
 df['Runtime'] = df['Runtime'].apply(lambda x: int(x.split()[0]) if isinstance(x, str) else np.nan)
 
-# Features we will use to predict IMDb Rating
-features = ['Year', 'Genre_Sentiment', 'Director_Popularity', 'Runtime']
+# Add Budget data (in millions) to the DataFrame
+df['Budget'] = df['Title'].map(budget_data)
 
-# X = feature set (Year, Genre_Sentiment, Director_Popularity, Runtime)
+# Features we will use to predict IMDb Rating
+features = ['Year', 'Genre_Sentiment', 'Director_Popularity', 'Runtime', 'Budget']
+
+# X = feature set (Year, Genre_Sentiment, Director_Popularity, Runtime, Budget)
 X = df[features]
 
 # y = target variable (IMDb Rating)
@@ -106,16 +136,8 @@ print(f'R-squared: {r2}')  # R-squared tells us how well the model explains the 
 comparison = pd.DataFrame({'Actual Rating': y_test, 'Predicted Rating': y_pred})
 print(comparison.head())
 
-# Bonus: Make a prediction for a new movie
-def predict_rating(year, genre_sentiment, director_popularity, runtime):
-    return model.predict(np.array([[year, genre_sentiment, director_popularity, runtime]]))[0]
-
-# Example usage
-predicted_rating = predict_rating(2024, 0.5, 3, 140)  # Predict rating for a movie in 2024 with neutral genre sentiment, director popularity of 3, and 140 minutes runtime
-print(f'Predicted Rating for a movie in 2024 with genre sentiment 0.5, director popularity 3, and runtime 140 minutes: {predicted_rating:.2f}')
-
 # Save to CSV
-df.to_csv('omdb_top_movies_with_sentiment_director_popularity_and_runtime.csv', index=False)
+df.to_csv('omdb_top_movies_with_sentiment_and_director_popularity.csv', index=False)
 
 # Example Rotten Tomatoes data
 rt_data = {
@@ -129,8 +151,8 @@ rt_df = pd.DataFrame(rt_data)
 # Merge IMDb and Rotten Tomatoes data on the movie title
 combined_df = pd.merge(df, rt_df, on='Title', how='inner')
 
-# Correlation between IMDb, Rotten Tomatoes, and Genre Sentiment
-correlation_matrix = combined_df[['Rating', 'RT_Rating', 'Genre_Sentiment', 'Director_Popularity', 'Runtime']].astype(float).corr()
+# Correlation between IMDb, Rotten Tomatoes, Genre Sentiment, and Budget
+correlation_matrix = combined_df[['Rating', 'RT_Rating', 'Genre_Sentiment', 'Director_Popularity', 'Runtime', 'Budget']].astype(float).corr()
 print(correlation_matrix)
 
 # Scatter plot to compare IMDb and Rotten Tomatoes ratings
@@ -141,38 +163,10 @@ plt.ylabel('Rotten Tomatoes Rating')
 plt.title('Comparison of IMDb and Rotten Tomatoes Ratings')
 plt.show()
 
-# Scatter plot of IMDb rating vs Genre sentiment
+# Scatter plot of IMDb rating vs Budget
 plt.figure(figsize=(10,6))
-plt.scatter(combined_df['Rating'].astype(float), combined_df['Genre_Sentiment'].astype(float), alpha=0.5, color='green')
+plt.scatter(combined_df['Rating'].astype(float), combined_df['Budget'].astype(float), alpha=0.5, color='purple')
 plt.xlabel('IMDb Rating')
-plt.ylabel('Genre Sentiment')
-plt.title('IMDb Rating vs Genre Sentiment')
-plt.show()
-
-# Scatter plot of IMDb rating vs Runtime
-plt.figure(figsize=(10,6))
-plt.scatter(combined_df['Rating'].astype(float), combined_df['Runtime'].astype(float), alpha=0.5, color='orange')
-plt.xlabel('IMDb Rating')
-plt.ylabel('Runtime (minutes)')
-plt.title('IMDb Rating vs Movie Runtime')
-plt.show()
-
-# Get the top 10 movies
-top_10_movies = df.sort_values(by='Rating', ascending=False).head(10)
-print(top_10_movies)
-
-# Plot distribution of ratings
-plt.hist(df['Rating'], bins=20, edgecolor='k')
-plt.xlabel('Rating')
-plt.ylabel('Frequency')
-plt.title('Distribution of IMDb Ratings')
-plt.show()
-
-# Plot top 10 movies by rating
-plt.figure(figsize=(10, 6))
-plt.barh(top_10_movies['Title'], top_10_movies['Rating'], color='skyblue')
-plt.xlabel('IMDb Rating')
-plt.ylabel('Movie Title')
-plt.title('Top 10 IMDb Movies by Rating')
-plt.gca().invert_yaxis()  # To display the highest rating at the top
+plt.ylabel('Budget (in millions)')
+plt.title('IMDb Rating vs Movie Budget')
 plt.show()
