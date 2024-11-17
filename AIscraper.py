@@ -79,7 +79,7 @@ if not movie_data:
 df = pd.DataFrame(movie_data)
 
 # Check if required columns are present
-required_columns = ['Title', 'Year', 'imdbRating', 'Genre', 'Director', 'Runtime']
+required_columns = ['Title', 'Year', 'imdbRating', 'Genre', 'Director', 'Runtime', 'imdbVotes']
 missing_columns = [col for col in required_columns if col not in df.columns]
 
 if missing_columns:
@@ -106,10 +106,13 @@ df['Runtime'] = df['Runtime'].apply(lambda x: int(x.split()[0]) if isinstance(x,
 # Add Budget data (in millions) to the DataFrame
 df['Budget'] = df['Title'].map(budget_data)
 
-# Features we will use to predict IMDb Rating
-features = ['Year', 'Genre_Sentiment', 'Director_Popularity', 'Runtime', 'Budget']
+# **New Feature: Movie Popularity based on IMDb Votes**
+df['Movie_Popularity'] = df['imdbVotes'].apply(lambda x: int(x.replace(',', '')) if isinstance(x, str) else 0)
 
-# X = feature set (Year, Genre_Sentiment, Director_Popularity, Runtime, Budget)
+# Features we will use to predict IMDb Rating
+features = ['Year', 'Genre_Sentiment', 'Director_Popularity', 'Runtime', 'Budget', 'Movie_Popularity']
+
+# X = feature set (Year, Genre_Sentiment, Director_Popularity, Runtime, Budget, Movie_Popularity)
 X = df[features]
 
 # y = target variable (IMDb Rating)
@@ -137,7 +140,7 @@ comparison = pd.DataFrame({'Actual Rating': y_test, 'Predicted Rating': y_pred})
 print(comparison.head())
 
 # Save to CSV
-df.to_csv('omdb_top_movies_with_sentiment_and_director_popularity.csv', index=False)
+df.to_csv('omdb_top_movies_with_sentiment_and_director_popularity_and_popularity.csv', index=False)
 
 # Example Rotten Tomatoes data
 rt_data = {
@@ -152,7 +155,7 @@ rt_df = pd.DataFrame(rt_data)
 combined_df = pd.merge(df, rt_df, on='Title', how='inner')
 
 # Correlation between IMDb, Rotten Tomatoes, Genre Sentiment, and Budget
-correlation_matrix = combined_df[['Rating', 'RT_Rating', 'Genre_Sentiment', 'Director_Popularity', 'Runtime', 'Budget']].astype(float).corr()
+correlation_matrix = combined_df[['Rating', 'RT_Rating', 'Genre_Sentiment', 'Director_Popularity', 'Runtime', 'Budget', 'Movie_Popularity']].astype(float).corr()
 print(correlation_matrix)
 
 # Scatter plot to compare IMDb and Rotten Tomatoes ratings
@@ -163,10 +166,10 @@ plt.ylabel('Rotten Tomatoes Rating')
 plt.title('Comparison of IMDb and Rotten Tomatoes Ratings')
 plt.show()
 
-# Scatter plot of IMDb rating vs Budget
+# Scatter plot of IMDb rating vs Movie Popularity
 plt.figure(figsize=(10,6))
-plt.scatter(combined_df['Rating'].astype(float), combined_df['Budget'].astype(float), alpha=0.5, color='purple')
+plt.scatter(combined_df['Rating'].astype(float), combined_df['Movie_Popularity'].astype(float), alpha=0.5, color='purple')
 plt.xlabel('IMDb Rating')
-plt.ylabel('Budget (in millions)')
-plt.title('IMDb Rating vs Movie Budget')
+plt.ylabel('Movie Popularity (Votes)')
+plt.title('IMDb Rating vs Movie Popularity')
 plt.show()
