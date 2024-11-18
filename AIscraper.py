@@ -6,6 +6,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score
 import numpy as np
+from datetime import datetime  # Import to get current year
 
 # Your OMDb API key
 api_key = '121c5367'
@@ -79,7 +80,7 @@ if not movie_data:
 df = pd.DataFrame(movie_data)
 
 # Check if required columns are present
-required_columns = ['Title', 'Year', 'imdbRating', 'Genre', 'Director', 'Runtime', 'imdbVotes', 'Released']
+required_columns = ['Title', 'Year', 'imdbRating', 'Genre', 'Director', 'Runtime', 'imdbVotes']
 missing_columns = [col for col in required_columns if col not in df.columns]
 
 if missing_columns:
@@ -106,17 +107,17 @@ df['Runtime'] = df['Runtime'].apply(lambda x: int(x.split()[0]) if isinstance(x,
 # Add Budget data (in millions) to the DataFrame
 df['Budget'] = df['Title'].map(budget_data)
 
+# **New Feature: Movie Age**
+current_year = datetime.now().year  # Get the current year
+df['Movie_Age'] = current_year - df['Year']
+
 # **New Feature: Movie Popularity based on IMDb Votes**
 df['Movie_Popularity'] = df['imdbVotes'].apply(lambda x: int(x.replace(',', '')) if isinstance(x, str) else 0)
 
-# **New Feature: Movie Release Month**
-# Convert 'Released' to datetime and extract the month
-df['Release_Month'] = pd.to_datetime(df['Released'], errors='coerce').dt.month
-
 # Features we will use to predict IMDb Rating
-features = ['Year', 'Genre_Sentiment', 'Director_Popularity', 'Runtime', 'Budget', 'Movie_Popularity', 'Release_Month']
+features = ['Year', 'Genre_Sentiment', 'Director_Popularity', 'Runtime', 'Budget', 'Movie_Popularity', 'Movie_Age']
 
-# X = feature set (Year, Genre_Sentiment, Director_Popularity, Runtime, Budget, Movie_Popularity, Release_Month)
+# X = feature set (Year, Genre_Sentiment, Director_Popularity, Runtime, Budget, Movie_Popularity)
 X = df[features]
 
 # y = target variable (IMDb Rating)
@@ -144,7 +145,7 @@ comparison = pd.DataFrame({'Actual Rating': y_test, 'Predicted Rating': y_pred})
 print(comparison.head())
 
 # Save to CSV
-df.to_csv('omdb_top_movies_with_sentiment_and_director_popularity_and_popularity_and_release_month.csv', index=False)
+df.to_csv('omdb_top_movies_with_sentiment_and_director_popularity_and_popularity_and_age.csv', index=False)
 
 # Example Rotten Tomatoes data
 rt_data = {
@@ -159,7 +160,7 @@ rt_df = pd.DataFrame(rt_data)
 combined_df = pd.merge(df, rt_df, on='Title', how='inner')
 
 # Correlation between IMDb, Rotten Tomatoes, Genre Sentiment, and Budget
-correlation_matrix = combined_df[['Rating', 'RT_Rating', 'Genre_Sentiment', 'Director_Popularity', 'Runtime', 'Budget', 'Movie_Popularity', 'Release_Month']].astype(float).corr()
+correlation_matrix = combined_df[['Rating', 'RT_Rating', 'Genre_Sentiment', 'Director_Popularity', 'Runtime', 'Budget', 'Movie_Popularity', 'Movie_Age']].astype(float).corr()
 print(correlation_matrix)
 
 # Scatter plot to compare IMDb and Rotten Tomatoes ratings
@@ -178,10 +179,10 @@ plt.ylabel('Movie Popularity (Votes)')
 plt.title('IMDb Rating vs Movie Popularity')
 plt.show()
 
-# Scatter plot of IMDb rating vs Movie Release Month
+# Scatter plot of IMDb rating vs Movie Age
 plt.figure(figsize=(10,6))
-plt.scatter(combined_df['Rating'].astype(float), combined_df['Release_Month'].astype(float), alpha=0.5, color='orange')
+plt.scatter(combined_df['Rating'].astype(float), combined_df['Movie_Age'].astype(float), alpha=0.5, color='orange')
 plt.xlabel('IMDb Rating')
-plt.ylabel('Release Month')
-plt.title('IMDb Rating vs Release Month')
+plt.ylabel('Movie Age')
+plt.title('IMDb Rating vs Movie Age')
 plt.show()
