@@ -6,7 +6,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score
 import numpy as np
-from datetime import datetime  # Import to get current year
+from datetime import datetime  # Import to get the current year
 
 # Your OMDb API key
 api_key = '121c5367'
@@ -114,8 +114,13 @@ df['Directors_Avg_Rating'] = df.groupby('Director')['Rating'].transform('mean')
 # **New Feature: Movie Popularity based on IMDb Votes**
 df['Movie_Popularity'] = df['imdbVotes'].apply(lambda x: int(x.replace(',', '')) if isinstance(x, str) else 0)
 
+# **New Feature: Movie Release Date Proximity**
+# Calculate the difference between the current year and the movie release year
+current_year = datetime.now().year  # Get the current year
+df['Release_Proximity'] = current_year - df['Year']
+
 # Features we will use to predict IMDb Rating
-features = ['Year', 'Genre_Sentiment', 'Director_Popularity', 'Runtime', 'Budget', 'Movie_Popularity', 'Directors_Avg_Rating']
+features = ['Year', 'Genre_Sentiment', 'Director_Popularity', 'Runtime', 'Budget', 'Movie_Popularity', 'Directors_Avg_Rating', 'Release_Proximity']
 
 # X = feature set (Year, Genre_Sentiment, Director_Popularity, Runtime, Budget, Movie_Popularity)
 X = df[features]
@@ -145,7 +150,7 @@ comparison = pd.DataFrame({'Actual Rating': y_test, 'Predicted Rating': y_pred})
 print(comparison.head())
 
 # Save to CSV
-df.to_csv('omdb_top_movies_with_sentiment_and_director_popularity_and_popularity_and_director_success.csv', index=False)
+df.to_csv('omdb_top_movies_with_sentiment_and_director_popularity_and_popularity_and_director_success_and_release_proximity.csv', index=False)
 
 # Example Rotten Tomatoes data
 rt_data = {
@@ -160,7 +165,7 @@ rt_df = pd.DataFrame(rt_data)
 combined_df = pd.merge(df, rt_df, on='Title', how='inner')
 
 # Correlation between IMDb, Rotten Tomatoes, Genre Sentiment, and Budget
-correlation_matrix = combined_df[['Rating', 'RT_Rating', 'Genre_Sentiment', 'Director_Popularity', 'Runtime', 'Budget', 'Movie_Popularity', 'Directors_Avg_Rating']].astype(float).corr()
+correlation_matrix = combined_df[['Rating', 'RT_Rating', 'Genre_Sentiment', 'Director_Popularity', 'Runtime', 'Budget', 'Movie_Popularity', 'Directors_Avg_Rating', 'Release_Proximity']].astype(float).corr()
 print(correlation_matrix)
 
 # Scatter plot to compare IMDb and Rotten Tomatoes ratings
@@ -171,10 +176,10 @@ plt.ylabel('Rotten Tomatoes Rating')
 plt.title('Comparison of IMDb and Rotten Tomatoes Ratings')
 plt.show()
 
-# Scatter plot of IMDb rating vs Director's Success Rate
+# Scatter plot of IMDb rating vs Movie Release Date Proximity
 plt.figure(figsize=(10,6))
-plt.scatter(combined_df['Rating'].astype(float), combined_df['Directors_Avg_Rating'].astype(float), alpha=0.5, color='red')
+plt.scatter(combined_df['Rating'].astype(float), combined_df['Release_Proximity'].astype(float), alpha=0.5, color='orange')
 plt.xlabel('IMDb Rating')
-plt.ylabel('Director\'s Average Rating')
-plt.title('IMDb Rating vs Director\'s Average Rating')
+plt.ylabel('Release Date Proximity (Years)')
+plt.title('IMDb Rating vs Movie Release Date Proximity')
 plt.show()
