@@ -78,7 +78,7 @@ if not movie_data:
 df = pd.DataFrame(movie_data)
 
 # Check for required columns
-required_columns = ['Title', 'Year', 'imdbRating', 'Genre', 'Director', 'Runtime', 'imdbVotes']
+required_columns = ['Title', 'Year', 'imdbRating', 'Genre', 'Director', 'Runtime', 'imdbVotes', 'BoxOffice']
 missing_columns = [col for col in required_columns if col not in df.columns]
 
 if missing_columns:
@@ -115,13 +115,24 @@ df['Rating_per_Genre'] = df.apply(
     lambda row: row['Rating'] / row['Num_Genres'] if row['Num_Genres'] > 0 else 0, axis=1
 )
 
-# **New Feature: Movie Age**
+# Add Movie Age
 current_year = datetime.now().year
 df['Movie_Age'] = current_year - df['Year']
 
+# **New Feature: Box Office Revenue per Genre**
+def convert_box_office_to_numeric(box_office):
+    if isinstance(box_office, str) and box_office.startswith('$'):
+        return int(box_office[1:].replace(',', ''))
+    return 0
+
+df['BoxOffice'] = df['BoxOffice'].apply(convert_box_office_to_numeric)
+df['BoxOffice_per_Genre'] = df.apply(
+    lambda row: row['BoxOffice'] / row['Num_Genres'] if row['Num_Genres'] > 0 else 0, axis=1
+)
+
 # Features for the model
 features = ['Year', 'Genre_Sentiment', 'Director_Popularity', 'Runtime', 
-            'Budget', 'Movie_Popularity', 'Num_Genres', 'Rating_per_Genre', 'Movie_Age']
+            'Budget', 'Movie_Popularity', 'Num_Genres', 'Rating_per_Genre', 'Movie_Age', 'BoxOffice_per_Genre']
 
 # X = feature set
 X = df[features]
@@ -151,12 +162,12 @@ comparison = pd.DataFrame({'Actual Rating': y_test, 'Predicted Rating': y_pred})
 print(comparison.head())
 
 # Save to CSV
-df.to_csv('omdb_with_movie_age.csv', index=False)
+df.to_csv('omdb_with_boxoffice_per_genre.csv', index=False)
 
-# Scatter plot: IMDb Rating vs Movie Age
+# Scatter plot: IMDb Rating vs Box Office Revenue per Genre
 plt.figure(figsize=(10,6))
-plt.scatter(df['Rating'], df['Movie_Age'], alpha=0.5, color='green')
+plt.scatter(df['Rating'], df['BoxOffice_per_Genre'], alpha=0.5, color='blue')
 plt.xlabel('IMDb Rating')
-plt.ylabel('Movie Age')
-plt.title('IMDb Rating vs Movie Age')
+plt.ylabel('Box Office Revenue per Genre')
+plt.title('IMDb Rating vs Box Office Revenue per Genre')
 plt.show()
