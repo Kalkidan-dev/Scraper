@@ -6,6 +6,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score
 import numpy as np
+from datetime import datetime
 
 # Your OMDb API key
 api_key = '121c5367'
@@ -109,14 +110,18 @@ df['Movie_Popularity'] = df['imdbVotes'].apply(lambda x: int(x.replace(',', ''))
 # Add Number of Genres
 df['Num_Genres'] = df['Genre'].apply(lambda x: len(x.split(',')) if isinstance(x, str) else 0)
 
-# **New Feature: IMDb Rating per Genre**
+# Add Rating per Genre
 df['Rating_per_Genre'] = df.apply(
     lambda row: row['Rating'] / row['Num_Genres'] if row['Num_Genres'] > 0 else 0, axis=1
 )
 
+# **New Feature: Movie Age**
+current_year = datetime.now().year
+df['Movie_Age'] = current_year - df['Year']
+
 # Features for the model
 features = ['Year', 'Genre_Sentiment', 'Director_Popularity', 'Runtime', 
-            'Budget', 'Movie_Popularity', 'Num_Genres', 'Rating_per_Genre']
+            'Budget', 'Movie_Popularity', 'Num_Genres', 'Rating_per_Genre', 'Movie_Age']
 
 # X = feature set
 X = df[features]
@@ -146,12 +151,12 @@ comparison = pd.DataFrame({'Actual Rating': y_test, 'Predicted Rating': y_pred})
 print(comparison.head())
 
 # Save to CSV
-df.to_csv('omdb_with_rating_per_genre.csv', index=False)
+df.to_csv('omdb_with_movie_age.csv', index=False)
 
-# Scatter plot: IMDb Rating vs Rating per Genre
+# Scatter plot: IMDb Rating vs Movie Age
 plt.figure(figsize=(10,6))
-plt.scatter(df['Rating'], df['Rating_per_Genre'], alpha=0.5, color='orange')
+plt.scatter(df['Rating'], df['Movie_Age'], alpha=0.5, color='green')
 plt.xlabel('IMDb Rating')
-plt.ylabel('Rating per Genre')
-plt.title('IMDb Rating vs Rating per Genre')
+plt.ylabel('Movie Age')
+plt.title('IMDb Rating vs Movie Age')
 plt.show()
