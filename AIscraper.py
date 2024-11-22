@@ -50,6 +50,18 @@ def extract_awards_count(awards):
         return sum(numbers)  # Sum all numbers extracted
     return 0
 
+# Add Genre Diversity feature
+def calculate_genre_diversity(genre):
+    """
+    Calculates the diversity of genres for a movie. 
+    Normalizes the count of unique genres by the total genres.
+    """
+    if isinstance(genre, str):
+        genres = genre.split(',')
+        unique_genres = set(genres)
+        return len(unique_genres) / len(genres) if len(genres) > 0 else 0
+    return 0
+
 # Example list of top-rated movie titles to fetch
 movie_titles = [
     'The Shawshank Redemption', 'The Godfather', 'The Dark Knight',
@@ -130,11 +142,14 @@ df['BoxOffice_per_Genre'] = df.apply(
 # Add Awards Count
 df['Awards_Count'] = df['Awards'].apply(extract_awards_count)
 
+# Add Genre Diversity
+df['Genre_Diversity'] = df['Genre'].apply(calculate_genre_diversity)
+
 # Features for the model
 features = [
     'Year', 'Genre_Sentiment', 'Director_Popularity', 'Runtime', 
     'Budget', 'Movie_Popularity', 'Num_Genres', 'Rating_per_Genre', 
-    'Movie_Age', 'BoxOffice_per_Genre', 'Awards_Count'
+    'Movie_Age', 'BoxOffice_per_Genre', 'Awards_Count', 'Genre_Diversity'
 ]
 
 # X = feature set
@@ -165,12 +180,12 @@ comparison = pd.DataFrame({'Actual Rating': y_test, 'Predicted Rating': y_pred})
 print(comparison.head())
 
 # Save the updated DataFrame with the new feature
-df.to_csv('omdb_with_all_features.csv', index=False)
+df.to_csv('omdb_with_genre_diversity.csv', index=False)
 
-# Scatter plot: IMDb Rating vs Awards Count
+# Scatter plot: IMDb Rating vs Genre Diversity
 plt.figure(figsize=(10, 6))
-plt.scatter(df['Rating'], df['Awards_Count'], alpha=0.5, color='purple')
+plt.scatter(df['Rating'], df['Genre_Diversity'], alpha=0.5, color='orange')
 plt.xlabel('IMDb Rating')
-plt.ylabel('Awards Count')
-plt.title('IMDb Rating vs Awards Count')
+plt.ylabel('Genre Diversity')
+plt.title('IMDb Rating vs Genre Diversity')
 plt.show()
