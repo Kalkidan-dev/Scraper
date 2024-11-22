@@ -74,6 +74,14 @@ def release_month_sentiment(release_date):
             return 0.0
     return 0.0
 
+# Add IMDb Rating per Director
+def calculate_imdb_rating_per_director(director, ratings_df):
+    # Check if the director exists in the DataFrame and calculate the average IMDb rating
+    director_movies = ratings_df[ratings_df['Director'] == director]
+    if not director_movies.empty:
+        return director_movies['Rating'].mean()  # Average IMDb rating for that director
+    return np.nan
+
 # Example list of top-rated movie titles to fetch
 movie_titles = [
     'The Shawshank Redemption', 'The Godfather', 'The Dark Knight',
@@ -154,12 +162,15 @@ df['Genre_Diversity'] = df['Genre'].apply(calculate_genre_diversity)
 # Add Release Month Sentiment
 df['Release_Month_Sentiment'] = df['Released'].apply(release_month_sentiment)
 
+# Add IMDb Rating per Director
+df['IMDb_Rating_per_Director'] = df['Director'].apply(lambda director: calculate_imdb_rating_per_director(director, df))
+
 # Features for the model
 features = [
     'Year', 'Genre_Sentiment', 'Director_Popularity', 'Runtime', 
     'Budget', 'Movie_Popularity', 'Num_Genres', 'Rating_per_Genre', 
     'Movie_Age', 'BoxOffice_per_Genre', 'Awards_Count', 'Genre_Diversity',
-    'Release_Month_Sentiment'
+    'Release_Month_Sentiment', 'IMDb_Rating_per_Director'
 ]
 
 # X = feature set
