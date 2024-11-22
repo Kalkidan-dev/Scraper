@@ -52,15 +52,27 @@ def extract_awards_count(awards):
 
 # Add Genre Diversity feature
 def calculate_genre_diversity(genre):
-    """
-    Calculates the diversity of genres for a movie. 
-    Normalizes the count of unique genres by the total genres.
-    """
     if isinstance(genre, str):
         genres = genre.split(',')
         unique_genres = set(genres)
         return len(unique_genres) / len(genres) if len(genres) > 0 else 0
     return 0
+
+# Add Release Month Sentiment feature
+def release_month_sentiment(release_date):
+    if isinstance(release_date, str) and release_date:
+        try:
+            # Extract the month from the release date
+            release_month = datetime.strptime(release_date, '%d %b %Y').month
+            # Define sentiment scores for months (arbitrary example scores)
+            month_sentiment = {
+                1: 0.3, 2: 0.4, 3: 0.5, 4: 0.6, 5: 0.8, 6: 0.9, 
+                7: 1.0, 8: 0.9, 9: 0.4, 10: 0.6, 11: 0.7, 12: 0.5
+            }
+            return month_sentiment.get(release_month, 0.0)
+        except ValueError:
+            return 0.0
+    return 0.0
 
 # Example list of top-rated movie titles to fetch
 movie_titles = [
@@ -92,14 +104,8 @@ if not movie_data:
 # Create DataFrame
 df = pd.DataFrame(movie_data)
 
-# Check for required columns
-required_columns = ['Title', 'Year', 'imdbRating', 'Genre', 'Director', 'Runtime', 'imdbVotes', 'BoxOffice', 'Awards']
-missing_columns = [col for col in required_columns if col not in df.columns]
-if missing_columns:
-    print(f"Error: Missing columns in data: {missing_columns}")
-    exit()
-
 # Select relevant columns
+required_columns = ['Title', 'Year', 'imdbRating', 'Genre', 'Director', 'Runtime', 'imdbVotes', 'BoxOffice', 'Awards', 'Released']
 df = df[required_columns]
 df['Rating'] = df['imdbRating'].astype(float)
 
@@ -145,11 +151,15 @@ df['Awards_Count'] = df['Awards'].apply(extract_awards_count)
 # Add Genre Diversity
 df['Genre_Diversity'] = df['Genre'].apply(calculate_genre_diversity)
 
+# Add Release Month Sentiment
+df['Release_Month_Sentiment'] = df['Released'].apply(release_month_sentiment)
+
 # Features for the model
 features = [
     'Year', 'Genre_Sentiment', 'Director_Popularity', 'Runtime', 
     'Budget', 'Movie_Popularity', 'Num_Genres', 'Rating_per_Genre', 
-    'Movie_Age', 'BoxOffice_per_Genre', 'Awards_Count', 'Genre_Diversity'
+    'Movie_Age', 'BoxOffice_per_Genre', 'Awards_Count', 'Genre_Diversity',
+    'Release_Month_Sentiment'
 ]
 
 # X = feature set
@@ -175,17 +185,10 @@ r2 = r2_score(y_test, y_pred)
 print(f'Mean Squared Error: {mse}')
 print(f'R-squared: {r2}')
 
-# Display actual vs predicted ratings
-comparison = pd.DataFrame({'Actual Rating': y_test, 'Predicted Rating': y_pred})
-print(comparison.head())
-
-# Save the updated DataFrame with the new feature
-df.to_csv('omdb_with_genre_diversity.csv', index=False)
-
-# Scatter plot: IMDb Rating vs Genre Diversity
+# Scatter plot: IMDb Rating vs Release Month Sentiment
 plt.figure(figsize=(10, 6))
-plt.scatter(df['Rating'], df['Genre_Diversity'], alpha=0.5, color='orange')
+plt.scatter(df['Rating'], df['Release_Month_Sentiment'], alpha=0.5, color='blue')
 plt.xlabel('IMDb Rating')
-plt.ylabel('Genre Diversity')
-plt.title('IMDb Rating vs Genre Diversity')
+plt.ylabel('Release Month Sentiment')
+plt.title('IMDb Rating vs Release Month Sentiment')
 plt.show()
