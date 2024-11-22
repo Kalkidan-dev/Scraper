@@ -82,6 +82,10 @@ def calculate_imdb_rating_per_director(director, ratings_df):
         return director_movies['Rating'].mean()  # Average IMDb rating for that director
     return np.nan
 
+# Add Director's Movie Count feature
+def calculate_director_movie_count(director, ratings_df):
+    return ratings_df[ratings_df['Director'] == director].shape[0]
+
 # Example list of top-rated movie titles to fetch
 movie_titles = [
     'The Shawshank Redemption', 'The Godfather', 'The Dark Knight',
@@ -165,12 +169,15 @@ df['Release_Month_Sentiment'] = df['Released'].apply(release_month_sentiment)
 # Add IMDb Rating per Director
 df['IMDb_Rating_per_Director'] = df['Director'].apply(lambda director: calculate_imdb_rating_per_director(director, df))
 
+# Add Director's Movie Count
+df['Director_Movie_Count'] = df['Director'].apply(lambda director: calculate_director_movie_count(director, df))
+
 # Features for the model
 features = [
     'Year', 'Genre_Sentiment', 'Director_Popularity', 'Runtime', 
     'Budget', 'Movie_Popularity', 'Num_Genres', 'Rating_per_Genre', 
     'Movie_Age', 'BoxOffice_per_Genre', 'Awards_Count', 'Genre_Diversity',
-    'Release_Month_Sentiment', 'IMDb_Rating_per_Director'
+    'Release_Month_Sentiment', 'IMDb_Rating_per_Director', 'Director_Movie_Count'
 ]
 
 # X = feature set
