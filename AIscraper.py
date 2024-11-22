@@ -7,6 +7,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score
 import numpy as np
 from datetime import datetime
+import re
 
 # Your OMDb API key
 api_key = '121c5367'
@@ -16,22 +17,16 @@ analyzer = SentimentIntensityAnalyzer()
 
 # Function to get movie data from OMDb with error handling
 def get_movie_data(title):
-    params = {
-        't': title,
-        'apikey': api_key
-    }
+    params = {'t': title, 'apikey': api_key}
     try:
         response = requests.get('http://www.omdbapi.com/', params=params)
         response.raise_for_status()
-        
         data = response.json()
-        
         if data.get('Response') == 'True':
             return data
         else:
             print(f"Error: No data found for title '{title}' - Reason: {data.get('Error')}")
             return None
-
     except requests.exceptions.RequestException as e:
         print(f"Request error for title '{title}': {e}")
         return None
@@ -40,6 +35,20 @@ def get_movie_data(title):
 def analyze_genre_sentiment(genre):
     sentiment_score = analyzer.polarity_scores(genre)
     return sentiment_score['compound']  # Use the compound score for overall sentiment
+
+# Function to convert BoxOffice to numeric
+def convert_box_office_to_numeric(box_office):
+    if isinstance(box_office, str) and box_office.startswith('$'):
+        return int(box_office[1:].replace(',', ''))
+    return 0
+
+# Extracting Awards Count
+def extract_awards_count(awards):
+    if isinstance(awards, str):
+        # Extract numbers in the format "Won X awards" or "Nominated for Y awards"
+        numbers = [int(num) for num in re.findall(r'\d+', awards)]
+        return sum(numbers)  # Sum all numbers extracted
+    return 0
 
 # Example list of top-rated movie titles to fetch
 movie_titles = [
@@ -51,19 +60,13 @@ movie_titles = [
 
 # Example budget data (in millions) for the movies
 budget_data = {
-    'The Shawshank Redemption': 25,
-    'The Godfather': 6,
-    'The Dark Knight': 185,
-    '12 Angry Men': 0.35,
-    'Schindler\'s List': 22,
-    'Pulp Fiction': 8,
-    'The Lord of the Rings: The Return of the King': 94,
-    'The Good, the Bad and the Ugly': 1.2,
-    'Fight Club': 63,
-    'Forrest Gump': 55
+    'The Shawshank Redemption': 25, 'The Godfather': 6, 'The Dark Knight': 185,
+    '12 Angry Men': 0.35, 'Schindler\'s List': 22, 'Pulp Fiction': 8,
+    'The Lord of the Rings: The Return of the King': 94, 'The Good, the Bad and the Ugly': 1.2,
+    'Fight Club': 63, 'Forrest Gump': 55
 }
 
-# Fetch data for each movie with error handling
+# Fetch data for each movie
 movie_data = []
 for title in movie_titles:
     data = get_movie_data(title)
@@ -78,9 +81,8 @@ if not movie_data:
 df = pd.DataFrame(movie_data)
 
 # Check for required columns
-required_columns = ['Title', 'Year', 'imdbRating', 'Genre', 'Director', 'Runtime', 'imdbVotes', 'BoxOffice']
+required_columns = ['Title', 'Year', 'imdbRating', 'Genre', 'Director', 'Runtime', 'imdbVotes', 'BoxOffice', 'Awards']
 missing_columns = [col for col in required_columns if col not in df.columns]
-
 if missing_columns:
     print(f"Error: Missing columns in data: {missing_columns}")
     exit()
@@ -119,20 +121,21 @@ df['Rating_per_Genre'] = df.apply(
 current_year = datetime.now().year
 df['Movie_Age'] = current_year - df['Year']
 
-# **New Feature: Box Office Revenue per Genre**
-def convert_box_office_to_numeric(box_office):
-    if isinstance(box_office, str) and box_office.startswith('$'):
-        return int(box_office[1:].replace(',', ''))
-    return 0
-
+# Add Box Office Revenue per Genre
 df['BoxOffice'] = df['BoxOffice'].apply(convert_box_office_to_numeric)
 df['BoxOffice_per_Genre'] = df.apply(
     lambda row: row['BoxOffice'] / row['Num_Genres'] if row['Num_Genres'] > 0 else 0, axis=1
 )
 
+# Add Awards Count
+df['Awards_Count'] = df['Awards'].apply(extract_awards_count)
+
 # Features for the model
-features = ['Year', 'Genre_Sentiment', 'Director_Popularity', 'Runtime', 
-            'Budget', 'Movie_Popularity', 'Num_Genres', 'Rating_per_Genre', 'Movie_Age', 'BoxOffice_per_Genre']
+features = [
+    'Year', 'Genre_Sentiment', 'Director_Popularity', 'Runtime', 
+    'Budget', 'Movie_Popularity', 'Num_Genres', 'Rating_per_Genre', 
+    'Movie_Age', 'BoxOffice_per_Genre', 'Awards_Count'
+]
 
 # X = feature set
 X = df[features]
@@ -161,13 +164,13 @@ print(f'R-squared: {r2}')
 comparison = pd.DataFrame({'Actual Rating': y_test, 'Predicted Rating': y_pred})
 print(comparison.head())
 
-# Save to CSV
-df.to_csv('omdb_with_boxoffice_per_genre.csv', index=False)
+# Save the updated DataFrame with the new feature
+df.to_csv('omdb_with_all_features.csv', index=False)
 
-# Scatter plot: IMDb Rating vs Box Office Revenue per Genre
-plt.figure(figsize=(10,6))
-plt.scatter(df['Rating'], df['BoxOffice_per_Genre'], alpha=0.5, color='blue')
+# Scatter plot: IMDb Rating vs Awards Count
+plt.figure(figsize=(10, 6))
+plt.scatter(df['Rating'], df['Awards_Count'], alpha=0.5, color='purple')
 plt.xlabel('IMDb Rating')
-plt.ylabel('Box Office Revenue per Genre')
-plt.title('IMDb Rating vs Box Office Revenue per Genre')
+plt.ylabel('Awards Count')
+plt.title('IMDb Rating vs Awards Count')
 plt.show()
