@@ -1,4 +1,3 @@
-import requests
 import pandas as pd
 import matplotlib.pyplot as plt
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
@@ -8,65 +7,93 @@ from sklearn.metrics import mean_squared_error, r2_score
 import numpy as np
 from datetime import datetime
 import re
+import requests
 
 # Your OMDb API key
-API_KEY = '121c5367'
+api_key = '121c5367'
 
 # Initialize sentiment analyzer
 analyzer = SentimentIntensityAnalyzer()
 
 # Function to get movie data from OMDb with error handling
 def get_movie_data(title):
-    params = {'t': title, 'apikey': API_KEY}
+    params = {'t': title, 'apikey': api_key}
     try:
         response = requests.get('http://www.omdbapi.com/', params=params)
         response.raise_for_status()
         data = response.json()
         if data.get('Response') == 'True':
             return data
-        print(f"Error: No data found for '{title}' - Reason: {data.get('Error')}")
+        else:
+            print(f"Error: No data found for title '{title}' - Reason: {data.get('Error')}")
+            return None
     except requests.exceptions.RequestException as e:
-        print(f"Request error for '{title}': {e}")
-    return None
+        print(f"Request error for title '{title}': {e}")
+        return None
 
-# Data processing functions
+# Function to analyze the sentiment of the movie genre
 def analyze_genre_sentiment(genre):
-    return analyzer.polarity_scores(genre)['compound'] if isinstance(genre, str) else 0
+    sentiment_score = analyzer.polarity_scores(genre)
+    return sentiment_score['compound']  # Use the compound score for overall sentiment
 
+# Function to convert BoxOffice to numeric
 def convert_box_office_to_numeric(box_office):
-    return int(box_office[1:].replace(',', '')) if isinstance(box_office, str) and box_office.startswith('$') else 0
+    if isinstance(box_office, str) and box_office.startswith('$'):
+        return int(box_office[1:].replace(',', ''))
+    return 0
 
+# Extracting Awards Count
 def extract_awards_count(awards):
-    return sum(map(int, re.findall(r'\d+', awards))) if isinstance(awards, str) else 0
+    if isinstance(awards, str):
+        numbers = [int(num) for num in re.findall(r'\d+', awards)]
+        return sum(numbers)  # Sum all numbers extracted
+    return 0
 
+# Add Genre Diversity feature
 def calculate_genre_diversity(genre):
-    genres = genre.split(',') if isinstance(genre, str) else []
-    return len(set(genres)) / len(genres) if genres else 0
+    if isinstance(genre, str):
+        genres = genre.split(',')
+        unique_genres = set(genres)
+        return len(unique_genres) / len(genres) if len(genres) > 0 else 0
+    return 0
 
+# Add Release Month Sentiment feature
 def release_month_sentiment(release_date):
-    try:
-        release_month = datetime.strptime(release_date, '%d %b %Y').month
-        month_sentiment = {1: 0.3, 2: 0.4, 3: 0.5, 4: 0.6, 5: 0.8, 6: 0.9, 
-                           7: 1.0, 8: 0.9, 9: 0.4, 10: 0.6, 11: 0.7, 12: 0.5}
-        return month_sentiment.get(release_month, 0.0)
-    except (ValueError, TypeError):
-        return 0.0
+    if isinstance(release_date, str) and release_date:
+        try:
+            release_month = datetime.strptime(release_date, '%d %b %Y').month
+            month_sentiment = {
+                1: 0.3, 2: 0.4, 3: 0.5, 4: 0.6, 5: 0.8, 6: 0.9, 
+                7: 1.0, 8: 0.9, 9: 0.4, 10: 0.6, 11: 0.7, 12: 0.5
+            }
+            return month_sentiment.get(release_month, 0.0)
+        except ValueError:
+            return 0.0
+    return 0.0
 
-def calculate_director_metrics(director, ratings_df):
+# Add IMDb Rating per Director
+def calculate_imdb_rating_per_director(director, ratings_df):
     director_movies = ratings_df[ratings_df['Director'] == director]
-    avg_rating = director_movies['Rating'].mean() if not director_movies.empty else 0
-    movie_count = director_movies.shape[0]
-    return avg_rating, movie_count
+    if not director_movies.empty:
+        return director_movies['Rating'].mean()
+    return np.nan
 
+# Add Director's Movie Count feature
+def calculate_director_movie_count(director, ratings_df):
+    return ratings_df[ratings_df['Director'] == director].shape[0]
+
+# Add Cast Popularity feature
 def calculate_cast_popularity(cast, ratings_df):
     if isinstance(cast, str):
         actors = cast.split(', ')
-        total_popularity = sum(ratings_df[ratings_df['Actors'].str.contains(actor, na=False)]['Movie_Popularity'].sum() 
-                               for actor in actors)
+        total_popularity = 0
+        for actor in actors:
+            actor_movies = ratings_df[ratings_df['Actors'].str.contains(actor, na=False, case=False)]
+            total_popularity += actor_movies['Movie_Popularity'].sum()
         return total_popularity / len(actors) if actors else 0
     return 0
 
-# Movie titles to fetch
+# Example list of movie titles
 movie_titles = [
     'The Shawshank Redemption', 'The Godfather', 'The Dark Knight',
     '12 Angry Men', 'Schindler\'s List', 'Pulp Fiction',
@@ -82,55 +109,78 @@ budget_data = {
     'Fight Club': 63, 'Forrest Gump': 55
 }
 
-# Fetch movie data
-movie_data = [data for title in movie_titles if (data := get_movie_data(title))]
+# Fetch data for each movie
+movie_data = []
+for title in movie_titles:
+    data = get_movie_data(title)
+    if data:
+        movie_data.append(data)
 
 if not movie_data:
-    print("No movie data retrieved. Exiting...")
+    print("No movie data was retrieved. Exiting...")
     exit()
 
-# Create DataFrame and process data
+# Create DataFrame
 df = pd.DataFrame(movie_data)
+
+# Select relevant columns
+required_columns = ['Title', 'Year', 'imdbRating', 'Genre', 'Director', 'Runtime', 'imdbVotes', 'BoxOffice', 'Awards', 'Released', 'Actors']
+df = df[required_columns]
 df['Rating'] = df['imdbRating'].astype(float)
+
+# Feature Engineering
+df['Genre_Sentiment'] = df['Genre'].apply(analyze_genre_sentiment)
 df['Year'] = df['Year'].astype(int)
+df['Director_Popularity'] = df['Director'].map(df['Director'].value_counts())
 df['Runtime'] = df['Runtime'].apply(lambda x: int(x.split()[0]) if isinstance(x, str) else np.nan)
 df['Budget'] = df['Title'].map(budget_data)
 df['Movie_Popularity'] = df['imdbVotes'].apply(lambda x: int(x.replace(',', '')) if isinstance(x, str) else 0)
-df['Genre_Sentiment'] = df['Genre'].apply(analyze_genre_sentiment)
-df['Awards_Count'] = df['Awards'].apply(extract_awards_count)
 df['Num_Genres'] = df['Genre'].apply(lambda x: len(x.split(',')) if isinstance(x, str) else 0)
+df['Rating_per_Genre'] = df.apply(lambda row: row['Rating'] / row['Num_Genres'] if row['Num_Genres'] > 0 else 0, axis=1)
+current_year = datetime.now().year
+df['Movie_Age'] = current_year - df['Year']
+df['BoxOffice'] = df['BoxOffice'].apply(convert_box_office_to_numeric)
+df['BoxOffice_per_Genre'] = df.apply(lambda row: row['BoxOffice'] / row['Num_Genres'] if row['Num_Genres'] > 0 else 0, axis=1)
+df['Awards_Count'] = df['Awards'].apply(extract_awards_count)
 df['Genre_Diversity'] = df['Genre'].apply(calculate_genre_diversity)
 df['Release_Month_Sentiment'] = df['Released'].apply(release_month_sentiment)
-df['Director_Movie_Count'] = df['Director'].apply(lambda x: calculate_director_metrics(x, df)[1])
-df['Cast_Popularity'] = df['Actors'].apply(lambda x: calculate_cast_popularity(x, df))
-df['BoxOffice'] = df['BoxOffice'].apply(convert_box_office_to_numeric)
-df['BoxOffice_per_Genre'] = df.apply(
-    lambda row: row['BoxOffice'] / row['Num_Genres'] if row['Num_Genres'] > 0 else 0, axis=1
-)
-df['Rating_per_Genre'] = df.apply(
-    lambda row: row['Rating'] / row['Num_Genres'] if row['Num_Genres'] > 0 else 0, axis=1
-)
-df['Movie_Age'] = datetime.now().year - df['Year']
+df['IMDb_Rating_per_Director'] = df['Director'].apply(lambda director: calculate_imdb_rating_per_director(director, df))
+df['Director_Movie_Count'] = df['Director'].apply(lambda director: calculate_director_movie_count(director, df))
+df['Cast_Popularity'] = df['Actors'].apply(lambda cast: calculate_cast_popularity(cast, df))
 
-# Define features and target
-features = ['Year', 'Genre_Sentiment', 'Runtime', 'Budget', 'Movie_Popularity', 
-            'Awards_Count', 'Genre_Diversity', 'Release_Month_Sentiment', 
-            'Director_Movie_Count', 'Cast_Popularity', 'BoxOffice_per_Genre', 
-            'Num_Genres', 'Rating_per_Genre', 'Movie_Age']
+# Features for the model
+features = [
+    'Year', 'Genre_Sentiment', 'Director_Popularity', 'Runtime', 
+    'Budget', 'Movie_Popularity', 'Num_Genres', 'Rating_per_Genre', 
+    'Movie_Age', 'BoxOffice_per_Genre', 'Awards_Count', 'Genre_Diversity',
+    'Release_Month_Sentiment', 'IMDb_Rating_per_Director', 'Director_Movie_Count', 
+    'Cast_Popularity'
+]
+
+# X = feature set
 X = df[features]
+
+# y = target variable (IMDb Rating)
 y = df['Rating']
 
-# Train-test split and modeling
+# Split data into training and testing sets
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Train the Linear Regression model
 model = LinearRegression()
 model.fit(X_train, y_train)
+
+# Make predictions
 y_pred = model.predict(X_test)
 
 # Evaluate the model
-print(f'Mean Squared Error: {mean_squared_error(y_test, y_pred)}')
-print(f'R-squared: {r2_score(y_test, y_pred)}')
+mse = mean_squared_error(y_test, y_pred)
+r2 = r2_score(y_test, y_pred)
 
-# Visualizations
+print(f'Mean Squared Error with Cast Popularity: {mse}')
+print(f'R-squared with Cast Popularity: {r2}')
+
+# Optional: Visualize the correlation between Cast Popularity and IMDb Rating
 plt.figure(figsize=(10, 6))
 plt.scatter(df['Cast_Popularity'], df['Rating'], alpha=0.5, color='green')
 plt.xlabel('Cast Popularity')
