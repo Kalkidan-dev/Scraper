@@ -149,7 +149,6 @@ df['Release_Season'] = df['Release_Month'].apply(categorize_month)
 df = pd.get_dummies(df, columns=['Release_Season'], drop_first=True)
 
 # Add a new feature: Director Age at Release
-# For this, let's assume we have a dictionary with director birth years
 director_birth_years = {
     'Frank Darabont': 1959,
     'Francis Ford Coppola': 1939,
@@ -163,19 +162,28 @@ director_birth_years = {
     'Robert Zemeckis': 1952
 }
 df['Director_Birth_Year'] = df['Director'].map(director_birth_years)
-
-# Convert 'Director_Birth_Year' to numeric and handle errors
+df['Year'] = pd.to_numeric(df['Year'], errors='coerce')
 df['Director_Birth_Year'] = pd.to_numeric(df['Director_Birth_Year'], errors='coerce')
-df['Director_Birth_Year'].fillna(0, inplace=True)  # Fill missing values if any
+
+# Fill any NaN values with 0 or another appropriate value
+df['Director_Birth_Year'].fillna(0, inplace=True)
+
+# Now calculate the Director's Age at Release
 df['Director_Age_At_Release'] = df['Year'] - df['Director_Birth_Year']
 
-# Features for the model
-features = [
-    'Year', 'Genre_Sentiment', 'Is_Holiday_Release', 'Is_Weekend', 
-    'Runtime_Minutes', 'Director_Popularity', 'Budget', 
-    'Release_Month', 'Release_Season_Summer', 'Release_Season_Holiday',
-    'Director_Age_At_Release'
-]
+# Check if the 'Release_Season_Holiday' column exists before using it
+if 'Release_Season_Holiday' in df.columns:
+    features = ['Year', 'Genre_Sentiment', 'Is_Holiday_Release', 'Is_Weekend', 
+                'Runtime_Minutes', 'Director_Popularity', 'Budget', 
+                'Release_Month', 'Release_Season_Other', 'Release_Season_Summer', 
+                'Director_Birth_Year', 'Director_Age_At_Release', 'Release_Season_Holiday']
+else:
+    features = ['Year', 'Genre_Sentiment', 'Is_Holiday_Release', 'Is_Weekend', 
+                'Runtime_Minutes', 'Director_Popularity', 'Budget', 
+                'Release_Month', 'Release_Season_Other', 'Release_Season_Summer', 
+                'Director_Birth_Year', 'Director_Age_At_Release']
+
+# Extract features
 X = df[features]
 y = df['Rating'].astype(float)
 
@@ -201,10 +209,17 @@ comparison = pd.DataFrame({'Actual Rating': y_test, 'Predicted Rating': y_pred})
 print(comparison.head())
 
 # Example of predicting the rating for a new movie
-def predict_rating(year, genre_sentiment, holiday_release, is_weekend, runtime, director_popularity, budget, release_month, summer_season, holiday_season, director_age):
-    # Ensure the input is a 2D array with the same number of features as the model
-    return model.predict(np.array([[year, genre_sentiment, holiday_release, is_weekend, runtime, director_popularity, budget, release_month, summer_season, holiday_season, director_age]]))[0]
+def predict_rating(year,genre_sentiment,season_holiday, holiday_release, is_weekend, runtime, director_popularity, budget, release_month, summer_season, holiday_season, director_age):
+    # Ensure you pass all the features expected by the model (12 features)
+    features = [
+        year, genre_sentiment, holiday_release, is_weekend, runtime, 
+        director_popularity, budget, release_month, summer_season, holiday_season, 
+        director_age,season_holiday # Add any missing features like 'Release_Season_Holiday' if used during training
+    ]
+    
+    # Ensure the input is a 2D array (1 row of data for prediction)
+    return model.predict(np.array([features]))[0]
 
 # Example prediction with all features
-predicted_rating = predict_rating(2024, 0.5, 1, 1, 120, 9, 100, 12, 0, 1, 54)
+predicted_rating = predict_rating(2024, 0.5, 1, 1, 120, 9, 100, 12, 0, 1, 54, 45)
 print(f'Predicted Rating for a movie in 2024: {predicted_rating}')
