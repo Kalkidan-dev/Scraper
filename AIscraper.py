@@ -8,6 +8,7 @@ import numpy as np
 from datetime import datetime
 import re
 import requests
+from sklearn.impute import SimpleImputer
 
 # Your OMDb API key
 api_key = '121c5367'
@@ -163,8 +164,18 @@ X = df[features]
 # y = target variable (IMDb Rating)
 y = df['Rating']
 
+# Handle missing values (choose one of the following approaches)
+
+# Option 1: Drop rows with missing values
+# X_cleaned = X.dropna()
+# y_cleaned = y[X_cleaned.index]  # Ensure y matches X after dropping rows
+
+# Option 2: Impute missing values with the mean of each column
+imputer = SimpleImputer(strategy='mean')
+X_imputed = imputer.fit_transform(X)
+
 # Split data into training and testing sets
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(X_imputed, y, test_size=0.2, random_state=42)
 
 # Train the Linear Regression model
 model = LinearRegression()
@@ -177,13 +188,12 @@ y_pred = model.predict(X_test)
 mse = mean_squared_error(y_test, y_pred)
 r2 = r2_score(y_test, y_pred)
 
-print(f'Mean Squared Error with Cast Popularity: {mse}')
-print(f'R-squared with Cast Popularity: {r2}')
+print(f'Mean Squared Error: {mse}')
+print(f'R-squared: {r2}')
 
-# Optional: Visualize the correlation between Cast Popularity and IMDb Rating
-plt.figure(figsize=(10, 6))
-plt.scatter(df['Cast_Popularity'], df['Rating'], alpha=0.5, color='green')
-plt.xlabel('Cast Popularity')
-plt.ylabel('IMDb Rating')
-plt.title('IMDb Rating vs Cast Popularity')
+# Plot actual vs predicted values
+plt.scatter(y_test, y_pred)
+plt.xlabel('Actual Ratings')
+plt.ylabel('Predicted Ratings')
+plt.title('Actual vs Predicted Ratings')
 plt.show()
