@@ -113,7 +113,7 @@ director_popularity = {
 }
 df['Director_Popularity'] = df['Director'].map(director_popularity).fillna(5)
 
-# Add the new "Budget" feature
+# Add the "Budget" feature
 budget_data = {
     'The Shawshank Redemption': 25,
     'The Godfather': 6,
@@ -166,10 +166,25 @@ df['Director_Birth_Year'].fillna(0, inplace=True)
 # Calculate the Director's Age at Release
 df['Director_Age_At_Release'] = df['Year'] - df['Director_Birth_Year']
 
+# Add the "Average IMDb Rating of the Cast" feature
+cast_avg_rating = {
+    'The Shawshank Redemption': 8.7,
+    'The Godfather': 9.1,
+    'The Dark Knight': 8.9,
+    '12 Angry Men': 8.5,
+    'Schindler\'s List': 8.8,
+    'Pulp Fiction': 8.6,
+    'The Lord of the Rings: The Return of the King': 8.9,
+    'The Good, the Bad and the Ugly': 8.5,
+    'Fight Club': 8.7,
+    'Forrest Gump': 8.5
+}
+df['Avg_IMDb_Rating_of_Cast'] = df['Title'].map(cast_avg_rating).fillna(8.0)
+
 # Ensure all relevant features are selected
 features = ['Year', 'Genre_Sentiment', 'Is_Holiday_Release', 'Is_Weekend', 
             'Runtime_Minutes', 'Director_Popularity', 'Budget', 
-            'Number_of_Awards', 'Director_Age_At_Release']
+            'Number_of_Awards', 'Director_Age_At_Release', 'Avg_IMDb_Rating_of_Cast']
 
 # Extract features
 X = df[features]
@@ -198,13 +213,13 @@ print(comparison.head())
 
 # Prediction function
 def predict_rating(year, genre_sentiment, holiday_release, is_weekend, runtime, 
-                   director_popularity, budget, number_of_awards, director_age):
+                   director_popularity, budget, number_of_awards, director_age, avg_cast_rating):
     features = [
         year, genre_sentiment, holiday_release, is_weekend, runtime, 
-        director_popularity, budget, number_of_awards, director_age
+        director_popularity, budget, number_of_awards, director_age, avg_cast_rating
     ]
     return model.predict(np.array([features]))[0]
 
 # Example prediction
-predicted_rating = predict_rating(2024, 0.5, 1, 1, 120, 9, 100, 10, 54)
+predicted_rating = predict_rating(2024, 0.5, 1, 1, 120, 9, 100, 10, 54, 8.5)
 print(f'Predicted Rating for a movie in 2024: {predicted_rating}')
