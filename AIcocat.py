@@ -22,22 +22,18 @@ analyzer = SentimentIntensityAnalyzer()
 
 # Function to get movie data from OMDb with retry logic
 def get_movie_data(title, retries=3, delay=5):
-    """Fetch movie data with retries in case of connection errors."""
     params = {'t': title, 'apikey': api_key}
-    
     for attempt in range(retries):
         try:
             response = requests.get('http://www.omdbapi.com/', params=params)
             response.raise_for_status()
-            
             data = response.json()
             if data.get('Response') == 'True':
-                # Convert runtime to minutes if available
                 runtime_str = data.get('Runtime', '0 min')
                 try:
-                    runtime = int(runtime_str.split()[0])  # Extract number of minutes
+                    runtime = int(runtime_str.split()[0])
                 except ValueError:
-                    runtime = 0  # Default to 0 if conversion fails
+                    runtime = 0
                 data['Runtime_Minutes'] = runtime
                 return data
             else:
@@ -59,7 +55,7 @@ def analyze_genre_sentiment(genre):
 
 # Function to create a holiday release indicator
 def is_holiday_release(date):
-    holiday_dates = ['12-25', '11-26']  # List of specific holiday dates (Christmas, example Thanksgiving)
+    holiday_dates = ['12-25', '11-26']
     return int(date.strftime('%m-%d') in holiday_dates)
 
 # List of top-rated movie titles to fetch as an example
@@ -102,7 +98,7 @@ df['Genre_Sentiment'] = df['Genre'].apply(analyze_genre_sentiment)
 # Apply the holiday release indicator
 df['Is_Holiday_Release'] = df['Release_Date'].apply(is_holiday_release)
 
-# Add a Director Popularity Score (example scores)
+# Add a Director Popularity Score
 director_popularity = {
     'Frank Darabont': 9,
     'Francis Ford Coppola': 10,
@@ -117,7 +113,7 @@ director_popularity = {
 }
 df['Director_Popularity'] = df['Director'].map(director_popularity).fillna(5)
 
-# Add the new "Budget" feature (in millions of dollars)
+# Add the new "Budget" feature
 budget_data = {
     'The Shawshank Redemption': 25,
     'The Godfather': 6,
@@ -132,21 +128,20 @@ budget_data = {
 }
 df['Budget'] = df['Title'].map(budget_data).fillna(10)
 
-# Create a new feature for the release month
-df['Release_Month'] = df['Release_Date'].dt.month
-
-# Categorize the release month into seasons
-def categorize_month(month):
-    if month in [6, 7, 8]:  # Summer months
-        return 'Summer'
-    elif month in [11, 12]:  # Holiday months
-        return 'Holiday'
-    else:
-        return 'Other'
-df['Release_Season'] = df['Release_Month'].apply(categorize_month)
-
-# One-hot encode the 'Release_Season' feature
-df = pd.get_dummies(df, columns=['Release_Season'], drop_first=True)
+# Add the "Number of Awards" feature
+awards_data = {
+    'The Shawshank Redemption': 7,
+    'The Godfather': 3,
+    'The Dark Knight': 8,
+    '12 Angry Men': 2,
+    'Schindler\'s List': 12,
+    'Pulp Fiction': 7,
+    'The Lord of the Rings: The Return of the King': 17,
+    'The Good, the Bad and the Ugly': 4,
+    'Fight Club': 1,
+    'Forrest Gump': 9
+}
+df['Number_of_Awards'] = df['Title'].map(awards_data).fillna(0)
 
 # Add a new feature: Director Age at Release
 director_birth_years = {
@@ -165,23 +160,16 @@ df['Director_Birth_Year'] = df['Director'].map(director_birth_years)
 df['Year'] = pd.to_numeric(df['Year'], errors='coerce')
 df['Director_Birth_Year'] = pd.to_numeric(df['Director_Birth_Year'], errors='coerce')
 
-# Fill any NaN values with 0 or another appropriate value
+# Fill NaN values in Director_Birth_Year
 df['Director_Birth_Year'].fillna(0, inplace=True)
 
-# Now calculate the Director's Age at Release
+# Calculate the Director's Age at Release
 df['Director_Age_At_Release'] = df['Year'] - df['Director_Birth_Year']
 
-# Check if the 'Release_Season_Holiday' column exists before using it
-if 'Release_Season_Holiday' in df.columns:
-    features = ['Year', 'Genre_Sentiment', 'Is_Holiday_Release', 'Is_Weekend', 
-                'Runtime_Minutes', 'Director_Popularity', 'Budget', 
-                'Release_Month', 'Release_Season_Other', 'Release_Season_Summer', 
-                'Director_Birth_Year', 'Director_Age_At_Release', 'Release_Season_Holiday']
-else:
-    features = ['Year', 'Genre_Sentiment', 'Is_Holiday_Release', 'Is_Weekend', 
-                'Runtime_Minutes', 'Director_Popularity', 'Budget', 
-                'Release_Month', 'Release_Season_Other', 'Release_Season_Summer', 
-                'Director_Birth_Year', 'Director_Age_At_Release']
+# Ensure all relevant features are selected
+features = ['Year', 'Genre_Sentiment', 'Is_Holiday_Release', 'Is_Weekend', 
+            'Runtime_Minutes', 'Director_Popularity', 'Budget', 
+            'Number_of_Awards', 'Director_Age_At_Release']
 
 # Extract features
 X = df[features]
@@ -208,18 +196,15 @@ print(f'R-squared: {r2}')
 comparison = pd.DataFrame({'Actual Rating': y_test, 'Predicted Rating': y_pred})
 print(comparison.head())
 
-# Example of predicting the rating for a new movie
-def predict_rating(year,genre_sentiment,season_holiday, holiday_release, is_weekend, runtime, director_popularity, budget, release_month, summer_season, holiday_season, director_age):
-    # Ensure you pass all the features expected by the model (12 features)
+# Prediction function
+def predict_rating(year, genre_sentiment, holiday_release, is_weekend, runtime, 
+                   director_popularity, budget, number_of_awards, director_age):
     features = [
         year, genre_sentiment, holiday_release, is_weekend, runtime, 
-        director_popularity, budget, release_month, summer_season, holiday_season, 
-        director_age,season_holiday # Add any missing features like 'Release_Season_Holiday' if used during training
+        director_popularity, budget, number_of_awards, director_age
     ]
-    
-    # Ensure the input is a 2D array (1 row of data for prediction)
     return model.predict(np.array([features]))[0]
 
-# Example prediction with all features
-predicted_rating = predict_rating(2024, 0.5, 1, 1, 120, 9, 100, 12, 0, 1, 54, 45)
+# Example prediction
+predicted_rating = predict_rating(2024, 0.5, 1, 1, 120, 9, 100, 10, 54)
 print(f'Predicted Rating for a movie in 2024: {predicted_rating}')
