@@ -181,12 +181,27 @@ cast_avg_rating = {
 }
 df['Avg_IMDb_Rating_of_Cast'] = df['Title'].map(cast_avg_rating).fillna(8.0)
 
-# Ensure all relevant features are selected
+# Add the "Movie Franchise Indicator" feature
+franchise_data = {
+    'The Shawshank Redemption': 0,
+    'The Godfather': 1,
+    'The Dark Knight': 1,
+    '12 Angry Men': 0,
+    'Schindler\'s List': 0,
+    'Pulp Fiction': 0,
+    'The Lord of the Rings: The Return of the King': 1,
+    'The Good, the Bad and the Ugly': 1,
+    'Fight Club': 0,
+    'Forrest Gump': 0
+}
+df['Is_Franchise'] = df['Title'].map(franchise_data).fillna(0).astype(int)
+
+# Ensure all relevant features are selected (including the new feature)
 features = ['Year', 'Genre_Sentiment', 'Is_Holiday_Release', 'Is_Weekend', 
             'Runtime_Minutes', 'Director_Popularity', 'Budget', 
-            'Number_of_Awards', 'Director_Age_At_Release', 'Avg_IMDb_Rating_of_Cast']
+            'Number_of_Awards', 'Director_Age_At_Release', 'Avg_IMDb_Rating_of_Cast', 'Is_Franchise']
 
-# Extract features
+# Extract features and target variable
 X = df[features]
 y = df['Rating'].astype(float)
 
@@ -204,22 +219,13 @@ y_pred = model.predict(X_test)
 mse = mean_squared_error(y_test, y_pred)
 r2 = r2_score(y_test, y_pred)
 
-print(f'Mean Squared Error: {mse}')
-print(f'R-squared: {r2}')
+print(f"Mean Squared Error: {mse}")
+print(f"R-squared: {r2}")
 
-# Display the actual vs predicted ratings
-comparison = pd.DataFrame({'Actual Rating': y_test, 'Predicted Rating': y_pred})
-print(comparison.head())
-
-# Prediction function
-def predict_rating(year, genre_sentiment, holiday_release, is_weekend, runtime, 
-                   director_popularity, budget, number_of_awards, director_age, avg_cast_rating):
-    features = [
-        year, genre_sentiment, holiday_release, is_weekend, runtime, 
-        director_popularity, budget, number_of_awards, director_age, avg_cast_rating
-    ]
-    return model.predict(np.array([features]))[0]
-
-# Example prediction
-predicted_rating = predict_rating(2024, 0.5, 1, 1, 120, 9, 100, 10, 54, 8.5)
-print(f'Predicted Rating for a movie in 2024: {predicted_rating}')
+# Plot the actual vs predicted ratings
+plt.figure(figsize=(10, 6))
+plt.scatter(y_test, y_pred, alpha=0.7)
+plt.xlabel('Actual Ratings')
+plt.ylabel('Predicted Ratings')
+plt.title('Actual vs Predicted Movie Ratings')
+plt.show()
