@@ -94,6 +94,13 @@ def is_holiday_release(date):
     holiday_dates = ['12-25', '11-26']
     return int(date.strftime('%m-%d') in holiday_dates)
 
+# Function to calculate the movie's age
+def calculate_movie_age(release_date):
+    """Calculate the movie's age in years from the current date."""
+    if pd.isnull(release_date):
+        return 0
+    return datetime.now().year - release_date.year
+
 # Function to convert Rotten Tomatoes score to sentiment
 def get_rt_sentiment(rt_score_str):
     """Convert Rotten Tomatoes score to sentiment."""
@@ -174,13 +181,13 @@ df['Budget'] = df['Title'].map({
     # Additional movies here
 }).fillna(10)
 
-# Add "Director Popularity" feature
-df['Director_Popularity'] = df['Director'].map(df['Director'].value_counts())
+# Add "Movie Age" feature
+df['Movie_Age'] = df['Release_Date'].apply(calculate_movie_age)
 
 # Ensure all relevant features are selected
 features = ['Year', 'Genre_Sentiment', 'Is_Holiday_Release', 'Is_Weekend', 
-            'Runtime_Minutes', 'RT_Sentiment', 'Director_Popularity', 
-            'Awards_Won', 'Top_Actors_Count']
+            'Runtime_Minutes', 'RT_Sentiment', 'Awards_Won', 'Top_Actors_Count',
+            'Movie_Age']
 
 # Extract features and target variable
 X = df[features]
