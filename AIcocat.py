@@ -35,6 +35,10 @@ def get_movie_data(title, retries=3, delay=5):
                 except ValueError:
                     runtime = 0
                 data['Runtime_Minutes'] = runtime
+
+                # Extract the number of awards won
+                awards_str = data.get('Awards', '')
+                data['Awards_Won'] = extract_awards_won(awards_str)
                 return data
             else:
                 print(f"Error: No data found for title '{title}' - {data.get('Error')}")
@@ -47,6 +51,21 @@ def get_movie_data(title, retries=3, delay=5):
             else:
                 print("Failed to fetch data after multiple attempts.")
                 return None
+
+# Function to extract the number of awards won
+def extract_awards_won(awards_str):
+    """Parse the 'Awards' string to count total awards won."""
+    try:
+        words = awards_str.split()
+        won = 0
+        for i, word in enumerate(words):
+            if word.lower() in ['win', 'wins']:
+                won += int(words[i - 1])  # The number preceding "win/wins"
+            elif word.lower() in ['award', 'awards']:
+                won += int(words[i - 1])  # The number preceding "award/awards"
+        return won
+    except (ValueError, IndexError):
+        return 0  # Default to 0 if parsing fails
 
 # Function to analyze the sentiment of the movie genre
 def analyze_genre_sentiment(genre):
@@ -105,7 +124,7 @@ for title in movie_titles:
 df = pd.DataFrame(movie_data)
 
 # Select relevant columns and rename for clarity
-df = df[['Title', 'Year', 'imdbRating', 'Genre', 'Director', 'Released', 'Runtime_Minutes']]
+df = df[['Title', 'Year', 'imdbRating', 'Genre', 'Director', 'Released', 'Runtime_Minutes', 'Awards_Won']]
 df['Rating'] = df['imdbRating'].astype(float)
 
 # Convert 'Released' column to datetime
@@ -142,7 +161,7 @@ df['Director_Popularity'] = df['Director'].map(df['Director'].value_counts())
 
 # Ensure all relevant features are selected
 features = ['Year', 'Genre_Sentiment', 'Is_Holiday_Release', 'Is_Weekend', 
-            'Runtime_Minutes', 'RT_Sentiment', 'Director_Popularity']
+            'Runtime_Minutes', 'RT_Sentiment', 'Director_Popularity', 'Awards_Won']
 
 # Extract features and target variable
 X = df[features]
@@ -172,3 +191,4 @@ plt.xlabel('Actual Ratings')
 plt.ylabel('Predicted Ratings')
 plt.title('Actual vs Predicted Movie Ratings')
 plt.show()
+
