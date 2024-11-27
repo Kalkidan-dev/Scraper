@@ -20,6 +20,13 @@ if not api_key:
 # Initialize sentiment analyzer
 analyzer = SentimentIntensityAnalyzer()
 
+# List of top actors
+top_actors = [
+    "Morgan Freeman", "Marlon Brando", "Christian Bale", "Al Pacino",
+    "Leonardo DiCaprio", "Tom Hanks", "Robert De Niro", "Brad Pitt",
+    "Johnny Depp", "Denzel Washington"
+]
+
 # Function to get movie data from OMDb with retry logic
 def get_movie_data(title, retries=3, delay=5):
     params = {'t': title, 'apikey': api_key}
@@ -39,6 +46,10 @@ def get_movie_data(title, retries=3, delay=5):
                 # Extract the number of awards won
                 awards_str = data.get('Awards', '')
                 data['Awards_Won'] = extract_awards_won(awards_str)
+
+                # Count top actors
+                actors_str = data.get('Actors', '')
+                data['Top_Actors_Count'] = count_top_actors(actors_str)
                 return data
             else:
                 print(f"Error: No data found for title '{title}' - {data.get('Error')}")
@@ -66,6 +77,12 @@ def extract_awards_won(awards_str):
         return won
     except (ValueError, IndexError):
         return 0  # Default to 0 if parsing fails
+
+# Function to count the number of top actors in a movie
+def count_top_actors(actors_str):
+    """Count how many actors in the 'Actors' string are in the top actors list."""
+    actors = [actor.strip() for actor in actors_str.split(",")]
+    return sum(1 for actor in actors if actor in top_actors)
 
 # Function to analyze the sentiment of the movie genre
 def analyze_genre_sentiment(genre):
@@ -124,7 +141,8 @@ for title in movie_titles:
 df = pd.DataFrame(movie_data)
 
 # Select relevant columns and rename for clarity
-df = df[['Title', 'Year', 'imdbRating', 'Genre', 'Director', 'Released', 'Runtime_Minutes', 'Awards_Won']]
+df = df[['Title', 'Year', 'imdbRating', 'Genre', 'Director', 'Released', 
+         'Runtime_Minutes', 'Awards_Won', 'Top_Actors_Count']]
 df['Rating'] = df['imdbRating'].astype(float)
 
 # Convert 'Released' column to datetime
@@ -161,7 +179,8 @@ df['Director_Popularity'] = df['Director'].map(df['Director'].value_counts())
 
 # Ensure all relevant features are selected
 features = ['Year', 'Genre_Sentiment', 'Is_Holiday_Release', 'Is_Weekend', 
-            'Runtime_Minutes', 'RT_Sentiment', 'Director_Popularity', 'Awards_Won']
+            'Runtime_Minutes', 'RT_Sentiment', 'Director_Popularity', 
+            'Awards_Won', 'Top_Actors_Count']
 
 # Extract features and target variable
 X = df[features]
@@ -191,4 +210,3 @@ plt.xlabel('Actual Ratings')
 plt.ylabel('Predicted Ratings')
 plt.title('Actual vs Predicted Movie Ratings')
 plt.show()
-
