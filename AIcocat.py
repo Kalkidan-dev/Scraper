@@ -27,6 +27,20 @@ top_actors = [
     "Johnny Depp", "Denzel Washington"
 ]
 
+# Director popularity mapping
+director_popularity = {
+    "Frank Darabont": 10,
+    "Francis Ford Coppola": 10,
+    "Christopher Nolan": 10,
+    "Steven Spielberg": 9,
+    "Quentin Tarantino": 9,
+    "Peter Jackson": 9,
+    "Clint Eastwood": 8,
+    "Stanley Kubrick": 8,
+    "Ridley Scott": 8,
+    "Martin Scorsese": 10
+}
+
 # Function to get movie data from OMDb with retry logic
 def get_movie_data(title, retries=3, delay=5):
     params = {'t': title, 'apikey': api_key}
@@ -50,6 +64,11 @@ def get_movie_data(title, retries=3, delay=5):
                 # Count top actors
                 actors_str = data.get('Actors', '')
                 data['Top_Actors_Count'] = count_top_actors(actors_str)
+
+                # Get director popularity
+                director_name = data.get('Director', '')
+                data['Director_Popularity'] = director_popularity.get(director_name, 5)  # Default to 5 if not listed
+
                 return data
             else:
                 print(f"Error: No data found for title '{title}' - {data.get('Error')}")
@@ -149,7 +168,7 @@ df = pd.DataFrame(movie_data)
 
 # Select relevant columns and rename for clarity
 df = df[['Title', 'Year', 'imdbRating', 'Genre', 'Director', 'Released', 
-         'Runtime_Minutes', 'Awards_Won', 'Top_Actors_Count']]
+         'Runtime_Minutes', 'Awards_Won', 'Top_Actors_Count', 'Director_Popularity']]
 df['Rating'] = df['imdbRating'].astype(float)
 
 # Convert 'Released' column to datetime
@@ -174,20 +193,13 @@ df['Is_Holiday_Release'] = df['Release_Date'].apply(is_holiday_release)
 df['Rotten_Tomatoes_Score'] = df['Title'].map(rotten_tomatoes_scores).fillna('0%')
 df['RT_Sentiment'] = df['Rotten_Tomatoes_Score'].apply(get_rt_sentiment)
 
-# Add the "Budget" feature
-df['Budget'] = df['Title'].map({
-    'The Shawshank Redemption': 25,
-    'The Godfather': 6,
-    # Additional movies here
-}).fillna(10)
-
 # Add "Movie Age" feature
 df['Movie_Age'] = df['Release_Date'].apply(calculate_movie_age)
 
 # Ensure all relevant features are selected
 features = ['Year', 'Genre_Sentiment', 'Is_Holiday_Release', 'Is_Weekend', 
             'Runtime_Minutes', 'RT_Sentiment', 'Awards_Won', 'Top_Actors_Count',
-            'Movie_Age']
+            'Movie_Age', 'Director_Popularity']
 
 # Extract features and target variable
 X = df[features]
