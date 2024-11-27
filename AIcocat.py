@@ -131,18 +131,18 @@ df['Rotten_Tomatoes_Score'] = df['Title'].map(rotten_tomatoes_scores).fillna('0%
 df['RT_Sentiment'] = df['Rotten_Tomatoes_Score'].apply(get_rt_sentiment)
 
 # Add the "Budget" feature
-# (Example budget data; ensure accurate data for actual use)
 df['Budget'] = df['Title'].map({
     'The Shawshank Redemption': 25,
     'The Godfather': 6,
     # Additional movies here
 }).fillna(10)
 
-# Add additional features as needed...
+# Add "Director Popularity" feature
+df['Director_Popularity'] = df['Director'].map(df['Director'].value_counts())
 
 # Ensure all relevant features are selected
 features = ['Year', 'Genre_Sentiment', 'Is_Holiday_Release', 'Is_Weekend', 
-            'Runtime_Minutes', 'RT_Sentiment']
+            'Runtime_Minutes', 'RT_Sentiment', 'Director_Popularity']
 
 # Extract features and target variable
 X = df[features]
