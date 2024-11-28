@@ -74,6 +74,19 @@ def calculate_budget_to_boxoffice_ratio(budget_str, box_office_str):
     except ValueError:
         return 0  # If parsing fails, return 0
 
+# New feature: Audience Sentiment from Rotten Tomatoes Audience Score
+def get_audience_sentiment(audience_score_str):
+    try:
+        audience_score = int(audience_score_str.strip('%'))
+        if audience_score >= 75:
+            return 1  # Positive sentiment
+        elif audience_score >= 50:
+            return 0  # Neutral sentiment
+        else:
+            return -1  # Negative sentiment
+    except (ValueError, TypeError):
+        return 0  # Default to neutral if parsing fails
+
 # Count top actors in the movie
 def count_top_actors(actors_str):
     return sum(1 for actor in top_actors_list if actor in actors_str)
@@ -102,6 +115,10 @@ def get_movie_data(title, retries=3, delay=5):
                 budget_str = data.get('BoxOffice', '')
                 box_office_str = data.get('Budget', '')
                 data['Budget_to_BoxOffice_Ratio'] = calculate_budget_to_boxoffice_ratio(budget_str, box_office_str)
+
+                # Get Audience Sentiment from Rotten Tomatoes (NEW FEATURE)
+                audience_score_str = data.get('Ratings', [{}])[1].get('Value', '0%')
+                data['Audience_Sentiment'] = get_audience_sentiment(audience_score_str)
 
                 # Count top actors
                 actors_str = data.get('Actors', '')
@@ -193,10 +210,10 @@ df['Is_Holiday_Release'] = df['Release_Date'].apply(is_holiday_release)
 df['Rotten_Tomatoes_Score'] = df['Title'].map(rotten_tomatoes_scores).fillna('0%')
 df['RT_Sentiment'] = df['Rotten_Tomatoes_Score'].apply(get_rt_sentiment)
 
-# Features for modeling (INCLUDING THE NEW FEATURE)
+# Features for modeling (including new features)
 features = ['Year', 'Genre_Sentiment', 'Is_Holiday_Release', 'Runtime_Minutes', 
-            'RT_Sentiment', 'Awards_Won', 'Golden_Globe_Wins', 'Top_Actors_Count', 
-            'Movie_Age', 'Director_Popularity', 'Studio_Influence', 'Budget_to_BoxOffice_Ratio']
+            'RT_Sentiment', 'Awards_Won', 'Top_Actors_Count', 'Movie_Age', 
+            'Director_Popularity', 'Studio_Influence', 'Budget_to_BoxOffice_Ratio', 'Audience_Sentiment']
 X = df[features]
 y = df['Rating'].astype(float)
 
