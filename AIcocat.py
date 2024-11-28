@@ -15,7 +15,7 @@ import re
 api_key = os.getenv("OMDB_API_KEY")
 
 if not api_key:
-    print("Ooops: API key not found. Please set the OMDB_API_KEY environment variable.")
+    print("Oops: API key not found. Please set the OMDB_API_KEY environment variable.")
     exit(1)
 
 # Initialize sentiment analyzer
@@ -56,6 +56,12 @@ def extract_awards_won(awards_str):
     match = awards_pattern.search(awards_str)
     return int(match.group(1)) if match else 0
 
+# Extract the number of Oscar nominations (NEW FEATURE)
+def extract_oscar_nominations(awards_str):
+    oscar_pattern = re.compile(r"Nominated for (\d+) Oscar", re.IGNORECASE)
+    match = oscar_pattern.search(awards_str)
+    return int(match.group(1)) if match else 0
+
 # Count top actors in the movie
 def count_top_actors(actors_str):
     return sum(1 for actor in top_actors_list if actor in actors_str)
@@ -76,6 +82,9 @@ def get_movie_data(title, retries=3, delay=5):
                 # Extract the number of awards won
                 awards_str = data.get('Awards', '')
                 data['Awards_Won'] = extract_awards_won(awards_str)
+
+                # Extract Oscar nominations (NEW FEATURE)
+                data['Oscar_Nominations'] = extract_oscar_nominations(awards_str)
 
                 # Count top actors
                 actors_str = data.get('Actors', '')
@@ -167,10 +176,10 @@ df['Is_Holiday_Release'] = df['Release_Date'].apply(is_holiday_release)
 df['Rotten_Tomatoes_Score'] = df['Title'].map(rotten_tomatoes_scores).fillna('0%')
 df['RT_Sentiment'] = df['Rotten_Tomatoes_Score'].apply(get_rt_sentiment)
 
-# Features for modeling
+# Features for modeling (NEW FEATURE INCLUDED)
 features = ['Year', 'Genre_Sentiment', 'Is_Holiday_Release', 'Runtime_Minutes', 
-            'RT_Sentiment', 'Awards_Won', 'Top_Actors_Count', 'Movie_Age', 
-            'Director_Popularity', 'Studio_Influence']
+            'RT_Sentiment', 'Awards_Won', 'Oscar_Nominations', 'Top_Actors_Count', 
+            'Movie_Age', 'Director_Popularity', 'Studio_Influence']
 X = df[features]
 y = df['Rating'].astype(float)
 
