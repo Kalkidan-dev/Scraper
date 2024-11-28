@@ -15,7 +15,7 @@ import re
 api_key = os.getenv("OMDB_API_KEY")
 
 if not api_key:
-    print("Oops: API key not found. Please set the OMDB_API_KEY environment variable.")
+    print("Ooops: API key not found. Please set the OMDB_API_KEY environment variable.")
     exit(1)
 
 # Initialize sentiment analyzer
@@ -56,11 +56,23 @@ def extract_awards_won(awards_str):
     match = awards_pattern.search(awards_str)
     return int(match.group(1)) if match else 0
 
-# Extract the number of Oscar nominations (NEW FEATURE)
-def extract_oscar_nominations(awards_str):
-    oscar_pattern = re.compile(r"Nominated for (\d+) Oscar", re.IGNORECASE)
-    match = oscar_pattern.search(awards_str)
+# Extract the number of Golden Globe wins (NEW FEATURE)
+def extract_golden_globe_wins(awards_str):
+    golden_globe_pattern = re.compile(r"Won (\d+) Golden Globe", re.IGNORECASE)
+    match = golden_globe_pattern.search(awards_str)
     return int(match.group(1)) if match else 0
+
+# New feature: Budget-to-BoxOffice Ratio
+def calculate_budget_to_boxoffice_ratio(budget_str, box_office_str):
+    try:
+        budget = int(budget_str.replace('$', '').replace(',', '').strip())
+        box_office = int(box_office_str.replace('$', '').replace(',', '').strip())
+        if box_office != 0:
+            return budget / box_office
+        else:
+            return 0  # Avoid division by zero
+    except ValueError:
+        return 0  # If parsing fails, return 0
 
 # Count top actors in the movie
 def count_top_actors(actors_str):
@@ -83,8 +95,13 @@ def get_movie_data(title, retries=3, delay=5):
                 awards_str = data.get('Awards', '')
                 data['Awards_Won'] = extract_awards_won(awards_str)
 
-                # Extract Oscar nominations (NEW FEATURE)
-                data['Oscar_Nominations'] = extract_oscar_nominations(awards_str)
+                # Extract Golden Globe wins (NEW FEATURE)
+                data['Golden_Globe_Wins'] = extract_golden_globe_wins(awards_str)
+
+                # Calculate Budget-to-BoxOffice Ratio (NEW FEATURE)
+                budget_str = data.get('BoxOffice', '')
+                box_office_str = data.get('Budget', '')
+                data['Budget_to_BoxOffice_Ratio'] = calculate_budget_to_boxoffice_ratio(budget_str, box_office_str)
 
                 # Count top actors
                 actors_str = data.get('Actors', '')
@@ -176,10 +193,10 @@ df['Is_Holiday_Release'] = df['Release_Date'].apply(is_holiday_release)
 df['Rotten_Tomatoes_Score'] = df['Title'].map(rotten_tomatoes_scores).fillna('0%')
 df['RT_Sentiment'] = df['Rotten_Tomatoes_Score'].apply(get_rt_sentiment)
 
-# Features for modeling (NEW FEATURE INCLUDED)
+# Features for modeling (INCLUDING THE NEW FEATURE)
 features = ['Year', 'Genre_Sentiment', 'Is_Holiday_Release', 'Runtime_Minutes', 
-            'RT_Sentiment', 'Awards_Won', 'Oscar_Nominations', 'Top_Actors_Count', 
-            'Movie_Age', 'Director_Popularity', 'Studio_Influence']
+            'RT_Sentiment', 'Awards_Won', 'Golden_Globe_Wins', 'Top_Actors_Count', 
+            'Movie_Age', 'Director_Popularity', 'Studio_Influence', 'Budget_to_BoxOffice_Ratio']
 X = df[features]
 y = df['Rating'].astype(float)
 
