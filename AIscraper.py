@@ -9,6 +9,7 @@ from datetime import datetime
 import re
 import requests
 from sklearn.impute import SimpleImputer
+import time
 
 # Your OMDb API key
 api_key = '121c5367'
@@ -17,20 +18,28 @@ api_key = '121c5367'
 analyzer = SentimentIntensityAnalyzer()
 
 # Function to get movie data from OMDb with error handling
-def get_movie_data(title):
+def get_movie_data(title, retries=3, delay=5):
     params = {'t': title, 'apikey': api_key}
-    try:
-        response = requests.get('http://www.omdbapi.com/', params=params)
-        response.raise_for_status()
-        data = response.json()
-        if data.get('Response') == 'True':
-            return data
-        else:
-            print(f"Error: No data found for title '{title}' - Reason: {data.get('Error')}")
-            return None
-    except requests.exceptions.RequestException as e:
-        print(f"Request error for title '{title}': {e}")
-        return None
+    attempt = 0
+    while attempt < retries:
+        try:
+            response = requests.get('http://www.omdbapi.com/', params=params, timeout=10)  # Added timeout
+            response.raise_for_status()
+            data = response.json()
+            if data.get('Response') == 'True':
+                return data
+            else:
+                print(f"Error: No data found for title '{title}' - Reason: {data.get('Error')}")
+                return None
+        except requests.exceptions.RequestException as e:
+            attempt += 1
+            print(f"Attempt {attempt}/{retries} failed: {e}")
+            if attempt < retries:
+                print(f"Retrying in {delay} seconds...")
+                time.sleep(delay)
+            else:
+                print("Max retries reached, skipping this movie.")
+                return None
 
 # Function to analyze the sentiment of the movie genre
 def analyze_genre_sentiment(genre):
