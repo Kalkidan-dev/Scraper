@@ -35,7 +35,7 @@ def get_movie_data(title):
 # Function to analyze the sentiment of the movie genre
 def analyze_genre_sentiment(genre):
     sentiment_score = analyzer.polarity_scores(genre)
-    return sentiment_score['compound']  # Use the compound score for overall sentiment
+    return sentiment_score['compound']
 
 # Function to convert BoxOffice to numeric
 def convert_box_office_to_numeric(box_office):
@@ -47,7 +47,7 @@ def convert_box_office_to_numeric(box_office):
 def extract_awards_count(awards):
     if isinstance(awards, str):
         numbers = [int(num) for num in re.findall(r'\d+', awards)]
-        return sum(numbers)  # Sum all numbers extracted
+        return sum(numbers)
     return 0
 
 # Add Genre Diversity feature
@@ -72,26 +72,11 @@ def release_month_sentiment(release_date):
             return 0.0
     return 0.0
 
-# Add IMDb Rating per Director
-def calculate_imdb_rating_per_director(director, ratings_df):
-    director_movies = ratings_df[ratings_df['Director'] == director]
-    if not director_movies.empty:
-        return director_movies['Rating'].mean()
-    return np.nan
-
-# Add Director's Movie Count feature
-def calculate_director_movie_count(director, ratings_df):
-    return ratings_df[ratings_df['Director'] == director].shape[0]
-
-# Add Cast Popularity feature
-def calculate_cast_popularity(cast, ratings_df):
-    if isinstance(cast, str):
-        actors = cast.split(', ')
-        total_popularity = 0
-        for actor in actors:
-            actor_movies = ratings_df[ratings_df['Actors'].str.contains(actor, na=False, case=False)]
-            total_popularity += actor_movies['Movie_Popularity'].sum()
-        return total_popularity / len(actors) if actors else 0
+# Add Actor Diversity feature
+def calculate_actor_diversity(actors):
+    if isinstance(actors, str):
+        unique_actors = set(actors.split(', '))
+        return len(unique_actors)
     return 0
 
 # Example list of movie titles
@@ -145,17 +130,14 @@ df['BoxOffice_per_Genre'] = df.apply(lambda row: row['BoxOffice'] / row['Num_Gen
 df['Awards_Count'] = df['Awards'].apply(extract_awards_count)
 df['Genre_Diversity'] = df['Genre'].apply(calculate_genre_diversity)
 df['Release_Month_Sentiment'] = df['Released'].apply(release_month_sentiment)
-df['IMDb_Rating_per_Director'] = df['Director'].apply(lambda director: calculate_imdb_rating_per_director(director, df))
-df['Director_Movie_Count'] = df['Director'].apply(lambda director: calculate_director_movie_count(director, df))
-df['Cast_Popularity'] = df['Actors'].apply(lambda cast: calculate_cast_popularity(cast, df))
+df['Actor_Diversity'] = df['Actors'].apply(calculate_actor_diversity)
 
 # Features for the model
 features = [
     'Year', 'Genre_Sentiment', 'Director_Popularity', 'Runtime', 
     'Budget', 'Movie_Popularity', 'Num_Genres', 'Rating_per_Genre', 
     'Movie_Age', 'BoxOffice_per_Genre', 'Awards_Count', 'Genre_Diversity',
-    'Release_Month_Sentiment', 'IMDb_Rating_per_Director', 'Director_Movie_Count', 
-    'Cast_Popularity'
+    'Release_Month_Sentiment', 'Actor_Diversity'
 ]
 
 # X = feature set
@@ -164,13 +146,7 @@ X = df[features]
 # y = target variable (IMDb Rating)
 y = df['Rating']
 
-# Handle missing values (choose one of the following approaches)
-
-# Option 1: Drop rows with missing values
-# X_cleaned = X.dropna()
-# y_cleaned = y[X_cleaned.index]  # Ensure y matches X after dropping rows
-
-# Option 2: Impute missing values with the mean of each column
+# Handle missing values
 imputer = SimpleImputer(strategy='mean')
 X_imputed = imputer.fit_transform(X)
 
@@ -191,9 +167,10 @@ r2 = r2_score(y_test, y_pred)
 print(f'Mean Squared Error: {mse}')
 print(f'R-squared: {r2}')
 
-# Plot actual vs predicted values
-plt.scatter(y_test, y_pred)
-plt.xlabel('Actual Ratings')
-plt.ylabel('Predicted Ratings')
-plt.title('Actual vs Predicted Ratings')
+# Visualize the impact of Actor Diversity on Ratings
+plt.figure(figsize=(10, 6))
+plt.scatter(df['Actor_Diversity'], df['Rating'], alpha=0.5, color='blue')
+plt.xlabel('Actor Diversity')
+plt.ylabel('IMDb Rating')
+plt.title('IMDb Rating vs Actor Diversity')
 plt.show()
