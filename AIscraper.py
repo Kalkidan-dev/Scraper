@@ -109,6 +109,13 @@ def actor_popularity(actors):
         return actor_popularity
     return 0
 
+# New Feature: Director's Previous Success
+def director_previous_success(director, df):
+    if isinstance(director, str):
+        director_movies = df[df['Director'] == director]
+        return director_movies['BoxOffice'].sum()  # Sum of BoxOffice earnings of all the movies directed by the same director
+    return 0
+
 # Example list of movie titles
 movie_titles = [
     'The Shawshank Redemption', 'The Godfather', 'The Dark Knight',
@@ -164,13 +171,15 @@ df['Actor_Diversity'] = df['Actors'].apply(calculate_actor_diversity)
 df['Weekend_Release'] = df['Released'].apply(is_weekend_release)
 df['Sequel_Indicator'] = df['Title'].apply(is_sequel)  # Sequel Indicator
 df['Lead_Actor_Popularity'] = df['Actors'].apply(actor_popularity)  # Lead Actor Popularity
+df['Director_Previous_Success'] = df['Director'].apply(director_previous_success, args=(df,))  # Director's Previous Success
 
 # Features for the model
 features = [
     'Year', 'Genre_Sentiment', 'Director_Popularity', 'Runtime', 
     'Budget', 'Movie_Popularity', 'Num_Genres', 'Rating_per_Genre', 
     'Movie_Age', 'BoxOffice_per_Genre', 'Awards_Count', 'Genre_Diversity',
-    'Release_Month_Sentiment', 'Actor_Diversity', 'Weekend_Release', 'Sequel_Indicator', 'Lead_Actor_Popularity'
+    'Release_Month_Sentiment', 'Actor_Diversity', 'Weekend_Release', 'Sequel_Indicator',
+    'Lead_Actor_Popularity', 'Director_Previous_Success'
 ]
 
 # X = feature set
