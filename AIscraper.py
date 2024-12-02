@@ -89,11 +89,24 @@ def is_weekend_release(release_date):
             return 0
     return 0
 
-# Add Sequel Indicator feature
+# New Feature: Sequel Indicator
 def is_sequel(title):
-    sequel_keywords = ['2', 'II', 'III', 'Part', 'The Next', 'Revenge', 'Reborn', 'Returns']
-    if any(keyword in title for keyword in sequel_keywords):
-        return 1
+    sequels = ['2', 'II', 'III', 'IV', 'V']
+    for sequel in sequels:
+        if sequel in title:
+            return 1
+    return 0
+
+# New Feature: Lead Actor Popularity
+def actor_popularity(actors):
+    if isinstance(actors, str):
+        actor_list = actors.split(', ')
+        actor_popularity = 0
+        for actor in actor_list:
+            actor_data = get_movie_data(actor)  # Fetch data for each actor's filmography
+            if actor_data:
+                actor_popularity += actor_data.get('imdbVotes', 0)  # Add IMDb votes of the actor's movies
+        return actor_popularity
     return 0
 
 # Example list of movie titles
@@ -149,14 +162,15 @@ df['Genre_Diversity'] = df['Genre'].apply(calculate_genre_diversity)
 df['Release_Month_Sentiment'] = df['Released'].apply(release_month_sentiment)
 df['Actor_Diversity'] = df['Actors'].apply(calculate_actor_diversity)
 df['Weekend_Release'] = df['Released'].apply(is_weekend_release)
-df['Sequel_Indicator'] = df['Title'].apply(is_sequel)  # Apply the Sequel Indicator
+df['Sequel_Indicator'] = df['Title'].apply(is_sequel)  # Sequel Indicator
+df['Lead_Actor_Popularity'] = df['Actors'].apply(actor_popularity)  # Lead Actor Popularity
 
 # Features for the model
 features = [
     'Year', 'Genre_Sentiment', 'Director_Popularity', 'Runtime', 
     'Budget', 'Movie_Popularity', 'Num_Genres', 'Rating_per_Genre', 
     'Movie_Age', 'BoxOffice_per_Genre', 'Awards_Count', 'Genre_Diversity',
-    'Release_Month_Sentiment', 'Actor_Diversity', 'Weekend_Release', 'Sequel_Indicator'
+    'Release_Month_Sentiment', 'Actor_Diversity', 'Weekend_Release', 'Sequel_Indicator', 'Lead_Actor_Popularity'
 ]
 
 # X = feature set
