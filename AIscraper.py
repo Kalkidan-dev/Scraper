@@ -89,6 +89,13 @@ def is_weekend_release(release_date):
             return 0
     return 0
 
+# Add Sequel Indicator feature
+def is_sequel(title):
+    sequel_keywords = ['2', 'II', 'III', 'Part', 'The Next', 'Revenge', 'Reborn', 'Returns']
+    if any(keyword in title for keyword in sequel_keywords):
+        return 1
+    return 0
+
 # Example list of movie titles
 movie_titles = [
     'The Shawshank Redemption', 'The Godfather', 'The Dark Knight',
@@ -142,13 +149,14 @@ df['Genre_Diversity'] = df['Genre'].apply(calculate_genre_diversity)
 df['Release_Month_Sentiment'] = df['Released'].apply(release_month_sentiment)
 df['Actor_Diversity'] = df['Actors'].apply(calculate_actor_diversity)
 df['Weekend_Release'] = df['Released'].apply(is_weekend_release)
+df['Sequel_Indicator'] = df['Title'].apply(is_sequel)  # Apply the Sequel Indicator
 
 # Features for the model
 features = [
     'Year', 'Genre_Sentiment', 'Director_Popularity', 'Runtime', 
     'Budget', 'Movie_Popularity', 'Num_Genres', 'Rating_per_Genre', 
     'Movie_Age', 'BoxOffice_per_Genre', 'Awards_Count', 'Genre_Diversity',
-    'Release_Month_Sentiment', 'Actor_Diversity', 'Weekend_Release'
+    'Release_Month_Sentiment', 'Actor_Diversity', 'Weekend_Release', 'Sequel_Indicator'
 ]
 
 # X = feature set
