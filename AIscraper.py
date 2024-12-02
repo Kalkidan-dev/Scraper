@@ -9,7 +9,6 @@ from datetime import datetime
 import re
 import requests
 from sklearn.impute import SimpleImputer
-import time
 
 # Your OMDb API key
 api_key = '121c5367'
@@ -18,28 +17,20 @@ api_key = '121c5367'
 analyzer = SentimentIntensityAnalyzer()
 
 # Function to get movie data from OMDb with error handling
-def get_movie_data(title, retries=3, delay=5):
+def get_movie_data(title):
     params = {'t': title, 'apikey': api_key}
-    attempt = 0
-    while attempt < retries:
-        try:
-            response = requests.get('http://www.omdbapi.com/', params=params, timeout=10)  # Added timeout
-            response.raise_for_status()
-            data = response.json()
-            if data.get('Response') == 'True':
-                return data
-            else:
-                print(f"Error: No data found for title '{title}' - Reason: {data.get('Error')}")
-                return None
-        except requests.exceptions.RequestException as e:
-            attempt += 1
-            print(f"Attempt {attempt}/{retries} failed: {e}")
-            if attempt < retries:
-                print(f"Retrying in {delay} seconds...")
-                time.sleep(delay)
-            else:
-                print("Max retries reached, skipping this movie.")
-                return None
+    try:
+        response = requests.get('http://www.omdbapi.com/', params=params)
+        response.raise_for_status()
+        data = response.json()
+        if data.get('Response') == 'True':
+            return data
+        else:
+            print(f"Error: No data found for title '{title}' - Reason: {data.get('Error')}")
+            return None
+    except requests.exceptions.RequestException as e:
+        print(f"Request error for title '{title}': {e}")
+        return None
 
 # Function to analyze the sentiment of the movie genre
 def analyze_genre_sentiment(genre):
@@ -88,14 +79,14 @@ def calculate_actor_diversity(actors):
         return len(unique_actors)
     return 0
 
-# Add Director Experience feature
-def calculate_director_experience(director, df):
-    if pd.notna(director):
-        director_movies = df[df['Director'] == director]
-        if not director_movies.empty:
-            min_year = director_movies['Year'].min()
-            max_year = director_movies['Year'].max()
-            return max_year - min_year + 1  # Include the current year
+# Add Weekend Release Indicator
+def is_weekend_release(release_date):
+    if isinstance(release_date, str) and release_date:
+        try:
+            release_day = datetime.strptime(release_date, '%d %b %Y').weekday()
+            return 1 if release_day in [5, 6] else 0  # 5 = Saturday, 6 = Sunday
+        except ValueError:
+            return 0
     return 0
 
 # Example list of movie titles
@@ -150,14 +141,14 @@ df['Awards_Count'] = df['Awards'].apply(extract_awards_count)
 df['Genre_Diversity'] = df['Genre'].apply(calculate_genre_diversity)
 df['Release_Month_Sentiment'] = df['Released'].apply(release_month_sentiment)
 df['Actor_Diversity'] = df['Actors'].apply(calculate_actor_diversity)
-df['Director_Experience'] = df['Director'].apply(lambda director: calculate_director_experience(director, df))
+df['Weekend_Release'] = df['Released'].apply(is_weekend_release)
 
 # Features for the model
 features = [
     'Year', 'Genre_Sentiment', 'Director_Popularity', 'Runtime', 
     'Budget', 'Movie_Popularity', 'Num_Genres', 'Rating_per_Genre', 
     'Movie_Age', 'BoxOffice_per_Genre', 'Awards_Count', 'Genre_Diversity',
-    'Release_Month_Sentiment', 'Actor_Diversity', 'Director_Experience'
+    'Release_Month_Sentiment', 'Actor_Diversity', 'Weekend_Release'
 ]
 
 # X = feature set
@@ -187,10 +178,10 @@ r2 = r2_score(y_test, y_pred)
 print(f'Mean Squared Error: {mse}')
 print(f'R-squared: {r2}')
 
-# Visualize the impact of Director Experience on Ratings
+# Visualize the impact of Weekend Release on Ratings
 plt.figure(figsize=(10, 6))
-plt.scatter(df['Director_Experience'], df['Rating'], alpha=0.5, color='blue')
-plt.xlabel('Director Experience (Years)')
+plt.scatter(df['Weekend_Release'], df['Rating'], alpha=0.5, color='green')
+plt.xlabel('Weekend Release (1 = Weekend, 0 = Weekday)')
 plt.ylabel('IMDb Rating')
-plt.title('IMDb Rating vs Director Experience')
+plt.title('IMDb Rating vs Weekend Release')
 plt.show()
