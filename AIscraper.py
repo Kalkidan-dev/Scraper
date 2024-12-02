@@ -116,6 +116,17 @@ def director_previous_success(director, df):
         return director_movies['BoxOffice'].sum()  # Sum of BoxOffice earnings of all the movies directed by the same director
     return 0
 
+# New Feature: Movie Popularity Trend
+def movie_popularity_trend(row):
+    if row['BoxOffice'] > 0 and row['Rating'] > 7.0:
+        # If the movie has a good box office and a high IMDb rating, we assume a positive trend
+        return 1
+    elif row['BoxOffice'] < 100000000 and row['Rating'] < 6.0:
+        # If the movie has a low box office and a low IMDb rating, we assume a negative trend
+        return 0
+    else:
+        return 1 if row['Rating'] > 6.0 else 0
+
 # Example list of movie titles
 movie_titles = [
     'The Shawshank Redemption', 'The Godfather', 'The Dark Knight',
@@ -162,24 +173,17 @@ df['Num_Genres'] = df['Genre'].apply(lambda x: len(x.split(',')) if isinstance(x
 df['Rating_per_Genre'] = df.apply(lambda row: row['Rating'] / row['Num_Genres'] if row['Num_Genres'] > 0 else 0, axis=1)
 current_year = datetime.now().year
 df['Movie_Age'] = current_year - df['Year']
-df['BoxOffice'] = df['BoxOffice'].apply(convert_box_office_to_numeric)
-df['BoxOffice_per_Genre'] = df.apply(lambda row: row['BoxOffice'] / row['Num_Genres'] if row['Num_Genres'] > 0 else 0, axis=1)
-df['Awards_Count'] = df['Awards'].apply(extract_awards_count)
-df['Genre_Diversity'] = df['Genre'].apply(calculate_genre_diversity)
-df['Release_Month_Sentiment'] = df['Released'].apply(release_month_sentiment)
-df['Actor_Diversity'] = df['Actors'].apply(calculate_actor_diversity)
 df['Weekend_Release'] = df['Released'].apply(is_weekend_release)
-df['Sequel_Indicator'] = df['Title'].apply(is_sequel)  # Sequel Indicator
-df['Lead_Actor_Popularity'] = df['Actors'].apply(actor_popularity)  # Lead Actor Popularity
-df['Director_Previous_Success'] = df['Director'].apply(director_previous_success, args=(df,))  # Director's Previous Success
+df['Sequel_Indicator'] = df['Title'].apply(is_sequel)
+df['Lead_Actor_Popularity'] = df['Actors'].apply(actor_popularity)
+df['Director_Previous_Success'] = df['Director'].apply(lambda x: director_previous_success(x, df))
+df['Popularity_Trend'] = df.apply(movie_popularity_trend, axis=1)
 
-# Features for the model
+# Feature Set
 features = [
-    'Year', 'Genre_Sentiment', 'Director_Popularity', 'Runtime', 
-    'Budget', 'Movie_Popularity', 'Num_Genres', 'Rating_per_Genre', 
-    'Movie_Age', 'BoxOffice_per_Genre', 'Awards_Count', 'Genre_Diversity',
-    'Release_Month_Sentiment', 'Actor_Diversity', 'Weekend_Release', 'Sequel_Indicator',
-    'Lead_Actor_Popularity', 'Director_Previous_Success'
+    'Year', 'Genre_Sentiment', 'Director_Popularity', 'Runtime', 'Budget', 'Movie_Popularity',
+    'Num_Genres', 'Rating_per_Genre', 'Movie_Age', 'Weekend_Release', 'Sequel_Indicator',
+    'Lead_Actor_Popularity', 'Director_Previous_Success', 'Popularity_Trend'
 ]
 
 # X = feature set
