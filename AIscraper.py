@@ -119,13 +119,22 @@ def director_previous_success(director, df):
 # New Feature: Movie Popularity Trend
 def movie_popularity_trend(row):
     if row['BoxOffice'] > 0 and row['Rating'] > 7.0:
-        # If the movie has a good box office and a high IMDb rating, we assume a positive trend
-        return 1
+        return 1  # Positive trend
     elif row['BoxOffice'] < 100000000 and row['Rating'] < 6.0:
-        # If the movie has a low box office and a low IMDb rating, we assume a negative trend
-        return 0
+        return 0  # Negative trend
     else:
         return 1 if row['Rating'] > 6.0 else 0
+
+# New Feature: Movie Age Group
+def movie_age_group(release_year):
+    current_year = datetime.now().year
+    movie_age = current_year - release_year
+    if movie_age <= 2:
+        return 'New Release'
+    elif movie_age <= 10:
+        return 'Modern'
+    else:
+        return 'Classic'
 
 # Example list of movie titles
 movie_titles = [
@@ -178,12 +187,13 @@ df['Sequel_Indicator'] = df['Title'].apply(is_sequel)
 df['Lead_Actor_Popularity'] = df['Actors'].apply(actor_popularity)
 df['Director_Previous_Success'] = df['Director'].apply(lambda x: director_previous_success(x, df))
 df['Popularity_Trend'] = df.apply(movie_popularity_trend, axis=1)
+df['Age_Group'] = df['Year'].apply(movie_age_group)
 
 # Feature Set
 features = [
     'Year', 'Genre_Sentiment', 'Director_Popularity', 'Runtime', 'Budget', 'Movie_Popularity',
     'Num_Genres', 'Rating_per_Genre', 'Movie_Age', 'Weekend_Release', 'Sequel_Indicator',
-    'Lead_Actor_Popularity', 'Director_Previous_Success', 'Popularity_Trend'
+    'Lead_Actor_Popularity', 'Director_Previous_Success', 'Popularity_Trend', 'Age_Group'
 ]
 
 # X = feature set
