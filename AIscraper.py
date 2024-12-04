@@ -134,6 +134,17 @@ def director_reputation(director, df):
         return director_movies['Rating'].mean()  # Average IMDb rating of the director's movies
     return 0
 
+# New Feature: Production Company Popularity
+def production_company_popularity(production_companies, df):
+    if isinstance(production_companies, str):
+        company_list = production_companies.split(', ')
+        company_popularity = 0
+        for company in company_list:
+            company_movies = df[df['Production'] == company]
+            company_popularity += company_movies['Rating'].mean()  # Average IMDb rating of the company's movies
+        return company_popularity
+    return 0
+
 # Example list of movie titles
 movie_titles = [
     'The Shawshank Redemption', 'The Godfather', 'The Dark Knight',
@@ -165,7 +176,7 @@ if not movie_data:
 df = pd.DataFrame(movie_data)
 
 # Select relevant columns
-required_columns = ['Title', 'Year', 'imdbRating', 'Genre', 'Director', 'Runtime', 'imdbVotes', 'BoxOffice', 'Awards', 'Released', 'Actors']
+required_columns = ['Title', 'Year', 'imdbRating', 'Genre', 'Director', 'Runtime', 'imdbVotes', 'BoxOffice', 'Awards', 'Released', 'Actors', 'Production']
 df = df[required_columns]
 df['Rating'] = df['imdbRating'].astype(float)
 
@@ -182,22 +193,17 @@ current_year = datetime.now().year
 df['Movie_Age'] = current_year - df['Year']
 df['Weekend_Release'] = df['Released'].apply(is_weekend_release)
 df['Sequel_Indicator'] = df['Title'].apply(is_sequel)
-df['Lead_Actor_Popularity'] = df['Actors'].apply(actor_popularity)
-df['Director_Previous_Success'] = df['Director'].apply(lambda x: director_previous_success(x, df))
-df['Popularity_Trend'] = df.apply(movie_popularity_trend, axis=1)
-df['Director_Reputation'] = df['Director'].apply(lambda x: director_reputation(x, df))
+df['Actor_Diversity'] = df['Actors'].apply(calculate_actor_diversity)
+df['Production_Company_Popularity'] = df['Production'].apply(lambda x: production_company_popularity(x, df))
 
-# Feature Set (Adding Director's Reputation)
+# Define feature set
 features = [
-    'Year', 'Genre_Sentiment', 'Director_Popularity', 'Runtime', 'Budget', 'Movie_Popularity',
+    'Genre_Sentiment', 'Year', 'Director_Popularity', 'Runtime', 'Budget', 'Movie_Popularity',
     'Num_Genres', 'Rating_per_Genre', 'Movie_Age', 'Weekend_Release', 'Sequel_Indicator',
-    'Lead_Actor_Popularity', 'Director_Previous_Success', 'Popularity_Trend', 'Director_Reputation'
+    'Actor_Diversity', 'Production_Company_Popularity'
 ]
 
-# X = feature set
 X = df[features]
-
-# y = target variable (IMDb Rating)
 y = df['Rating']
 
 # Handle missing values
@@ -221,10 +227,10 @@ r2 = r2_score(y_test, y_pred)
 print(f'Mean Squared Error: {mse}')
 print(f'R-squared: {r2}')
 
-# Visualize the impact of Director's Reputation on Ratings
+# Visualize the impact of Production Company Popularity on Ratings
 plt.figure(figsize=(10, 6))
-plt.scatter(df['Director_Reputation'], df['Rating'], alpha=0.5, color='blue')
-plt.xlabel('Director Reputation (Average IMDb Rating of Movies)')
+plt.scatter(df['Production_Company_Popularity'], df['Rating'], alpha=0.5, color='red')
+plt.xlabel('Production Company Popularity (Average IMDb Rating of Movies)')
 plt.ylabel('IMDb Rating')
-plt.title('IMDb Rating vs Director Reputation')
+plt.title('IMDb Rating vs Production Company Popularity')
 plt.show()
