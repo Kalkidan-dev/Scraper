@@ -119,22 +119,20 @@ def director_previous_success(director, df):
 # New Feature: Movie Popularity Trend
 def movie_popularity_trend(row):
     if row['BoxOffice'] > 0 and row['Rating'] > 7.0:
-        return 1  # Positive trend
+        # If the movie has a good box office and a high IMDb rating, we assume a positive trend
+        return 1
     elif row['BoxOffice'] < 100000000 and row['Rating'] < 6.0:
-        return 0  # Negative trend
+        # If the movie has a low box office and a low IMDb rating, we assume a negative trend
+        return 0
     else:
         return 1 if row['Rating'] > 6.0 else 0
 
-# New Feature: Movie Age Group
-def movie_age_group(release_year):
-    current_year = datetime.now().year
-    movie_age = current_year - release_year
-    if movie_age <= 2:
-        return 'New Release'
-    elif movie_age <= 10:
-        return 'Modern'
-    else:
-        return 'Classic'
+# New Feature: Director's Reputation
+def director_reputation(director, df):
+    if isinstance(director, str):
+        director_movies = df[df['Director'] == director]
+        return director_movies['Rating'].mean()  # Average IMDb rating of the director's movies
+    return 0
 
 # Example list of movie titles
 movie_titles = [
@@ -187,13 +185,13 @@ df['Sequel_Indicator'] = df['Title'].apply(is_sequel)
 df['Lead_Actor_Popularity'] = df['Actors'].apply(actor_popularity)
 df['Director_Previous_Success'] = df['Director'].apply(lambda x: director_previous_success(x, df))
 df['Popularity_Trend'] = df.apply(movie_popularity_trend, axis=1)
-df['Age_Group'] = df['Year'].apply(movie_age_group)
+df['Director_Reputation'] = df['Director'].apply(lambda x: director_reputation(x, df))
 
-# Feature Set
+# Feature Set (Adding Director's Reputation)
 features = [
     'Year', 'Genre_Sentiment', 'Director_Popularity', 'Runtime', 'Budget', 'Movie_Popularity',
     'Num_Genres', 'Rating_per_Genre', 'Movie_Age', 'Weekend_Release', 'Sequel_Indicator',
-    'Lead_Actor_Popularity', 'Director_Previous_Success', 'Popularity_Trend', 'Age_Group'
+    'Lead_Actor_Popularity', 'Director_Previous_Success', 'Popularity_Trend', 'Director_Reputation'
 ]
 
 # X = feature set
@@ -223,10 +221,10 @@ r2 = r2_score(y_test, y_pred)
 print(f'Mean Squared Error: {mse}')
 print(f'R-squared: {r2}')
 
-# Visualize the impact of Weekend Release on Ratings
+# Visualize the impact of Director's Reputation on Ratings
 plt.figure(figsize=(10, 6))
-plt.scatter(df['Weekend_Release'], df['Rating'], alpha=0.5, color='green')
-plt.xlabel('Weekend Release (1 = Weekend, 0 = Weekday)')
+plt.scatter(df['Director_Reputation'], df['Rating'], alpha=0.5, color='blue')
+plt.xlabel('Director Reputation (Average IMDb Rating of Movies)')
 plt.ylabel('IMDb Rating')
-plt.title('IMDb Rating vs Weekend Release')
+plt.title('IMDb Rating vs Director Reputation')
 plt.show()
