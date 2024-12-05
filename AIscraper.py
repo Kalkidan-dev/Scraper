@@ -159,6 +159,23 @@ def director_age(director, df):
                     return 0
     return 0
 
+# New Feature: Movie Release Period (Season)
+def release_period(release_date):
+    if isinstance(release_date, str) and release_date:
+        try:
+            release_month = datetime.strptime(release_date, '%d %b %Y').month
+            if release_month in [6, 7, 8]:
+                return 'Summer'
+            elif release_month in [9, 10, 11]:
+                return 'Fall'
+            elif release_month in [12, 1, 2]:
+                return 'Winter'
+            elif release_month in [3, 4, 5]:
+                return 'Spring'
+        except ValueError:
+            return 'Unknown'
+    return 'Unknown'
+
 # Example list of movie titles
 movie_titles = [
     'The Shawshank Redemption', 'The Godfather', 'The Dark Knight',
@@ -194,27 +211,28 @@ required_columns = ['Title', 'Year', 'imdbRating', 'Genre', 'Director', 'Runtime
 df = df[required_columns]
 df['Rating'] = df['imdbRating'].astype(float)
 
-# Feature Engineering
+# Add new features to the DataFrame
 df['Genre_Sentiment'] = df['Genre'].apply(analyze_genre_sentiment)
-df['Year'] = df['Year'].astype(int)
-df['Director_Popularity'] = df['Director'].map(df['Director'].value_counts())
-df['Runtime'] = df['Runtime'].apply(lambda x: int(x.split()[0]) if isinstance(x, str) else np.nan)
-df['Budget'] = df['Title'].map(budget_data)
-df['Movie_Popularity'] = df['imdbVotes'].apply(lambda x: int(x.replace(',', '')) if isinstance(x, str) else 0)
-df['Num_Genres'] = df['Genre'].apply(lambda x: len(x.split(',')))
-df['Rating_per_Genre'] = df['Rating'] / df['Num_Genres']
-df['Movie_Age'] = 2024 - df['Year']
+df['BoxOffice'] = df['BoxOffice'].apply(convert_box_office_to_numeric)
+df['Awards_Count'] = df['Awards'].apply(extract_awards_count)
+df['Genre_Diversity'] = df['Genre'].apply(calculate_genre_diversity)
+df['Release_Month_Sentiment'] = df['Released'].apply(release_month_sentiment)
+df['Actor_Diversity'] = df['Actors'].apply(calculate_actor_diversity)
 df['Weekend_Release'] = df['Released'].apply(is_weekend_release)
 df['Sequel_Indicator'] = df['Title'].apply(is_sequel)
-df['Actor_Diversity'] = df['Actors'].apply(calculate_actor_diversity)
+df['Actor_Popularity'] = df['Actors'].apply(actor_popularity)
+df['Director_Previous_Success'] = df['Director'].apply(lambda x: director_previous_success(x, df))
+df['Movie_Popularity_Trend'] = df.apply(movie_popularity_trend, axis=1)
+df['Director_Reputation'] = df['Director'].apply(lambda x: director_reputation(x, df))
 df['Production_Company_Popularity'] = df['Production'].apply(lambda x: production_company_popularity(x, df))
 df['Director_Age'] = df['Director'].apply(lambda x: director_age(x, df))
+df['Release_Period'] = df['Released'].apply(release_period)
 
 # Define feature set
 features = [
     'Genre_Sentiment', 'Year', 'Director_Popularity', 'Runtime', 'Budget', 'Movie_Popularity',
     'Num_Genres', 'Rating_per_Genre', 'Movie_Age', 'Weekend_Release', 'Sequel_Indicator',
-    'Actor_Diversity', 'Production_Company_Popularity', 'Director_Age'
+    'Actor_Diversity', 'Production_Company_Popularity', 'Director_Age', 'Release_Period'
 ]
 
 X = df[features]
