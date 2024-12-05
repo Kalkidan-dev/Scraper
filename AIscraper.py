@@ -176,6 +176,14 @@ def release_period(release_date):
             return 'Unknown'
     return 'Unknown'
 
+# New Feature: Movie Franchise Indicator
+def franchise_indicator(title):
+    franchise_keywords = ['Avengers', 'Star Wars', 'Batman', 'Spider-Man', 'Harry Potter']
+    for keyword in franchise_keywords:
+        if keyword in title:
+            return 1  # Movie is part of a franchise
+    return 0  # Movie is not part of a franchise
+
 # Example list of movie titles
 movie_titles = [
     'The Shawshank Redemption', 'The Godfather', 'The Dark Knight',
@@ -200,20 +208,13 @@ for title in movie_titles:
         movie_data.append(data)
 
 if not movie_data:
-    print("No movie data was retrieved. Exiting...")
-    exit()
+    raise ValueError("No movie data available")
 
-# Create DataFrame
+# Create a DataFrame with relevant information
 df = pd.DataFrame(movie_data)
-
-# Select relevant columns
-required_columns = ['Title', 'Year', 'imdbRating', 'Genre', 'Director', 'Runtime', 'imdbVotes', 'BoxOffice', 'Awards', 'Released', 'Actors', 'Production']
-df = df[required_columns]
-df['Rating'] = df['imdbRating'].astype(float)
-
-# Add new features to the DataFrame
-df['Genre_Sentiment'] = df['Genre'].apply(analyze_genre_sentiment)
 df['BoxOffice'] = df['BoxOffice'].apply(convert_box_office_to_numeric)
+df['Budget'] = df['Title'].map(budget_data)
+df['Genre_Sentiment'] = df['Genre'].apply(analyze_genre_sentiment)
 df['Awards_Count'] = df['Awards'].apply(extract_awards_count)
 df['Genre_Diversity'] = df['Genre'].apply(calculate_genre_diversity)
 df['Release_Month_Sentiment'] = df['Released'].apply(release_month_sentiment)
@@ -227,12 +228,13 @@ df['Director_Reputation'] = df['Director'].apply(lambda x: director_reputation(x
 df['Production_Company_Popularity'] = df['Production'].apply(lambda x: production_company_popularity(x, df))
 df['Director_Age'] = df['Director'].apply(lambda x: director_age(x, df))
 df['Release_Period'] = df['Released'].apply(release_period)
+df['Franchise_Indicator'] = df['Title'].apply(franchise_indicator)
 
 # Define feature set
 features = [
     'Genre_Sentiment', 'Year', 'Director_Popularity', 'Runtime', 'Budget', 'Movie_Popularity',
     'Num_Genres', 'Rating_per_Genre', 'Movie_Age', 'Weekend_Release', 'Sequel_Indicator',
-    'Actor_Diversity', 'Production_Company_Popularity', 'Director_Age', 'Release_Period'
+    'Actor_Diversity', 'Production_Company_Popularity', 'Director_Age', 'Release_Period', 'Franchise_Indicator'
 ]
 
 X = df[features]
