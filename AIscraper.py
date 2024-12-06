@@ -127,62 +127,16 @@ def movie_popularity_trend(row):
     else:
         return 1 if row['Rating'] > 6.0 else 0
 
-# New Feature: Director's Reputation
-def director_reputation(director, df):
-    if isinstance(director, str):
-        director_movies = df[df['Director'] == director]
-        return director_movies['Rating'].mean()  # Average IMDb rating of the director's movies
+# New Feature: Critical Acclaim Indicator
+def critical_acclaim_indicator(awards):
+    """
+    Determines if a movie is critically acclaimed based on awards information.
+    A movie is considered critically acclaimed if it has won more than 5 awards.
+    """
+    if isinstance(awards, str):
+        awards_count = extract_awards_count(awards)
+        return 1 if awards_count > 5 else 0
     return 0
-
-# New Feature: Production Company Popularity
-def production_company_popularity(production_companies, df):
-    if isinstance(production_companies, str):
-        company_list = production_companies.split(', ')
-        company_popularity = 0
-        for company in company_list:
-            company_movies = df[df['Production'] == company]
-            company_popularity += company_movies['Rating'].mean()  # Average IMDb rating of the company's movies
-        return company_popularity
-    return 0
-
-# New Feature: Director's Age
-def director_age(director, df):
-    if isinstance(director, str):
-        director_data = get_movie_data(director)  # Fetch data for director's birth year
-        if director_data and director_data.get('Director') == director:
-            birth_year = director_data.get('Born')
-            if birth_year:
-                try:
-                    birth_year = int(birth_year.split()[-1])  # Extract year from the birth string
-                    return datetime.now().year - birth_year
-                except ValueError:
-                    return 0
-    return 0
-
-# New Feature: Movie Release Period (Season)
-def release_period(release_date):
-    if isinstance(release_date, str) and release_date:
-        try:
-            release_month = datetime.strptime(release_date, '%d %b %Y').month
-            if release_month in [6, 7, 8]:
-                return 'Summer'
-            elif release_month in [9, 10, 11]:
-                return 'Fall'
-            elif release_month in [12, 1, 2]:
-                return 'Winter'
-            elif release_month in [3, 4, 5]:
-                return 'Spring'
-        except ValueError:
-            return 'Unknown'
-    return 'Unknown'
-
-# New Feature: Movie Franchise Indicator
-def franchise_indicator(title):
-    franchise_keywords = ['Avengers', 'Star Wars', 'Batman', 'Spider-Man', 'Harry Potter']
-    for keyword in franchise_keywords:
-        if keyword in title:
-            return 1  # Movie is part of a franchise
-    return 0  # Movie is not part of a franchise
 
 # Example list of movie titles
 movie_titles = [
@@ -208,63 +162,70 @@ for title in movie_titles:
         movie_data.append(data)
 
 if not movie_data:
-    raise ValueError("No movie data available")
+    print("No movie data was retrieved. Exiting...")
+    exit()
 
-# Create a DataFrame with relevant information
+# Create DataFrame
 df = pd.DataFrame(movie_data)
-df['BoxOffice'] = df['BoxOffice'].apply(convert_box_office_to_numeric)
-df['Budget'] = df['Title'].map(budget_data)
+
+# Select relevant columns
+required_columns = ['Title', 'Year', 'imdbRating', 'Genre', 'Director', 'Runtime', 'imdbVotes', 'BoxOffice', 'Awards', 'Released', 'Actors']
+df = df[required_columns]
+df['Rating'] = df['imdbRating'].astype(float)
+
+# Feature Engineering
 df['Genre_Sentiment'] = df['Genre'].apply(analyze_genre_sentiment)
-df['Awards_Count'] = df['Awards'].apply(extract_awards_count)
-df['Genre_Diversity'] = df['Genre'].apply(calculate_genre_diversity)
-df['Release_Month_Sentiment'] = df['Released'].apply(release_month_sentiment)
-df['Actor_Diversity'] = df['Actors'].apply(calculate_actor_diversity)
+df['Year'] = df['Year'].astype(int)
+df['Director_Popularity'] = df['Director'].map(df['Director'].value_counts())
+df['Runtime'] = df['Runtime'].apply(lambda x: int(x.split()[0]) if isinstance(x, str) else np.nan)
+df['Budget'] = df['Title'].map(budget_data)
+df['Movie_Popularity'] = df['imdbVotes'].apply(lambda x: int(x.replace(',', '')) if isinstance(x, str) else 0)
+df['Num_Genres'] = df['Genre'].apply(lambda x: len(x.split(',')) if isinstance(x, str) else 0)
+df['Rating_per_Genre'] = df.apply(lambda row: row['Rating'] / row['Num_Genres'] if row['Num_Genres'] > 0 else 0, axis=1)
+current_year = datetime.now().year
+df['Movie_Age'] = current_year - df['Year']
 df['Weekend_Release'] = df['Released'].apply(is_weekend_release)
 df['Sequel_Indicator'] = df['Title'].apply(is_sequel)
-df['Actor_Popularity'] = df['Actors'].apply(actor_popularity)
+df['Lead_Actor_Popularity'] = df['Actors'].apply(actor_popularity)
 df['Director_Previous_Success'] = df['Director'].apply(lambda x: director_previous_success(x, df))
-df['Movie_Popularity_Trend'] = df.apply(movie_popularity_trend, axis=1)
-df['Director_Reputation'] = df['Director'].apply(lambda x: director_reputation(x, df))
-df['Production_Company_Popularity'] = df['Production'].apply(lambda x: production_company_popularity(x, df))
-df['Director_Age'] = df['Director'].apply(lambda x: director_age(x, df))
-df['Release_Period'] = df['Released'].apply(release_period)
-df['Franchise_Indicator'] = df['Title'].apply(franchise_indicator)
+df['Popularity_Trend'] = df.apply(movie_popularity_trend, axis=1)
+df['Critical_Acclaim'] = df['Awards'].apply(critical_acclaim_indicator)
 
-# Define feature set
+# Feature Set
 features = [
-    'Genre_Sentiment', 'Year', 'Director_Popularity', 'Runtime', 'Budget', 'Movie_Popularity',
+    'Year', 'Genre_Sentiment', 'Director_Popularity', 'Runtime', 'Budget', 'Movie_Popularity',
     'Num_Genres', 'Rating_per_Genre', 'Movie_Age', 'Weekend_Release', 'Sequel_Indicator',
-    'Actor_Diversity', 'Production_Company_Popularity', 'Director_Age', 'Release_Period', 'Franchise_Indicator'
+    'Lead_Actor_Popularity', 'Director_Previous_Success', 'Popularity_Trend', 'Critical_Acclaim'
 ]
 
+# Drop missing values
+df = df.dropna(subset=features)
+
+# Define X and y
 X = df[features]
 y = df['Rating']
 
-# Handle missing values
-imputer = SimpleImputer(strategy='mean')
-X_imputed = imputer.fit_transform(X)
+# Split the data
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Split data into training and testing sets
-X_train, X_test, y_train, y_test = train_test_split(X_imputed, y, test_size=0.2, random_state=42)
-
-# Train the Linear Regression model
+# Train the model
 model = LinearRegression()
 model.fit(X_train, y_train)
 
-# Make predictions
+# Predict
 y_pred = model.predict(X_test)
 
-# Evaluate the model
+# Evaluate
 mse = mean_squared_error(y_test, y_pred)
 r2 = r2_score(y_test, y_pred)
 
-print(f'Mean Squared Error: {mse}')
-print(f'R-squared: {r2}')
+# Display Results
+print(f"Mean Squared Error: {mse:.2f}")
+print(f"R^2 Score: {r2:.2f}")
 
-# Visualize the impact of Director Age on Ratings
-plt.figure(figsize=(10, 6))
-plt.scatter(df['Director_Age'], df['Rating'], alpha=0.5, color='blue')
-plt.xlabel('Director Age')
-plt.ylabel('IMDb Rating')
-plt.title('IMDb Rating vs Director Age')
+# Visualization
+plt.scatter(y_test, y_pred, alpha=0.5)
+plt.xlabel("Actual Ratings")
+plt.ylabel("Predicted Ratings")
+plt.title("Actual vs. Predicted Ratings")
 plt.show()
