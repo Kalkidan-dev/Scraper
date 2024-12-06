@@ -105,9 +105,7 @@ def actor_popularity(actors):
         for actor in actor_list:
             actor_data = get_movie_data(actor)  # Fetch data for each actor's filmography
             if actor_data:
-                # Make sure imdbVotes is treated as an integer
-                imdb_votes = actor_data.get('imdbVotes', '0').replace(',', '')  # Remove commas
-                actor_popularity += int(imdb_votes)  # Convert to int and add to total
+                actor_popularity += actor_data.get('imdbVotes', 0)  # Add IMDb votes of the actor's movies
         return actor_popularity
     return 0
 
@@ -129,18 +127,16 @@ def movie_popularity_trend(row):
     else:
         return 1 if row['Rating'] > 6.0 else 0
 
-# New Feature: International Box Office Ratio
-def international_box_office_ratio(box_office, awards):
+# New Feature: Director Popularity Indicator
+def director_popularity_indicator(director, df):
     """
-    Approximate the international box office ratio using awards information
-    as a proxy (fictional example). Adjust logic if real data is available.
+    Calculate a Director Popularity indicator based on the total box office earnings of all movies directed by the director.
     """
-    if isinstance(box_office, (int, float)) and box_office > 0:
-        # Assume that for movies with more than 5 awards, 70% of the box office comes from international markets.
-        is_international = extract_awards_count(awards) > 5
-        ratio = 0.7 if is_international else 0.5  # Fictional assumption
-        return box_office * ratio
-    return 0.0
+    if isinstance(director, str):
+        director_movies = df[df['Director'] == director]
+        total_box_office = director_movies['BoxOffice'].sum()
+        return total_box_office
+    return 0
 
 # Example list of movie titles
 movie_titles = [
@@ -193,42 +189,47 @@ df['Sequel_Indicator'] = df['Title'].apply(is_sequel)
 df['Lead_Actor_Popularity'] = df['Actors'].apply(actor_popularity)
 df['Director_Previous_Success'] = df['Director'].apply(lambda x: director_previous_success(x, df))
 df['Popularity_Trend'] = df.apply(movie_popularity_trend, axis=1)
-df['International_BoxOffice_Ratio'] = df.apply(
-    lambda row: international_box_office_ratio(row['BoxOffice'], row['Awards']), axis=1
-)
 
-# Update the features list
-features = ['Rating', 'Genre_Sentiment', 'Director_Popularity', 'Runtime', 'Budget', 'Movie_Popularity', 'Num_Genres', 'Rating_per_Genre', 'Movie_Age', 'Weekend_Release', 'Sequel_Indicator', 'Lead_Actor_Popularity', 'Director_Previous_Success', 'Popularity_Trend', 'International_BoxOffice_Ratio']
+# Adding "Director Popularity Indicator" feature to the DataFrame
+df['Director_Popularity_Indicator'] = df['Director'].apply(lambda x: director_popularity_indicator(x, df))
 
-# Drop missing values (ensure new features are included)
+# Feature Set
+features = [
+    'Year', 'Genre_Sentiment', 'Director_Popularity', 'Runtime', 'Budget', 'Movie_Popularity',
+    'Num_Genres', 'Rating_per_Genre', 'Movie_Age', 'Weekend_Release', 'Sequel_Indicator',
+    'Lead_Actor_Popularity', 'Director_Previous_Success', 'Popularity_Trend', 'Director_Popularity_Indicator'
+]
+
+# Drop missing values
 df = df.dropna(subset=features)
 
-# Define X and y again to include new features
+# Define X and y
 X = df[features]
 y = df['Rating']
 
-# Split the data into training and test sets
+# Train-test split
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Train a model
+# Train a Linear Regression model
 model = LinearRegression()
 model.fit(X_train, y_train)
 
-# Make predictions
+# Predictions
 y_pred = model.predict(X_test)
 
 # Evaluate the model
 mse = mean_squared_error(y_test, y_pred)
+rmse = np.sqrt(mse)
 r2 = r2_score(y_test, y_pred)
 
-# Print evaluation results
-print(f"Mean Squared Error: {mse}")
-print(f"R-squared: {r2}")
+print(f'Mean Squared Error: {mse}')
+print(f'Root Mean Squared Error: {rmse}')
+print(f'R-squared: {r2}')
 
-# Visualize predictions vs true ratings
-plt.figure(figsize=(10, 6))
-plt.scatter(y_test, y_pred)
-plt.xlabel('True Ratings')
-plt.ylabel('Predicted Ratings')
-plt.title('True Ratings vs Predicted Ratings')
+# Visualization of feature importance
+feature_importance = model.coef_
+plt.figure(figsize=(12, 8))
+plt.barh(features, feature_importance)
+plt.xlabel('Feature Importance')
+plt.title('Feature Importance in Predicting Movie Rating')
 plt.show()
