@@ -105,7 +105,9 @@ def actor_popularity(actors):
         for actor in actor_list:
             actor_data = get_movie_data(actor)  # Fetch data for each actor's filmography
             if actor_data:
-                actor_popularity += actor_data.get('imdbVotes', 0)  # Add IMDb votes of the actor's movies
+                # Make sure imdbVotes is treated as an integer
+                imdb_votes = actor_data.get('imdbVotes', '0').replace(',', '')  # Remove commas
+                actor_popularity += int(imdb_votes)  # Convert to int and add to total
         return actor_popularity
     return 0
 
