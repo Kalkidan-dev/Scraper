@@ -127,16 +127,18 @@ def movie_popularity_trend(row):
     else:
         return 1 if row['Rating'] > 6.0 else 0
 
-# New Feature: Critical Acclaim Indicator
-def critical_acclaim_indicator(awards):
+# New Feature: International Box Office Ratio
+def international_box_office_ratio(box_office, awards):
     """
-    Determines if a movie is critically acclaimed based on awards information.
-    A movie is considered critically acclaimed if it has won more than 5 awards.
+    Approximate the international box office ratio using awards information
+    as a proxy (fictional example). Adjust logic if real data is available.
     """
-    if isinstance(awards, str):
-        awards_count = extract_awards_count(awards)
-        return 1 if awards_count > 5 else 0
-    return 0
+    if isinstance(box_office, (int, float)) and box_office > 0:
+        # Assume that for movies with more than 5 awards, 70% of the box office comes from international markets.
+        is_international = extract_awards_count(awards) > 5
+        ratio = 0.7 if is_international else 0.5  # Fictional assumption
+        return box_office * ratio
+    return 0.0
 
 # Example list of movie titles
 movie_titles = [
@@ -189,43 +191,42 @@ df['Sequel_Indicator'] = df['Title'].apply(is_sequel)
 df['Lead_Actor_Popularity'] = df['Actors'].apply(actor_popularity)
 df['Director_Previous_Success'] = df['Director'].apply(lambda x: director_previous_success(x, df))
 df['Popularity_Trend'] = df.apply(movie_popularity_trend, axis=1)
-df['Critical_Acclaim'] = df['Awards'].apply(critical_acclaim_indicator)
+df['International_BoxOffice_Ratio'] = df.apply(
+    lambda row: international_box_office_ratio(row['BoxOffice'], row['Awards']), axis=1
+)
 
-# Feature Set
-features = [
-    'Year', 'Genre_Sentiment', 'Director_Popularity', 'Runtime', 'Budget', 'Movie_Popularity',
-    'Num_Genres', 'Rating_per_Genre', 'Movie_Age', 'Weekend_Release', 'Sequel_Indicator',
-    'Lead_Actor_Popularity', 'Director_Previous_Success', 'Popularity_Trend', 'Critical_Acclaim'
-]
+# Update the features list
+features = ['Rating', 'Genre_Sentiment', 'Director_Popularity', 'Runtime', 'Budget', 'Movie_Popularity', 'Num_Genres', 'Rating_per_Genre', 'Movie_Age', 'Weekend_Release', 'Sequel_Indicator', 'Lead_Actor_Popularity', 'Director_Previous_Success', 'Popularity_Trend', 'International_BoxOffice_Ratio']
 
-# Drop missing values
+# Drop missing values (ensure new features are included)
 df = df.dropna(subset=features)
 
-# Define X and y
+# Define X and y again to include new features
 X = df[features]
 y = df['Rating']
 
-# Split the data
+# Split the data into training and test sets
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Train the model
+# Train a model
 model = LinearRegression()
 model.fit(X_train, y_train)
 
-# Predict
+# Make predictions
 y_pred = model.predict(X_test)
 
-# Evaluate
+# Evaluate the model
 mse = mean_squared_error(y_test, y_pred)
 r2 = r2_score(y_test, y_pred)
 
-# Display Results
-print(f"Mean Squared Error: {mse:.2f}")
-print(f"R^2 Score: {r2:.2f}")
+# Print evaluation results
+print(f"Mean Squared Error: {mse}")
+print(f"R-squared: {r2}")
 
-# Visualization
-plt.scatter(y_test, y_pred, alpha=0.5)
-plt.xlabel("Actual Ratings")
-plt.ylabel("Predicted Ratings")
-plt.title("Actual vs. Predicted Ratings")
+# Visualize predictions vs true ratings
+plt.figure(figsize=(10, 6))
+plt.scatter(y_test, y_pred)
+plt.xlabel('True Ratings')
+plt.ylabel('Predicted Ratings')
+plt.title('True Ratings vs Predicted Ratings')
 plt.show()
