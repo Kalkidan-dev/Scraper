@@ -16,6 +16,9 @@ api_key = '121c5367'
 # Initialize sentiment analyzer
 analyzer = SentimentIntensityAnalyzer()
 
+response = requests.get("https://httpbin.org/get")
+print(response.status_code)
+
 # Function to get movie data from OMDb with error handling
 def get_movie_data(title):
     params = {'t': title, 'apikey': api_key}
