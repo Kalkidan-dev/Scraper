@@ -104,12 +104,17 @@ def is_sequel(title):
 def actor_popularity(actors):
     if isinstance(actors, str):
         actor_list = actors.split(', ')
-        actor_popularity = 0
+        total_actor_popularity = 0
         for actor in actor_list:
             actor_data = get_movie_data(actor)  # Fetch data for each actor's filmography
             if actor_data:
-                actor_popularity += actor_data.get('imdbVotes', 0)  # Add IMDb votes of the actor's movies
-        return actor_popularity
+                imdb_votes = actor_data.get('imdbVotes', '0')
+                # Convert imdbVotes to an integer after removing commas
+                try:
+                    total_actor_popularity += int(imdb_votes.replace(',', '')) if imdb_votes.isdigit() else 0
+                except ValueError:
+                    total_actor_popularity += 0
+        return total_actor_popularity
     return 0
 
 # New Feature: Director's Previous Success
