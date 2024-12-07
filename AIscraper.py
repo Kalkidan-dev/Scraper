@@ -6,7 +6,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score
 import numpy as np
 from datetime import datetime
-import re
+# import re
 import requests
 from sklearn.impute import SimpleImputer
 
