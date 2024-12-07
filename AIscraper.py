@@ -200,36 +200,32 @@ features = [
     'Lead_Actor_Popularity', 'Director_Previous_Success', 'Popularity_Trend', 'Director_Popularity_Indicator'
 ]
 
-# Drop missing values
-df = df.dropna(subset=features)
+# Drop rows with missing values
+imputer = SimpleImputer(strategy='mean')
+X = imputer.fit_transform(df[features])
 
-# Define X and y
-X = df[features]
 y = df['Rating']
 
-# Train-test split
+# Split the dataset into training and testing sets
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Train a Linear Regression model
+# Train the model
 model = LinearRegression()
 model.fit(X_train, y_train)
 
-# Predictions
+# Make predictions on the test set
 y_pred = model.predict(X_test)
 
 # Evaluate the model
 mse = mean_squared_error(y_test, y_pred)
 rmse = np.sqrt(mse)
 r2 = r2_score(y_test, y_pred)
+print(f"Root Mean Squared Error (RMSE): {rmse}")
+print(f"R-squared: {r2}")
 
-print(f'Mean Squared Error: {mse}')
-print(f'Root Mean Squared Error: {rmse}')
-print(f'R-squared: {r2}')
-
-# Visualization of feature importance
-feature_importance = model.coef_
-plt.figure(figsize=(12, 8))
-plt.barh(features, feature_importance)
-plt.xlabel('Feature Importance')
-plt.title('Feature Importance in Predicting Movie Rating')
+# Plot actual vs. predicted ratings
+plt.scatter(y_test, y_pred)
+plt.xlabel("Actual Ratings")
+plt.ylabel("Predicted Ratings")
+plt.title("Actual vs. Predicted Ratings")
 plt.show()
