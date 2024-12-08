@@ -155,6 +155,19 @@ def get_actor_movies(actor_name):
         else:
             break
     return movies
+def extract_audience_review_count(imdb_votes):
+    """
+    Extract audience review count from the imdbVotes column.
+    If imdbVotes is not a valid number, return 0.
+    """
+    if isinstance(imdb_votes, str):
+        try:
+            return int(imdb_votes.replace(',', ''))
+        except ValueError:
+            return 0
+    elif isinstance(imdb_votes, (int, float)):
+        return int(imdb_votes)
+    return 0  # Default for missing or invalid data
 
 # New Feature: Critic Reviews Sentiment
 def fetch_critic_reviews_sentiment(title):
