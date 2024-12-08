@@ -81,7 +81,23 @@ def calculate_actor_diversity(actors):
         unique_actors = set(actors.split(', '))
         return len(unique_actors)
     return 0
-
+def co_actor_network_strength(actors, df):
+    """
+    Calculate the co-actor network strength by summing the number of movies 
+    their co-actors have appeared in within the dataset.
+    """
+    if isinstance(actors, str):
+        actor_list = actors.split(', ')
+        strength = 0
+        for actor in actor_list:
+            # Find co-actors in the dataset
+            co_actors = df[df['Actors'].str.contains(actor, na=False, case=False)]['Actors']
+            co_actor_list = [a for co in co_actors for a in co.split(', ') if a != actor]
+            # Sum the number of movies co-actors have appeared in
+            for co_actor in set(co_actor_list):
+                strength += df[df['Actors'].str.contains(co_actor, na=False, case=False)].shape[0]
+        return strength
+    return 0
 # Add Weekend Release Indicator
 def is_weekend_release(release_date):
     if isinstance(release_date, str) and release_date:
