@@ -9,6 +9,7 @@ import numpy as np
 from datetime import datetime
 import requests
 import re
+import random 
 
 # Your OMDb API key
 api_key = '121c5367'
@@ -168,6 +169,24 @@ def extract_audience_review_count(imdb_votes):
     elif isinstance(imdb_votes, (int, float)):
         return int(imdb_votes)
     return 0  # Default for missing or invalid data
+ # Import random module for simulation
+
+# Add Social Media Mentions feature
+def generate_social_media_mentions(title):
+    """
+    Generate a simulated value for social media mentions.
+    In a real-world scenario, integrate with a social media API.
+    """
+    if isinstance(title, str):
+        # Simulate social media mentions with a random number between 1000 and 100000
+        return random.randint(1000, 100000)
+    return 0
+
+# Adding Social Media Mentions to the DataFrame
+df['Social_Media_Mentions'] = df['Title'].apply(generate_social_media_mentions)
+
+# Include the feature in the feature set
+features.append('Social_Media_Mentions')
 
 # New Feature: Critic Reviews Sentiment
 def fetch_critic_reviews_sentiment(title):
