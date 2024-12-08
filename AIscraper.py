@@ -181,12 +181,40 @@ def generate_social_media_mentions(title):
         # Simulate social media mentions with a random number between 1000 and 100000
         return random.randint(1000, 100000)
     return 0
+# Fetch data for each movie
+movie_data = []
+for title in movie_titles:
+    data = get_movie_data(title)
+    if data:
+        movie_data.append(data)
+
+if not movie_data:
+    print("No movie data was retrieved. Exiting...")
+    exit()
+
+# Create DataFrame
+df = pd.DataFrame(movie_data)
+
+# Select relevant columns
+required_columns = ['Title', 'Year', 'imdbRating', 'Genre', 'Director', 'Runtime', 
+                    'imdbVotes', 'BoxOffice', 'Awards', 'Released', 'Actors']
+df = df[required_columns]
 
 # Adding Social Media Mentions to the DataFrame
 df['Social_Media_Mentions'] = df['Title'].apply(generate_social_media_mentions)
 
 # Include the feature in the feature set
 features.append('Social_Media_Mentions')
+# Extract Rotten Tomatoes and Metascore ratings
+def extract_ratings(ratings, source):
+    for rating in ratings:
+        if rating['Source'] == source:
+            return rating['Value']
+    return None
+
+# Add Rotten Tomatoes and Metascore to DataFrame
+df['Rotten Tomatoes'] = df['Ratings'].apply(lambda x: extract_ratings(x, 'Rotten Tomatoes'))
+df['Metascore'] = df['Metascore'].astype(float)
 
 # New Feature: Critic Reviews Sentiment
 def fetch_critic_reviews_sentiment(title):
