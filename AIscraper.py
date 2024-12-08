@@ -4,20 +4,17 @@ from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.impute import SimpleImputer
 import numpy as np
 from datetime import datetime
-# import re
 import requests
-from sklearn.impute import SimpleImputer
+import re
 
 # Your OMDb API key
 api_key = '121c5367'
 
 # Initialize sentiment analyzer
 analyzer = SentimentIntensityAnalyzer()
-
-response = requests.get("https://httpbin.org/get")
-print(response.status_code)
 
 # Function to get movie data from OMDb with error handling
 def get_movie_data(title):
@@ -35,7 +32,7 @@ def get_movie_data(title):
         print(f"Request error for title '{title}': {e}")
         return None
 
-# Function to analyze the sentiment of the movie genre
+# Function to analyze the sentiment of movie genre
 def analyze_genre_sentiment(genre):
     sentiment_score = analyzer.polarity_scores(genre)
     return sentiment_score['compound']
@@ -46,7 +43,7 @@ def convert_box_office_to_numeric(box_office):
         return int(box_office[1:].replace(',', ''))
     return 0
 
-# Extracting Awards Count
+# Extract Awards Count
 def extract_awards_count(awards):
     if isinstance(awards, str):
         numbers = [int(num) for num in re.findall(r'\d+', awards)]
@@ -81,23 +78,7 @@ def calculate_actor_diversity(actors):
         unique_actors = set(actors.split(', '))
         return len(unique_actors)
     return 0
-def co_actor_network_strength(actors, df):
-    """
-    Calculate the co-actor network strength by summing the number of movies 
-    their co-actors have appeared in within the dataset.
-    """
-    if isinstance(actors, str):
-        actor_list = actors.split(', ')
-        strength = 0
-        for actor in actor_list:
-            # Find co-actors in the dataset
-            co_actors = df[df['Actors'].str.contains(actor, na=False, case=False)]['Actors']
-            co_actor_list = [a for co in co_actors for a in co.split(', ') if a != actor]
-            # Sum the number of movies co-actors have appeared in
-            for co_actor in set(co_actor_list):
-                strength += df[df['Actors'].str.contains(co_actor, na=False, case=False)].shape[0]
-        return strength
-    return 0
+
 # Add Weekend Release Indicator
 def is_weekend_release(release_date):
     if isinstance(release_date, str) and release_date:
@@ -108,7 +89,7 @@ def is_weekend_release(release_date):
             return 0
     return 0
 
-# New Feature: Sequel Indicator
+# Add Sequel Indicator
 def is_sequel(title):
     sequels = ['2', 'II', 'III', 'IV', 'V']
     for sequel in sequels:
@@ -116,51 +97,81 @@ def is_sequel(title):
             return 1
     return 0
 
-# New Feature: Lead Actor Popularity
-def actor_popularity(actors):
-    if isinstance(actors, str):
-        actor_list = actors.split(', ')
-        total_actor_popularity = 0
-        for actor in actor_list:
-            actor_data = get_movie_data(actor)  # Fetch data for each actor's filmography
-            if actor_data:
-                imdb_votes = actor_data.get('imdbVotes', '0')
-                # Convert imdbVotes to an integer after removing commas
-                try:
-                    total_actor_popularity += int(imdb_votes.replace(',', '')) if imdb_votes.isdigit() else 0
-                except ValueError:
-                    total_actor_popularity += 0
-        return total_actor_popularity
-    return 0
-
-# New Feature: Director's Previous Success
+# Director's Previous Success
 def director_previous_success(director, df):
     if isinstance(director, str):
         director_movies = df[df['Director'] == director]
         return director_movies['BoxOffice'].sum()  # Sum of BoxOffice earnings of all the movies directed by the same director
     return 0
 
-# New Feature: Movie Popularity Trend
+# Movie Popularity Trend
 def movie_popularity_trend(row):
     if row['BoxOffice'] > 0 and row['Rating'] > 7.0:
-        # If the movie has a good box office and a high IMDb rating, we assume a positive trend
-        return 1
+        return 1  # Positive trend
     elif row['BoxOffice'] < 100000000 and row['Rating'] < 6.0:
-        # If the movie has a low box office and a low IMDb rating, we assume a negative trend
-        return 0
+        return 0  # Negative trend
     else:
         return 1 if row['Rating'] > 6.0 else 0
 
-# New Feature: Director Popularity Indicator
-def director_popularity_indicator(director, df):
-    """
-    Calculate a Director Popularity indicator based on the total box office earnings of all movies directed by the director.
-    """
-    if isinstance(director, str):
-        director_movies = df[df['Director'] == director]
-        total_box_office = director_movies['BoxOffice'].sum()
-        return total_box_office
+# Enhanced Actor Popularity
+def enhanced_actor_popularity(actor_name):
+    if isinstance(actor_name, str):
+        lead_actor = actor_name.split(', ')[0]
+        total_votes = 0
+        total_rating = 0
+        movie_count = 0
+        actor_movies = get_actor_movies(lead_actor)  # Implement this function
+        for movie_data in actor_movies:
+            imdb_votes = movie_data.get('imdbVotes', '0').replace(',', '')
+            try:
+                total_votes += int(imdb_votes)
+            except ValueError:
+                total_votes += 0
+            imdb_rating = movie_data.get('imdbRating', '0')
+            try:
+                total_rating += float(imdb_rating)
+                movie_count += 1
+            except ValueError:
+                pass
+        avg_rating = total_rating / movie_count if movie_count > 0 else 0
+        popularity_score = (total_votes / 1_000) + (avg_rating * 10)
+        return round(popularity_score, 2)
     return 0
+
+def get_actor_movies(actor_name):
+    api_key = "your_api_key_here"
+    movies = []
+    for i in range(1, 3):  # Adjust pagination as needed
+        response = requests.get(f"http://www.omdbapi.com/?apikey={api_key}&s={actor_name}&type=movie&page={i}")
+        if response.status_code == 200:
+            data = response.json()
+            if "Search" in data:
+                for movie in data["Search"]:
+                    movie_data = get_movie_data(movie['Title'])
+                    if movie_data:
+                        movies.append(movie_data)
+            else:
+                break
+        else:
+            break
+    return movies
+
+# New Feature: Critic Reviews Sentiment
+def fetch_critic_reviews_sentiment(title):
+    params = {'t': title, 'apikey': api_key}
+    try:
+        response = requests.get('http://www.omdbapi.com/', params=params)
+        response.raise_for_status()
+        data = response.json()
+        if data.get('Response') == 'True' and 'Ratings' in data:
+            reviews = [rating['Value'] for rating in data['Ratings'] if 'Metascore' in rating or 'Rotten Tomatoes' in rating]
+            if reviews:
+                sentiment_scores = [analyzer.polarity_scores(review)['compound'] for review in reviews]
+                return np.mean(sentiment_scores)
+        return 0.0
+    except requests.exceptions.RequestException as e:
+        print(f"Request error for title '{title}': {e}")
+        return 0.0
 
 # Example list of movie titles
 movie_titles = [
@@ -204,52 +215,33 @@ df['Director_Popularity'] = df['Director'].map(df['Director'].value_counts())
 df['Runtime'] = df['Runtime'].apply(lambda x: int(x.split()[0]) if isinstance(x, str) else np.nan)
 df['Budget'] = df['Title'].map(budget_data)
 df['Movie_Popularity'] = df['imdbVotes'].apply(lambda x: int(x.replace(',', '')) if isinstance(x, str) else 0)
-df['Num_Genres'] = df['Genre'].apply(lambda x: len(x.split(',')) if isinstance(x, str) else 0)
-df['Rating_per_Genre'] = df.apply(lambda row: row['Rating'] / row['Num_Genres'] if row['Num_Genres'] > 0 else 0, axis=1)
-current_year = datetime.now().year
-df['Movie_Age'] = current_year - df['Year']
+df['BoxOffice'] = df['BoxOffice'].apply(convert_box_office_to_numeric)
+df['Awards_Count'] = df['Awards'].apply(extract_awards_count)
+df['Genre_Diversity'] = df['Genre'].apply(calculate_genre_diversity)
+df['Release_Month_Sentiment'] = df['Released'].apply(release_month_sentiment)
 df['Weekend_Release'] = df['Released'].apply(is_weekend_release)
-df['Sequel_Indicator'] = df['Title'].apply(is_sequel)
-df['Lead_Actor_Popularity'] = df['Actors'].apply(actor_popularity)
-df['Director_Previous_Success'] = df['Director'].apply(lambda x: director_previous_success(x, df))
-df['Popularity_Trend'] = df.apply(movie_popularity_trend, axis=1)
+df['Sequel'] = df['Title'].apply(is_sequel)
+df['Critic_Reviews_Sentiment'] = df['Title'].apply(fetch_critic_reviews_sentiment)
 
-# Adding "Director Popularity Indicator" feature to the DataFrame
-df['Director_Popularity_Indicator'] = df['Director'].apply(lambda x: director_popularity_indicator(x, df))
-
-# Feature Set
-features = [
-    'Year', 'Genre_Sentiment', 'Director_Popularity', 'Runtime', 'Budget', 'Movie_Popularity',
-    'Num_Genres', 'Rating_per_Genre', 'Movie_Age', 'Weekend_Release', 'Sequel_Indicator',
-    'Lead_Actor_Popularity', 'Director_Previous_Success', 'Popularity_Trend', 'Director_Popularity_Indicator'
-]
-
-# Drop rows with missing values
-imputer = SimpleImputer(strategy='mean')
-X = imputer.fit_transform(df[features])
-
+# Prepare Features and Target
+features = ['Year', 'Director_Popularity', 'Runtime', 'Budget', 'Movie_Popularity',
+            'Genre_Sentiment', 'BoxOffice', 'Awards_Count', 'Genre_Diversity',
+            'Release_Month_Sentiment', 'Weekend_Release', 'Sequel', 'Critic_Reviews_Sentiment']
+X = df[features]
 y = df['Rating']
 
-# Split the dataset into training and testing sets
+# Handle missing values
+imputer = SimpleImputer(strategy='mean')
+X = pd.DataFrame(imputer.fit_transform(X), columns=features)
+
+# Split data
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Train the model
+# Train model
 model = LinearRegression()
 model.fit(X_train, y_train)
 
-# Make predictions on the test set
+# Predict and Evaluate
 y_pred = model.predict(X_test)
-
-# Evaluate the model
-mse = mean_squared_error(y_test, y_pred)
-rmse = np.sqrt(mse)
-r2 = r2_score(y_test, y_pred)
-print(f"Root Mean Squared Error (RMSE): {rmse}")
-print(f"R-squared: {r2}")
-
-# Plot actual vs. predicted ratings
-plt.scatter(y_test, y_pred)
-plt.xlabel("Actual Ratings")
-plt.ylabel("Predicted Ratings")
-plt.title("Actual vs. Predicted Ratings")
-plt.show()
+print("Mean Squared Error:", mean_squared_error(y_test, y_pred))
+print("R^2 Score:", r2_score(y_test, y_pred))
