@@ -139,6 +139,14 @@ def enhanced_actor_popularity(actor_name):
         return round(popularity_score, 2)
     return 0
 
+movie_titles = [
+    'The Shawshank Redemption', 'The Godfather', 'The Dark Knight',
+    '12 Angry Men', 'Schindler\'s List', 'Pulp Fiction',
+    'The Lord of the Rings: The Return of the King', 'The Good, the Bad and the Ugly',
+    'Fight Club', 'Forrest Gump'
+]
+
+
 def get_actor_movies(actor_name):
     api_key = "your_api_key_here"
     movies = []
@@ -262,14 +270,7 @@ def fetch_critic_reviews_sentiment(title):
     except requests.exceptions.RequestException as e:
         print(f"Request error for title '{title}': {e}")
         return 0.0
-
 # Example list of movie titles
-movie_titles = [
-    'The Shawshank Redemption', 'The Godfather', 'The Dark Knight',
-    '12 Angry Men', 'Schindler\'s List', 'Pulp Fiction',
-    'The Lord of the Rings: The Return of the King', 'The Good, the Bad and the Ugly',
-    'Fight Club', 'Forrest Gump'
-]
 
 # Example budget data (in millions)
 budget_data = {
