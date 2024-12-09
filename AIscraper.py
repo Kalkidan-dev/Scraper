@@ -215,6 +215,17 @@ def extract_ratings(ratings, source):
 # Add Rotten Tomatoes and Metascore to DataFrame
 df['Rotten Tomatoes'] = df['Ratings'].apply(lambda x: extract_ratings(x, 'Rotten Tomatoes'))
 df['Metascore'] = df['Metascore'].astype(float)
+# Calculate Budget-to-BoxOffice Ratio
+def calculate_budget_boxoffice_ratio(row):
+    if row['Budget'] > 0:
+        return row['BoxOffice'] / row['Budget']
+    return 0
+
+# Add Budget-to-BoxOffice Ratio to DataFrame
+df['Budget_BoxOffice_Ratio'] = df.apply(calculate_budget_boxoffice_ratio, axis=1)
+
+# Include the feature in the feature set
+features.append('Budget_BoxOffice_Ratio')
 
 # New Feature: Critic Reviews Sentiment
 def fetch_critic_reviews_sentiment(title):
