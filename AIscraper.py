@@ -215,6 +215,7 @@ def extract_ratings(ratings, source):
 # Add Rotten Tomatoes and Metascore to DataFrame
 df['Rotten Tomatoes'] = df['Ratings'].apply(lambda x: extract_ratings(x, 'Rotten Tomatoes'))
 df['Metascore'] = df['Metascore'].astype(float)
+
 # Calculate Budget-to-BoxOffice Ratio
 def calculate_budget_boxoffice_ratio(row):
     if row['Budget'] > 0:
@@ -226,6 +227,24 @@ df['Budget_BoxOffice_Ratio'] = df.apply(calculate_budget_boxoffice_ratio, axis=1
 
 # Include the feature in the feature set
 features.append('Budget_BoxOffice_Ratio')
+
+# Calculate Lead Actor Career Impact
+def calculate_actor_career_impact(row, df):
+    if isinstance(row['Actors'], str):
+        lead_actor = row['Actors'].split(', ')[0]
+        prior_movies = df[df['Actors'].str.contains(lead_actor, na=False, case=False)]
+        
+        if not prior_movies.empty:
+            prior_box_office = prior_movies['BoxOffice'].mean()
+            if prior_box_office > 0:
+                return row['BoxOffice'] / prior_box_office
+    return 1  # Default impact for new actors or missing data
+
+# Add Lead Actor Career Impact to DataFrame
+df['Lead_Actor_Career_Impact'] = df.apply(lambda x: calculate_actor_career_impact(x, df), axis=1)
+
+# Include the feature in the feature set
+features.append('Lead_Actor_Career_Impact')
 
 # New Feature: Critic Reviews Sentiment
 def fetch_critic_reviews_sentiment(title):
