@@ -251,8 +251,37 @@ def calculate_actor_career_impact(row, df):
 # Add Lead Actor Career Impact to DataFrame
 df['Lead_Actor_Career_Impact'] = df.apply(lambda x: calculate_actor_career_impact(x, df), axis=1)
 
+# Function to calculate Audience Engagement Score
+def calculate_audience_engagement(row):
+    """
+    Calculate audience engagement score as a weighted combination of:
+    - Social Media Mentions
+    - Audience Review Count (imdbVotes)
+    - Average Audience Rating (imdbRating)
+    """
+    social_media_mentions = row.get('Social_Media_Mentions', 0)
+    audience_review_count = extract_audience_review_count(row.get('imdbVotes', '0'))
+    average_rating = row.get('imdbRating', 0.0)
+    
+    # Weights for each component
+    social_weight = 0.4
+    review_weight = 0.3
+    rating_weight = 0.3
+    
+    # Normalize and calculate score
+    engagement_score = (
+        (social_weight * social_media_mentions / 100000) +
+        (review_weight * audience_review_count / 100000) +
+        (rating_weight * average_rating / 10)
+    )
+    
+    return round(engagement_score, 3)
+
+# Apply the function to the DataFrame
+df['Audience_Engagement_Score'] = df.apply(calculate_audience_engagement, axis=1)
+
 # Include the feature in the feature set
-features.append('Lead_Actor_Career_Impact')
+features.append('Audience_Engagement_Score')
 
 # New Feature: Critic Reviews Sentiment
 def fetch_critic_reviews_sentiment(title):
@@ -313,6 +342,9 @@ df['Release_Month_Sentiment'] = df['Released'].apply(release_month_sentiment)
 df['Weekend_Release'] = df['Released'].apply(is_weekend_release)
 df['Sequel'] = df['Title'].apply(is_sequel)
 df['Critic_Reviews_Sentiment'] = df['Title'].apply(fetch_critic_reviews_sentiment)
+df['Audience_Engagement_Score'] = df.apply(calculate_audience_engagement, axis=1)
+
+features.append('Lead_Actor_Career_Impact')
 
 # Prepare Features and Target
 features = ['Year', 'Director_Popularity', 'Runtime', 'Budget', 'Movie_Popularity',
