@@ -123,6 +123,39 @@ def fetch_critic_reviews_sentiment(title):
     # Placeholder sentiment score generation (you can replace this)
     sentiment_score = random.uniform(-1, 1)  # Random score between -1 and 1
     return sentiment_score
+
+    """
+    Calculate audience engagement score as a weighted combination of:
+    - Social Media Mentions
+    - Audience Review Count (imdbVotes)
+    - Average Audience Rating (imdbRating)
+    """
+    social_media_mentions = row.get('Social_Media_Mentions', 0)
+    audience_review_count = extract_audience_review_count(row.get('imdbVotes', '0'))
+    average_rating = row.get('imdbRating', 0.0)
+    
+    # Weights for each component
+    social_weight = 0.4
+    review_weight = 0.3
+    rating_weight = 0.3
+    
+    # Normalize and calculate score
+    engagement_score = (
+        (social_weight * social_media_mentions / 100000) +
+        (review_weight * audience_review_count / 100000) +
+        (rating_weight * average_rating / 10)
+    )
+    
+    return round(engagement_score, 3)
+def extract_audience_review_count(imdb_votes):
+    """
+    Extract the numeric review count from the imdbVotes string.
+    If the value is not numeric, it returns 0.
+    """
+    try:
+        return int(imdb_votes.replace(',', ''))  # Remove commas and convert to integer
+    except ValueError:
+        return 0  # Return 0 if conversion fails
 def calculate_audience_engagement(row):
     """
     Calculate audience engagement score as a weighted combination of:
