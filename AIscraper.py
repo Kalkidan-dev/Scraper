@@ -165,7 +165,10 @@ def calculate_audience_engagement(row):
     """
     social_media_mentions = row.get('Social_Media_Mentions', 0)
     audience_review_count = extract_audience_review_count(row.get('imdbVotes', '0'))
-    average_rating = row.get('imdbRating', 0.0)
+    try:
+        average_rating = float(row.get('imdbRating', 0.0))  # Ensure it's a float
+    except ValueError:
+        average_rating = 0.0  # Default to 0.0 if conversion fails
     
     # Weights for each component
     social_weight = 0.4
