@@ -1,8 +1,9 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, GridSearchCV, cross_val_score
 from sklearn.linear_model import LinearRegression
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.impute import SimpleImputer
 import numpy as np
@@ -139,167 +140,13 @@ def enhanced_actor_popularity(actor_name):
         return round(popularity_score, 2)
     return 0
 
+# Example list of movie titles
 movie_titles = [
     'The Shawshank Redemption', 'The Godfather', 'The Dark Knight',
     '12 Angry Men', 'Schindler\'s List', 'Pulp Fiction',
     'The Lord of the Rings: The Return of the King', 'The Good, the Bad and the Ugly',
     'Fight Club', 'Forrest Gump'
 ]
-
-
-def get_actor_movies(actor_name):
-    api_key = "your_api_key_here"
-    movies = []
-    for i in range(1, 3):  # Adjust pagination as needed
-        response = requests.get(f"http://www.omdbapi.com/?apikey={api_key}&s={actor_name}&type=movie&page={i}")
-        if response.status_code == 200:
-            data = response.json()
-            if "Search" in data:
-                for movie in data["Search"]:
-                    movie_data = get_movie_data(movie['Title'])
-                    if movie_data:
-                        movies.append(movie_data)
-            else:
-                break
-        else:
-            break
-    return movies
-def extract_audience_review_count(imdb_votes):
-    """
-    Extract audience review count from the imdbVotes column.
-    If imdbVotes is not a valid number, return 0.
-    """
-    if isinstance(imdb_votes, str):
-        try:
-            return int(imdb_votes.replace(',', ''))
-        except ValueError:
-            return 0
-    elif isinstance(imdb_votes, (int, float)):
-        return int(imdb_votes)
-    return 0  # Default for missing or invalid data
- # Import random module for simulation
-
-# Add Social Media Mentions feature
-def generate_social_media_mentions(title):
-    """
-    Generate a simulated value for social media mentions.
-    In a real-world scenario, integrate with a social media API.
-    """
-    if isinstance(title, str):
-        # Simulate social media mentions with a random number between 1000 and 100000
-        return random.randint(1000, 100000)
-    return 0
-# Fetch data for each movie
-movie_data = []
-for title in movie_titles:
-    data = get_movie_data(title)
-    if data:
-        movie_data.append(data)
-
-if not movie_data:
-    print("No movie data was retrieved. Exiting...")
-    exit()
-
-# Create DataFrame
-df = pd.DataFrame(movie_data)
-
-# Select relevant columns
-required_columns = ['Title', 'Year', 'imdbRating', 'Genre', 'Director', 'Runtime', 
-                    'imdbVotes', 'BoxOffice', 'Awards', 'Released', 'Actors']
-df = df[required_columns]
-
-# Adding Social Media Mentions to the DataFrame
-df['Social_Media_Mentions'] = df['Title'].apply(generate_social_media_mentions)
-
-# Include the feature in the feature set
-features.append('Social_Media_Mentions')
-# Extract Rotten Tomatoes and Metascore ratings
-def extract_ratings(ratings, source):
-    for rating in ratings:
-        if rating['Source'] == source:
-            return rating['Value']
-    return None
-
-# Add Rotten Tomatoes and Metascore to DataFrame
-df['Rotten Tomatoes'] = df['Ratings'].apply(lambda x: extract_ratings(x, 'Rotten Tomatoes'))
-df['Metascore'] = df['Metascore'].astype(float)
-
-# Calculate Budget-to-BoxOffice Ratio
-def calculate_budget_boxoffice_ratio(row):
-    if row['Budget'] > 0:
-        return row['BoxOffice'] / row['Budget']
-    return 0
-
-# Add Budget-to-BoxOffice Ratio to DataFrame
-df['Budget_BoxOffice_Ratio'] = df.apply(calculate_budget_boxoffice_ratio, axis=1)
-
-# Include the feature in the feature set
-features.append('Budget_BoxOffice_Ratio')
-
-# Calculate Lead Actor Career Impact
-def calculate_actor_career_impact(row, df):
-    if isinstance(row['Actors'], str):
-        lead_actor = row['Actors'].split(', ')[0]
-        prior_movies = df[df['Actors'].str.contains(lead_actor, na=False, case=False)]
-        
-        if not prior_movies.empty:
-            prior_box_office = prior_movies['BoxOffice'].mean()
-            if prior_box_office > 0:
-                return row['BoxOffice'] / prior_box_office
-    return 1  # Default impact for new actors or missing data
-
-# Add Lead Actor Career Impact to DataFrame
-df['Lead_Actor_Career_Impact'] = df.apply(lambda x: calculate_actor_career_impact(x, df), axis=1)
-
-# Function to calculate Audience Engagement Score
-def calculate_audience_engagement(row):
-    """
-    Calculate audience engagement score as a weighted combination of:
-    - Social Media Mentions
-    - Audience Review Count (imdbVotes)
-    - Average Audience Rating (imdbRating)
-    """
-    social_media_mentions = row.get('Social_Media_Mentions', 0)
-    audience_review_count = extract_audience_review_count(row.get('imdbVotes', '0'))
-    average_rating = row.get('imdbRating', 0.0)
-    
-    # Weights for each component
-    social_weight = 0.4
-    review_weight = 0.3
-    rating_weight = 0.3
-    
-    # Normalize and calculate score
-    engagement_score = (
-        (social_weight * social_media_mentions / 100000) +
-        (review_weight * audience_review_count / 100000) +
-        (rating_weight * average_rating / 10)
-    )
-    
-    return round(engagement_score, 3)
-
-# Apply the function to the DataFrame
-df['Audience_Engagement_Score'] = df.apply(calculate_audience_engagement, axis=1)
-
-# Include the feature in the feature set
-features.append('Audience_Engagement_Score')
-
-# New Feature: Critic Reviews Sentiment
-def fetch_critic_reviews_sentiment(title):
-    params = {'t': title, 'apikey': api_key}
-    try:
-        response = requests.get('http://www.omdbapi.com/', params=params)
-        response.raise_for_status()
-        data = response.json()
-        if data.get('Response') == 'True' and 'Ratings' in data:
-            reviews = [rating['Value'] for rating in data['Ratings'] if 'Metascore' in rating or 'Rotten Tomatoes' in rating]
-            if reviews:
-                sentiment_scores = [analyzer.polarity_scores(review)['compound'] for review in reviews]
-                return np.mean(sentiment_scores)
-        return 0.0
-    except requests.exceptions.RequestException as e:
-        print(f"Request error for title '{title}': {e}")
-        return 0.0
-# Example list of movie titles
 
 # Example budget data (in millions)
 budget_data = {
@@ -324,7 +171,8 @@ if not movie_data:
 df = pd.DataFrame(movie_data)
 
 # Select relevant columns
-required_columns = ['Title', 'Year', 'imdbRating', 'Genre', 'Director', 'Runtime', 'imdbVotes', 'BoxOffice', 'Awards', 'Released', 'Actors']
+required_columns = ['Title', 'Year', 'imdbRating', 'Genre', 'Director', 'Runtime', 
+                    'imdbVotes', 'BoxOffice', 'Awards', 'Released', 'Actors']
 df = df[required_columns]
 df['Rating'] = df['imdbRating'].astype(float)
 
@@ -344,8 +192,6 @@ df['Sequel'] = df['Title'].apply(is_sequel)
 df['Critic_Reviews_Sentiment'] = df['Title'].apply(fetch_critic_reviews_sentiment)
 df['Audience_Engagement_Score'] = df.apply(calculate_audience_engagement, axis=1)
 
-features.append('Lead_Actor_Career_Impact')
-
 # Prepare Features and Target
 features = ['Year', 'Director_Popularity', 'Runtime', 'Budget', 'Movie_Popularity',
             'Genre_Sentiment', 'BoxOffice', 'Awards_Count', 'Genre_Diversity',
@@ -360,11 +206,38 @@ X = pd.DataFrame(imputer.fit_transform(X), columns=features)
 # Split data
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Train model
-model = LinearRegression()
-model.fit(X_train, y_train)
+# Initialize RandomForestRegressor and use GridSearchCV for hyperparameter tuning
+rf = RandomForestRegressor(random_state=42)
 
-# Predict and Evaluate
-y_pred = model.predict(X_test)
-print("Mean Squared Error:", mean_squared_error(y_test, y_pred))
-print("R^2 Score:", r2_score(y_test, y_pred))
+# Hyperparameter grid for tuning
+param_grid = {
+    'n_estimators': [50, 100, 150],
+    'max_depth': [10, 20, None],
+    'min_samples_split': [2, 5, 10],
+    'min_samples_leaf': [1, 2, 4],
+    'bootstrap': [True, False]
+}
+
+grid_search = GridSearchCV(estimator=rf, param_grid=param_grid, cv=5, n_jobs=-1, verbose=2)
+grid_search.fit(X_train, y_train)
+
+# Get best parameters and model
+best_rf_model = grid_search.best_estimator_
+
+# Evaluate the model
+y_pred = best_rf_model.predict(X_test)
+
+# Print evaluation results
+print(f"Best Parameters: {grid_search.best_params_}")
+print(f"R^2: {r2_score(y_test, y_pred)}")
+print(f"Mean Squared Error: {mean_squared_error(y_test, y_pred)}")
+
+# Feature importance visualization
+importances = best_rf_model.feature_importances_
+indices = np.argsort(importances)[::-1]
+plt.figure(figsize=(10, 6))
+plt.title("Random Forest Regressor - Feature Importance")
+plt.barh(range(len(indices)), importances[indices], align="center")
+plt.yticks(range(len(indices)), [features[i] for i in indices])
+plt.xlabel("Relative Importance")
+plt.show()
