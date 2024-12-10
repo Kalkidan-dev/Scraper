@@ -114,6 +114,15 @@ def movie_popularity_trend(row):
         return 0  # Negative trend
     else:
         return 1 if row['Rating'] > 6.0 else 0
+def fetch_critic_reviews_sentiment(title):
+    # Example placeholder function for fetching critic reviews sentiment
+    # You can replace this with actual code that scrapes or fetches critic reviews
+    # from a source like Rotten Tomatoes, Metacritic, or an API.
+    # For now, this returns a random sentiment score.
+
+    # Placeholder sentiment score generation (you can replace this)
+    sentiment_score = random.uniform(-1, 1)  # Random score between -1 and 1
+    return sentiment_score
 
 # Enhanced Actor Popularity
 def enhanced_actor_popularity(actor_name):
