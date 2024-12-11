@@ -1,8 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
-from sklearn.model_selection import train_test_split, GridSearchCV, cross_val_score
-from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.impute import SimpleImputer
@@ -10,7 +9,7 @@ import numpy as np
 from datetime import datetime
 import requests
 import re
-import random 
+import random
 
 # Your OMDb API key
 api_key = '121c5367'
@@ -34,180 +33,17 @@ def get_movie_data(title):
         print(f"Request error for title '{title}': {e}")
         return None
 
-# Function to analyze the sentiment of movie genre
-def analyze_genre_sentiment(genre):
-    sentiment_score = analyzer.polarity_scores(genre)
-    return sentiment_score['compound']
-
-# Function to convert BoxOffice to numeric
-def convert_box_office_to_numeric(box_office):
-    if isinstance(box_office, str) and box_office.startswith('$'):
-        return int(box_office[1:].replace(',', ''))
-    return 0
-
-# Extract Awards Count
-def extract_awards_count(awards):
-    if isinstance(awards, str):
-        numbers = [int(num) for num in re.findall(r'\d+', awards)]
-        return sum(numbers)
-    return 0
-
-# Add Genre Diversity feature
-def calculate_genre_diversity(genre):
-    if isinstance(genre, str):
-        genres = genre.split(',')
-        unique_genres = set(genres)
-        return len(unique_genres) / len(genres) if len(genres) > 0 else 0
-    return 0
-
-# Add Release Month Sentiment feature
-def release_month_sentiment(release_date):
-    if isinstance(release_date, str) and release_date:
-        try:
-            release_month = datetime.strptime(release_date, '%d %b %Y').month
-            month_sentiment = {
-                1: 0.3, 2: 0.4, 3: 0.5, 4: 0.6, 5: 0.8, 6: 0.9, 
-                7: 1.0, 8: 0.9, 9: 0.4, 10: 0.6, 11: 0.7, 12: 0.5
-            }
-            return month_sentiment.get(release_month, 0.0)
-        except ValueError:
-            return 0.0
-    return 0.0
-
-# Add Actor Diversity feature
-def calculate_actor_diversity(actors):
-    if isinstance(actors, str):
-        unique_actors = set(actors.split(', '))
-        return len(unique_actors)
-    return 0
-
-# Add Weekend Release Indicator
-def is_weekend_release(release_date):
-    if isinstance(release_date, str) and release_date:
-        try:
-            release_day = datetime.strptime(release_date, '%d %b %Y').weekday()
-            return 1 if release_day in [5, 6] else 0  # 5 = Saturday, 6 = Sunday
-        except ValueError:
-            return 0
-    return 0
-
-# Add Sequel Indicator
-def is_sequel(title):
-    sequels = ['2', 'II', 'III', 'IV', 'V']
-    for sequel in sequels:
-        if sequel in title:
-            return 1
-    return 0
-
-# Director's Previous Success
-def director_previous_success(director, df):
-    if isinstance(director, str):
-        director_movies = df[df['Director'] == director]
-        return director_movies['BoxOffice'].sum()  # Sum of BoxOffice earnings of all the movies directed by the same director
-    return 0
-
-# Movie Popularity Trend
-def movie_popularity_trend(row):
-    if row['BoxOffice'] > 0 and row['Rating'] > 7.0:
-        return 1  # Positive trend
-    elif row['BoxOffice'] < 100000000 and row['Rating'] < 6.0:
-        return 0  # Negative trend
-    else:
-        return 1 if row['Rating'] > 6.0 else 0
-def fetch_critic_reviews_sentiment(title):
-    # Example placeholder function for fetching critic reviews sentiment
-    # You can replace this with actual code that scrapes or fetches critic reviews
-    # from a source like Rotten Tomatoes, Metacritic, or an API.
-    # For now, this returns a random sentiment score.
-
-    # Placeholder sentiment score generation (you can replace this)
-    sentiment_score = random.uniform(-1, 1)  # Random score between -1 and 1
-    return sentiment_score
-
+# Function to generate Critical Acclaim (Placeholder)
+def generate_critical_acclaim(title):
     """
-    Calculate audience engagement score as a weighted combination of:
-    - Social Media Mentions
-    - Audience Review Count (imdbVotes)
-    - Average Audience Rating (imdbRating)
+    Placeholder function to simulate critical acclaim.
+    In a real-world scenario, replace this with actual data
+    fetched from Rotten Tomatoes, Metacritic, or another source.
     """
-    social_media_mentions = row.get('Social_Media_Mentions', 0)
-    audience_review_count = extract_audience_review_count(row.get('imdbVotes', '0'))
-    average_rating = row.get('imdbRating', 0.0)
-    
-    # Weights for each component
-    social_weight = 0.4
-    review_weight = 0.3
-    rating_weight = 0.3
-    
-    # Normalize and calculate score
-    engagement_score = (
-        (social_weight * social_media_mentions / 100000) +
-        (review_weight * audience_review_count / 100000) +
-        (rating_weight * average_rating / 10)
-    )
-    
-    return round(engagement_score, 3)
-def extract_audience_review_count(imdb_votes):
-    """
-    Extract the numeric review count from the imdbVotes string.
-    If the value is not numeric, it returns 0.
-    """
-    try:
-        return int(imdb_votes.replace(',', ''))  # Remove commas and convert to integer
-    except ValueError:
-        return 0  # Return 0 if conversion fails
-def calculate_audience_engagement(row):
-    """
-    Calculate audience engagement score as a weighted combination of:
-    - Social Media Mentions
-    - Audience Review Count (imdbVotes)
-    - Average Audience Rating (imdbRating)
-    """
-    social_media_mentions = row.get('Social_Media_Mentions', 0)
-    audience_review_count = extract_audience_review_count(row.get('imdbVotes', '0'))
-    try:
-        average_rating = float(row.get('imdbRating', 0.0))  # Ensure it's a float
-    except ValueError:
-        average_rating = 0.0  # Default to 0.0 if conversion fails
-    
-    # Weights for each component
-    social_weight = 0.4
-    review_weight = 0.3
-    rating_weight = 0.3
-    
-    # Normalize and calculate score
-    engagement_score = (
-        (social_weight * social_media_mentions / 100000) +
-        (review_weight * audience_review_count / 100000) +
-        (rating_weight * average_rating / 10)
-    )
-    
-    return round(engagement_score, 3)
+    return random.randint(50, 100)  # Simulate scores between 50 and 100
 
-# Enhanced Actor Popularity
-def enhanced_actor_popularity(actor_name):
-    if isinstance(actor_name, str):
-        lead_actor = actor_name.split(', ')[0]
-        total_votes = 0
-        total_rating = 0
-        movie_count = 0
-        actor_movies = get_actor_movies(lead_actor)  # Implement this function
-        for movie_data in actor_movies:
-            imdb_votes = movie_data.get('imdbVotes', '0').replace(',', '')
-            try:
-                total_votes += int(imdb_votes)
-            except ValueError:
-                total_votes += 0
-            imdb_rating = movie_data.get('imdbRating', '0')
-            try:
-                total_rating += float(imdb_rating)
-                movie_count += 1
-            except ValueError:
-                pass
-        avg_rating = total_rating / movie_count if movie_count > 0 else 0
-        popularity_score = (total_votes / 1_000) + (avg_rating * 10)
-        return round(popularity_score, 2)
-    return 0
+# Add functions for feature engineering (same as before)
+# ...
 
 # Example list of movie titles
 movie_titles = [
@@ -259,12 +95,13 @@ df['Release_Month_Sentiment'] = df['Released'].apply(release_month_sentiment)
 df['Weekend_Release'] = df['Released'].apply(is_weekend_release)
 df['Sequel'] = df['Title'].apply(is_sequel)
 df['Critic_Reviews_Sentiment'] = df['Title'].apply(fetch_critic_reviews_sentiment)
-df['Audience_Engagement_Score'] = df.apply(calculate_audience_engagement, axis=1)
+df['Critical_Acclaim'] = df['Title'].apply(generate_critical_acclaim)
 
 # Prepare Features and Target
 features = ['Year', 'Director_Popularity', 'Runtime', 'Budget', 'Movie_Popularity',
             'Genre_Sentiment', 'BoxOffice', 'Awards_Count', 'Genre_Diversity',
-            'Release_Month_Sentiment', 'Weekend_Release', 'Sequel', 'Critic_Reviews_Sentiment']
+            'Release_Month_Sentiment', 'Weekend_Release', 'Sequel', 
+            'Critic_Reviews_Sentiment', 'Critical_Acclaim']
 X = df[features]
 y = df['Rating']
 
