@@ -6,8 +6,115 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.impute import SimpleImputer
 from sklearn.metrics import r2_score, mean_squared_error
 import matplotlib.pyplot as plt
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+from datetime import datetime
+import requests
+import re
+
+# Initialize sentiment analyzer
+analyzer = SentimentIntensityAnalyzer()
 
 # Assuming your DataFrame `df` and target variable `y` are defined
+
+# Your OMDb API key
+api_key = '121c5367'
+
+# Function to get movie data from OMDb with error handling
+def get_movie_data(title):
+    params = {'t': title, 'apikey': api_key}
+    try:
+        response = requests.get('http://www.omdbapi.com/', params=params)
+        response.raise_for_status()
+        data = response.json()
+        if data.get('Response') == 'True':
+            return data
+        else:
+            print(f"Error: No data found for title '{title}' - Reason: {data.get('Error')}")
+            return None
+    except requests.exceptions.RequestException as e:
+        print(f"Request error for title '{title}': {e}")
+        return None
+
+# Function to analyze the sentiment of movie genre
+def analyze_genre_sentiment(genre):
+    sentiment_score = analyzer.polarity_scores(genre)
+    return sentiment_score['compound']
+
+# Function to convert BoxOffice to numeric
+def convert_box_office_to_numeric(box_office):
+    if isinstance(box_office, str) and box_office.startswith('$'):
+        return int(box_office[1:].replace(',', ''))
+    return 0
+
+# Extract Awards Count
+def extract_awards_count(awards):
+    if isinstance(awards, str):
+        numbers = [int(num) for num in re.findall(r'\d+', awards)]
+        return sum(numbers)
+    return 0
+
+# Add Genre Diversity feature
+def calculate_genre_diversity(genre):
+    if isinstance(genre, str):
+        genres = genre.split(',')
+        unique_genres = set(genres)
+        return len(unique_genres) / len(genres) if len(genres) > 0 else 0
+    return 0
+
+# Add Release Month Sentiment feature
+def release_month_sentiment(release_date):
+    if isinstance(release_date, str) and release_date:
+        try:
+            release_month = datetime.strptime(release_date, '%d %b %Y').month
+            month_sentiment = {
+                1: 0.3, 2: 0.4, 3: 0.5, 4: 0.6, 5: 0.8, 6: 0.9, 
+                7: 1.0, 8: 0.9, 9: 0.4, 10: 0.6, 11: 0.7, 12: 0.5
+            }
+            return month_sentiment.get(release_month, 0.0)
+        except ValueError:
+            return 0.0
+    return 0.0
+
+# Add Actor Diversity feature
+def calculate_actor_diversity(actors):
+    if isinstance(actors, str):
+        unique_actors = set(actors.split(', '))
+        return len(unique_actors)
+    return 0
+
+# Add Weekend Release Indicator
+def is_weekend_release(release_date):
+    if isinstance(release_date, str) and release_date:
+        try:
+            release_day = datetime.strptime(release_date, '%d %b %Y').weekday()
+            return 1 if release_day in [5, 6] else 0  # 5 = Saturday, 6 = Sunday
+        except ValueError:
+            return 0
+    return 0
+
+# Add Sequel Indicator
+def is_sequel(title):
+    sequels = ['2', 'II', 'III', 'IV', 'V']
+    for sequel in sequels:
+        if sequel in title:
+            return 1
+    return 0
+
+# Director's Previous Success
+def director_previous_success(director, df):
+    if isinstance(director, str):
+        director_movies = df[df['Director'] == director]
+        return director_movies['BoxOffice'].sum()  # Sum of BoxOffice earnings of all the movies directed by the same director
+    return 0
+
+# Movie Popularity Trend
+def movie_popularity_trend(row):
+    if row['BoxOffice'] > 0 and row['Rating'] > 7.0:
+        return 1  # Positive trend
+    elif row['BoxOffice'] < 100000000 and row['Rating'] < 6.0:
+        return 0  # Negative trend
+    else:
+        return 1 if row['Rating'] > 6.0 else 0
 
 # Function to simulate social media buzz (you can replace this with actual data)
 def generate_social_media_buzz(title):
@@ -20,7 +127,7 @@ def generate_social_media_buzz(title):
 # Add Social Media Buzz feature
 df['Social_Media_Buzz'] = df['Title'].apply(generate_social_media_buzz)
 
-# Add the new feature to the existing feature list
+# Add all features from previous and new ones
 features = [
     'Year', 'Director_Popularity', 'Runtime', 'Budget', 'Movie_Popularity',
     'Genre_Sentiment', 'BoxOffice', 'Awards_Count', 'Genre_Diversity',
