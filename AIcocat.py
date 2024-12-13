@@ -81,6 +81,16 @@ def extract_awards_won(awards_str):
     match = awards_pattern.search(awards_str)
     return int(match.group(1)) if match else 0
 
+# New Feature: Calculate average sentiment score of movie reviews
+def calculate_review_sentiment(reviews):
+    """
+    Calculate the average sentiment score from a list of reviews using VADER sentiment analysis.
+    """
+    if isinstance(reviews, list):
+        sentiments = [analyzer.polarity_scores(review)['compound'] for review in reviews]
+        return np.mean(sentiments) if sentiments else 0
+    return 0
+
 # Fetch data for each movie
 movie_data = []
 for title in movie_titles:
@@ -120,6 +130,12 @@ df['Director_Popularity'] = df['Director'].apply(lambda x: director_popularity.g
 # Replace missing Budget to BoxOffice Ratio with default
 df['Budget_to_BoxOffice_Ratio'] = df['Budget_to_BoxOffice_Ratio'].fillna(1.0)
 
+# Add new feature: Review Sentiment
+if 'Reviews' in df.columns:
+    df['Review_Sentiment'] = df['Reviews'].apply(calculate_review_sentiment).fillna(0)
+else:
+    df['Review_Sentiment'] = 0
+
 # Drop rows where 'Rating' or critical features are missing
 df = df.dropna(subset=['Rating', 'Year', 'Runtime_Minutes', 'Director', 'Actors'])
 
@@ -131,7 +147,7 @@ print(df.head())
 features = ['Year', 'Genre_Sentiment', 'Is_Holiday_Release', 'Runtime_Minutes', 
             'RT_Sentiment', 'Awards_Won', 'Top_Actors_Count', 'Movie_Age', 
             'Director_Popularity', 'Studio_Influence', 'Budget_to_BoxOffice_Ratio', 
-            'Audience_Sentiment', 'Co_Actor_Network_Strength']
+            'Audience_Sentiment', 'Co_Actor_Network_Strength', 'Review_Sentiment']
 X = df[features]
 y = df['Rating'].astype(float)
 
