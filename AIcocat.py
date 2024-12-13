@@ -50,6 +50,12 @@ def get_studio_influence(studio):
     """Assign an influence score to the production studio."""
     return studio_influence.get(studio, 5)  # Default to 5 for unknown studios
 
+def extract_awards_count(awards):
+    if isinstance(awards, str):
+        numbers = [int(num) for num in re.findall(r'\d+', awards)]
+        return sum(numbers)
+    return 0
+
 # Function to calculate co-actor network strength
 def co_actor_network_strength(actors, df):
     """
@@ -75,9 +81,6 @@ def extract_awards_won(awards_str):
     match = awards_pattern.search(awards_str)
     return int(match.group(1)) if match else 0
 
-# (Remaining previously defined functions like `extract_golden_globe_wins`, 
-# `calculate_budget_to_boxoffice_ratio`, `analyze_genre_sentiment` remain unchanged)
-
 # Fetch data for each movie
 movie_data = []
 for title in movie_titles:
@@ -88,18 +91,41 @@ for title in movie_titles:
 # Create DataFrame
 df = pd.DataFrame(movie_data)
 
-# Clean and engineer features
-df['Year'] = pd.to_numeric(df['Year'], errors='coerce')
-df['Rating'] = df['imdbRating'].astype(float)
-df['Release_Date'] = pd.to_datetime(df['Released'], errors='coerce')
-df['Movie_Age'] = datetime.now().year - df['Year'].astype(int)
+# Error handling: Fill missing data or replace with defaults
+df['Year'] = pd.to_numeric(df['Year'], errors='coerce').fillna(datetime.now().year)  # Replace missing years with the current year
+df['Rating'] = pd.to_numeric(df['imdbRating'], errors='coerce').fillna(df['imdbRating'].median())  # Fill missing ratings with median
+df['Release_Date'] = pd.to_datetime(df['Released'], errors='coerce')  # Convert to datetime
+df['Movie_Age'] = df['Year'].apply(lambda x: datetime.now().year - x if pd.notnull(x) else 0)  # Handle missing years
+
+# Handle missing Genres by assigning neutral sentiment
+df['Genre'] = df['Genre'].fillna('Unknown')
 df['Genre_Sentiment'] = df['Genre'].apply(analyze_genre_sentiment)
-df['Is_Holiday_Release'] = df['Release_Date'].apply(is_holiday_release)
-df['Rotten_Tomatoes_Score'] = df['Title'].map(rotten_tomatoes_scores).fillna('0%')
+
+# Handle missing Holiday Release information
+df['Is_Holiday_Release'] = df['Release_Date'].apply(is_holiday_release).fillna(False)
+
+# Handle missing Rotten Tomatoes Scores by assuming '0%'
+df['Rotten_Tomatoes_Score'] = df['Rotten_Tomatoes_Score'].fillna('0%')
 df['RT_Sentiment'] = df['Rotten_Tomatoes_Score'].apply(get_rt_sentiment)
 
-# Add Co-Actor Network Strength feature
-df['Co_Actor_Network_Strength'] = df['Actors'].apply(lambda x: co_actor_network_strength(x, df))
+# Replace missing values for custom features
+df['Awards_Won'] = df['Awards'].apply(extract_awards_won).fillna(0)
+df['Co_Actor_Network_Strength'] = df['Actors'].apply(lambda x: co_actor_network_strength(x, df) if pd.notnull(x) else 0)
+df['Studio_Influence'] = df['Production'].apply(get_studio_influence).fillna(5)
+df['Top_Actors_Count'] = df['Actors'].apply(lambda x: sum([1 for actor in top_actors_list if pd.notnull(x) and actor in x]))
+
+# Replace missing Director Popularity with default score
+df['Director_Popularity'] = df['Director'].apply(lambda x: director_popularity.get(x, 5) if pd.notnull(x) else 5)
+
+# Replace missing Budget to BoxOffice Ratio with default
+df['Budget_to_BoxOffice_Ratio'] = df['Budget_to_BoxOffice_Ratio'].fillna(1.0)
+
+# Drop rows where 'Rating' or critical features are missing
+df = df.dropna(subset=['Rating', 'Year', 'Runtime_Minutes', 'Director', 'Actors'])
+
+# Display the final cleaned DataFrame
+print("DataFrame after cleaning and handling missing data:")
+print(df.head())
 
 # Features for modeling (including the new feature)
 features = ['Year', 'Genre_Sentiment', 'Is_Holiday_Release', 'Runtime_Minutes', 
