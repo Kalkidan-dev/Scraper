@@ -104,6 +104,55 @@ def get_franchise_impact(title):
             return score
     return 5  # Default score for non-franchise movies
 
+# Function to estimate social media buzz
+def get_social_media_buzz(title):
+    """
+    Simulate social media buzz score based on movie title.
+    Higher scores represent more buzz (e.g., mentions, hashtags).
+    """
+    buzz_keywords = {
+        "Avengers": 10,
+        "Batman": 9,
+        "Spider-Man": 8,
+        "Frozen": 8,
+        "Fast & Furious": 7,
+        "Harry Potter": 9,
+    }
+    for keyword, score in buzz_keywords.items():
+        if keyword.lower() in title.lower():
+            return score
+    return 5  # Default score for movies without significant buzz
+
+# New feature: Calculate critical reception sentiment
+def get_critical_reception_sentiment(plot):
+    """
+    Use VADER sentiment analysis to calculate the sentiment of the plot.
+    """
+    if isinstance(plot, str):
+        sentiment = analyzer.polarity_scores(plot)
+        return sentiment['compound']
+    return 0  # Default to neutral sentiment if plot is missing
+
+# New feature: Categorize movies by runtime
+def categorize_movie_length(runtime):
+    """
+    Categorize movies into 'Short', 'Average', and 'Long' based on runtime.
+    """
+    if pd.notnull(runtime):
+        if runtime < 90:
+            return "Short"
+        elif 90 <= runtime <= 150:
+            return "Average"
+        else:
+            return "Long"
+    return "Unknown"  # Handle missing or unknown runtime
+
+# New feature: Calculate Director's Previous Movie Performance
+def get_director_previous_performance(director, df):
+    """Calculate the average rating for the director's previous movies."""
+    director_movies = df[df['Director'] == director]
+    return director_movies['Rating'].mean() if not director_movies.empty else 5.0  # Default to 5 if no movies by this director
+
 # Fetch data for each movie
 movie_data = []
 for title in movie_titles:
@@ -146,6 +195,18 @@ df['Budget_to_BoxOffice_Ratio'] = df['Budget_to_BoxOffice_Ratio'].fillna(1.0)
 # Add Franchise Impact feature
 df['Franchise_Impact'] = df['Title'].apply(get_franchise_impact)
 
+# Add Social Media Buzz feature
+df['Social_Media_Buzz'] = df['Title'].apply(get_social_media_buzz)
+
+# Add Critical Reception Sentiment feature
+df['Critical_Reception_Sentiment'] = df['Plot'].apply(get_critical_reception_sentiment)
+
+# Add Movie Length Category feature
+df['Movie_Length_Category'] = df['Runtime_Minutes'].apply(categorize_movie_length)
+
+# Add Director's Previous Movie Performance feature
+df['Director_Previous_Performance'] = df['Director'].apply(lambda x: get_director_previous_performance(x, df))
+
 # Drop rows where 'Rating' or critical features are missing
 df = df.dropna(subset=['Rating', 'Year', 'Runtime_Minutes', 'Director', 'Actors'])
 
@@ -157,8 +218,11 @@ print(df.head())
 features = ['Year', 'Genre_Sentiment', 'Is_Holiday_Release', 'Runtime_Minutes', 
             'RT_Sentiment', 'Awards_Won', 'Top_Actors_Count', 'Movie_Age', 
             'Director_Popularity', 'Studio_Influence', 'Budget_to_BoxOffice_Ratio', 
-            'Audience_Sentiment', 'Co_Actor_Network_Strength', 'Franchise_Impact']
-X = df[features]
+            'Audience_Sentiment', 'Co_Actor_Network_Strength', 'Franchise_Impact', 
+            'Social_Media_Buzz', 'Critical_Reception_Sentiment', 'Movie_Length_Category',
+            'Director_Previous_Performance']  # New feature added here
+
+X = pd.get_dummies(df[features], drop_first=True)  # Handle categorical variables
 y = df['Rating'].astype(float)
 
 # Train-test split and modeling
