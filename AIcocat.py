@@ -61,113 +61,128 @@ franchise_popularity = {
 # Function to assign production studio influence score
 def get_studio_influence(studio):
     """Assign an influence score to the production studio."""
-    return studio_influence.get(studio, 5)  # Default to 5 for unknown studios
+    try:
+        return studio_influence.get(studio, 5)  # Default to 5 for unknown studios
+    except Exception as e:
+        print(f"Error in get_studio_influence: {e}")
+        return 5
 
 def extract_awards_count(awards):
-    if isinstance(awards, str):
-        numbers = [int(num) for num in re.findall(r'\d+', awards)]
-        return sum(numbers)
-    return 0
+    try:
+        if isinstance(awards, str):
+            numbers = [int(num) for num in re.findall(r'\d+', awards)]
+            return sum(numbers)
+        return 0
+    except Exception as e:
+        print(f"Error extracting awards count: {e}")
+        return 0
 
 # Function to calculate co-actor network strength
 def co_actor_network_strength(actors, df):
-    """
-    Calculate the co-actor network strength by summing the number of movies 
-    their co-actors have appeared in within the dataset.
-    """
-    if isinstance(actors, str):
-        actor_list = actors.split(', ')
-        strength = 0
-        for actor in actor_list:
-            # Find co-actors in the dataset
-            co_actors = df[df['Actors'].str.contains(actor, na=False, case=False)]['Actors']
-            co_actor_list = [a for co in co_actors for a in co.split(', ') if a != actor]
-            # Sum the number of movies co-actors have appeared in
-            for co_actor in set(co_actor_list):
-                strength += df[df['Actors'].str.contains(co_actor, na=False, case=False)].shape[0]
-        return strength
-    return 0
+    try:
+        if isinstance(actors, str):
+            actor_list = actors.split(', ')
+            strength = 0
+            for actor in actor_list:
+                # Find co-actors in the dataset
+                co_actors = df[df['Actors'].str.contains(actor, na=False, case=False)]['Actors']
+                co_actor_list = [a for co in co_actors for a in co.split(', ') if a != actor]
+                # Sum the number of movies co-actors have appeared in
+                for co_actor in set(co_actor_list):
+                    strength += df[df['Actors'].str.contains(co_actor, na=False, case=False)].shape[0]
+            return strength
+        return 0
+    except Exception as e:
+        print(f"Error calculating co-actor network strength: {e}")
+        return 0
 
 # Extract the number of awards won
 def extract_awards_won(awards_str):
-    awards_pattern = re.compile(r"(\d+)\s+win", re.IGNORECASE)
-    match = awards_pattern.search(awards_str)
-    return int(match.group(1)) if match else 0
+    try:
+        awards_pattern = re.compile(r"(\d+)\s+win", re.IGNORECASE)
+        match = awards_pattern.search(awards_str)
+        return int(match.group(1)) if match else 0
+    except Exception as e:
+        print(f"Error extracting awards won: {e}")
+        return 0
 
 # Function to determine franchise impact
 def get_franchise_impact(title):
-    """
-    Determine if the movie belongs to a popular franchise and assign a score.
-    """
-    for franchise, score in franchise_popularity.items():
-        if franchise.lower() in title.lower():
-            return score
-    return 5  # Default score for non-franchise movies
+    try:
+        for franchise, score in franchise_popularity.items():
+            if franchise.lower() in title.lower():
+                return score
+        return 5  # Default score for non-franchise movies
+    except Exception as e:
+        print(f"Error in get_franchise_impact: {e}")
+        return 5
 
 # Function to estimate social media buzz
 def get_social_media_buzz(title):
-    """
-    Simulate social media buzz score based on movie title.
-    Higher scores represent more buzz (e.g., mentions, hashtags).
-    """
-    buzz_keywords = {
-        "Avengers": 10,
-        "Batman": 9,
-        "Spider-Man": 8,
-        "Frozen": 8,
-        "Fast & Furious": 7,
-        "Harry Potter": 9,
-    }
-    for keyword, score in buzz_keywords.items():
-        if keyword.lower() in title.lower():
-            return score
-    return 5  # Default score for movies without significant buzz
+    try:
+        buzz_keywords = {
+            "Avengers": 10,
+            "Batman": 9,
+            "Spider-Man": 8,
+            "Frozen": 8,
+            "Fast & Furious": 7,
+            "Harry Potter": 9,
+        }
+        for keyword, score in buzz_keywords.items():
+            if keyword.lower() in title.lower():
+                return score
+        return 5  # Default score for movies without significant buzz
+    except Exception as e:
+        print(f"Error in get_social_media_buzz: {e}")
+        return 5
 
 # New feature: Calculate critical reception sentiment
 def get_critical_reception_sentiment(plot):
-    """
-    Use VADER sentiment analysis to calculate the sentiment of the plot.
-    """
-    if isinstance(plot, str):
-        sentiment = analyzer.polarity_scores(plot)
-        return sentiment['compound']
-    return 0  # Default to neutral sentiment if plot is missing
+    try:
+        if isinstance(plot, str):
+            sentiment = analyzer.polarity_scores(plot)
+            return sentiment['compound']
+        return 0  # Default to neutral sentiment if plot is missing
+    except Exception as e:
+        print(f"Error in get_critical_reception_sentiment: {e}")
+        return 0
 
 # New feature: Categorize movies by runtime
 def categorize_movie_length(runtime):
-    """
-    Categorize movies into 'Short', 'Average', and 'Long' based on runtime.
-    """
-    if pd.notnull(runtime):
-        if runtime < 90:
-            return "Short"
-        elif 90 <= runtime <= 150:
-            return "Average"
-        else:
-            return "Long"
-    return "Unknown"  # Handle missing or unknown runtime
-
-# New feature: Calculate Director's Previous Movie Performance
-def get_director_previous_performance(director, df):
-    """Calculate the average rating for the director's previous movies."""
-    director_movies = df[df['Director'] == director]
-    return director_movies['Rating'].mean() if not director_movies.empty else 5.0  # Default to 5 if no movies by this director
+    try:
+        if pd.notnull(runtime):
+            if runtime < 90:
+                return "Short"
+            elif 90 <= runtime <= 150:
+                return "Average"
+            else:
+                return "Long"
+        return "Unknown"  # Handle missing or unknown runtime
+    except Exception as e:
+        print(f"Error categorizing movie length: {e}")
+        return "Unknown"
 
 # Fetch data for each movie
 movie_data = []
 for title in movie_titles:
-    data = get_movie_data(title)
-    if data:
-        movie_data.append(data)
+    try:
+        data = get_movie_data(title)
+        if data:
+            movie_data.append(data)
+    except Exception as e:
+        print(f"Error fetching data for {title}: {e}")
 
 # Create DataFrame
 df = pd.DataFrame(movie_data)
 
 # Error handling: Fill missing data or replace with defaults
-df['Year'] = pd.to_numeric(df['Year'], errors='coerce').fillna(datetime.now().year)  # Replace missing years with the current year
-df['Rating'] = pd.to_numeric(df['imdbRating'], errors='coerce').fillna(df['imdbRating'].median())  # Fill missing ratings with median
-df['Release_Date'] = pd.to_datetime(df['Released'], errors='coerce')  # Convert to datetime
-df['Movie_Age'] = df['Year'].apply(lambda x: datetime.now().year - x if pd.notnull(x) else 0)  # Handle missing years
+try:
+    df['Year'] = pd.to_numeric(df['Year'], errors='coerce').fillna(datetime.now().year)  # Replace missing years with the current year
+    df['Rating'] = pd.to_numeric(df['imdbRating'], errors='coerce').fillna(df['imdbRating'].median())  # Fill missing ratings with median
+    df['Release_Date'] = pd.to_datetime(df['Released'], errors='coerce')  # Convert to datetime
+    df['Movie_Age'] = df['Year'].apply(lambda x: datetime.now().year - x if pd.notnull(x) else 0)  # Handle missing years
+except Exception as e:
+    print(f"Error in data transformation: {e}")
 
 # Handle missing Genres by assigning neutral sentiment
 df['Genre'] = df['Genre'].fillna('Unknown')
@@ -204,9 +219,6 @@ df['Critical_Reception_Sentiment'] = df['Plot'].apply(get_critical_reception_sen
 # Add Movie Length Category feature
 df['Movie_Length_Category'] = df['Runtime_Minutes'].apply(categorize_movie_length)
 
-# Add Director's Previous Movie Performance feature
-df['Director_Previous_Performance'] = df['Director'].apply(lambda x: get_director_previous_performance(x, df))
-
 # Drop rows where 'Rating' or critical features are missing
 df = df.dropna(subset=['Rating', 'Year', 'Runtime_Minutes', 'Director', 'Actors'])
 
@@ -214,34 +226,4 @@ df = df.dropna(subset=['Rating', 'Year', 'Runtime_Minutes', 'Director', 'Actors'
 print("DataFrame after cleaning and handling missing data:")
 print(df.head())
 
-# Features for modeling (including the new feature)
-features = ['Year', 'Genre_Sentiment', 'Is_Holiday_Release', 'Runtime_Minutes', 
-            'RT_Sentiment', 'Awards_Won', 'Top_Actors_Count', 'Movie_Age', 
-            'Director_Popularity', 'Studio_Influence', 'Budget_to_BoxOffice_Ratio', 
-            'Audience_Sentiment', 'Co_Actor_Network_Strength', 'Franchise_Impact', 
-            'Social_Media_Buzz', 'Critical_Reception_Sentiment', 'Movie_Length_Category',
-            'Director_Previous_Performance']  # New feature added here
 
-X = pd.get_dummies(df[features], drop_first=True)  # Handle categorical variables
-y = df['Rating'].astype(float)
-
-# Train-test split and modeling
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-model = LinearRegression()
-model.fit(X_train, y_train)
-
-# Evaluate
-y_pred = model.predict(X_test)
-mse = mean_squared_error(y_test, y_pred)
-r2 = r2_score(y_test, y_pred)
-
-print(f"Mean Squared Error: {mse}")
-print(f"R-squared: {r2}")
-
-# Plot predictions
-plt.scatter(y_test, y_pred, alpha=0.7, edgecolor='k')
-plt.xlabel('Actual Ratings')
-plt.ylabel('Predicted Ratings')
-plt.title('Actual vs Predicted Movie Ratings')
-plt.grid(True)
-plt.show()
