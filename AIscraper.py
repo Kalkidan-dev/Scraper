@@ -14,8 +14,6 @@ import re
 # Initialize sentiment analyzer
 analyzer = SentimentIntensityAnalyzer()
 
-# Assuming your DataFrame `df` and target variable `y` are defined
-
 # Your OMDb API key
 api_key = '121c5367'
 
