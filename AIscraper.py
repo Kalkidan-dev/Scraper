@@ -147,31 +147,16 @@ def director_experience(director, df):
         return len(df[df['Director'] == director])
     return 0
 
-# New Feature: Budget-to-BoxOffice Ratio
-def budget_to_boxoffice_ratio(row):
-    if row['Budget'] > 0:
-        return row['BoxOffice'] / row['Budget']
-    return 0
-
-# New Feature: Average Review Score
-def average_review_score(row):
-    if row['CriticReviews'] > 0 and row['AudienceReviews'] > 0:
-        return (row['CriticReviews'] + row['AudienceReviews']) / 2
-    return 0
-
-# New Feature: Director's Genre Specialization
-def director_genre_specialization(director, df):
-    if isinstance(director, str):
-        director_movies = df[df['Director'] == director]
-        genre_counts = director_movies['Genre'].value_counts()
-        if len(genre_counts) > 1:
-            return 0  # Indicates diverse genre choices
-        return 1  # Indicates specialization in one genre
-    return 0
-
-# New Feature: Critical Acclaim Indicator
-def critical_acclaim_indicator(critic_reviews_score):
-    return 1 if critic_reviews_score > 75 else 0  # Threshold can be adjusted
+# New Feature: Audience Sentiment Indicator
+def audience_sentiment_indicator(audience_reviews):
+    """
+    Analyze the sentiment of the audience reviews.
+    A positive score is positive sentiment, 0 is neutral, and negative is negative sentiment.
+    """
+    if isinstance(audience_reviews, str):
+        sentiment_score = analyzer.polarity_scores(audience_reviews)
+        return sentiment_score['compound']
+    return 0.0  # Default neutral sentiment if no audience reviews available
 
 # Add all features from previous and new ones
 features = [
@@ -180,14 +165,9 @@ features = [
     'Release_Month_Sentiment', 'Weekend_Release', 'Sequel', 
     'Critic_Reviews_Sentiment', 'Audience_Engagement_Score', 'Social_Media_Buzz',
     'Actors_Popularity_Score', 'Director_Experience', 'Budget_to_BoxOffice_Ratio',
-    'Average_Review_Score', 'Director_Genre_Specialization', 'Critical_Acclaim_Indicator'
+    'Average_Review_Score', 'Director_Genre_Specialization', 'Critical_Acclaim_Indicator',
+    'Audience_Sentiment_Indicator'  # New feature added
 ]
-
-# Calculate new features
-df['Budget_to_BoxOffice_Ratio'] = df.apply(budget_to_boxoffice_ratio, axis=1)
-df['Average_Review_Score'] = df.apply(average_review_score, axis=1)
-df['Director_Genre_Specialization'] = df['Director'].apply(lambda x: director_genre_specialization(x, df))
-df['Critical_Acclaim_Indicator'] = df['CriticReviews'].apply(critical_acclaim_indicator)
 
 # Handle missing values
 imputer = SimpleImputer(strategy='mean')
