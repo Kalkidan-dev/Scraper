@@ -114,7 +114,7 @@ def movie_popularity_trend(row):
     else:
         return 1 if row['Rating'] > 6.0 else 0
 
-# Function to simulate social media buzz (you can replace this with actual data)
+# Function to simulate social media buzz
 def generate_social_media_buzz(title):
     """
     Simulate social media buzz as a random number.
@@ -122,15 +122,29 @@ def generate_social_media_buzz(title):
     """
     return random.randint(1000, 1000000)  # Simulate mentions between 1k and 1M
 
-# Add Social Media Buzz feature
-df['Social_Media_Buzz'] = df['Title'].apply(generate_social_media_buzz)
+# New Feature: Count Main Actors' Popularity Score
+def actors_popularity_score(actors):
+    """
+    Simulate actors' popularity based on predefined scores.
+    Replace with real data if available.
+    """
+    predefined_popularity = {
+        'Robert Downey Jr.': 95, 'Scarlett Johansson': 90, 'Leonardo DiCaprio': 92,
+        'Chris Evans': 88, 'Brad Pitt': 85, 'Angelina Jolie': 87, 'Tom Cruise': 93
+    }
+    if isinstance(actors, str):
+        actors_list = actors.split(', ')
+        total_score = sum(predefined_popularity.get(actor, 50) for actor in actors_list)
+        return total_score / len(actors_list)
+    return 50
 
 # Add all features from previous and new ones
 features = [
     'Year', 'Director_Popularity', 'Runtime', 'Budget', 'Movie_Popularity',
     'Genre_Sentiment', 'BoxOffice', 'Awards_Count', 'Genre_Diversity',
     'Release_Month_Sentiment', 'Weekend_Release', 'Sequel', 
-    'Critic_Reviews_Sentiment', 'Audience_Engagement_Score', 'Social_Media_Buzz'
+    'Critic_Reviews_Sentiment', 'Audience_Engagement_Score', 'Social_Media_Buzz',
+    'Actors_Popularity_Score'
 ]
 
 # Handle missing values
