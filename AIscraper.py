@@ -138,13 +138,22 @@ def actors_popularity_score(actors):
         return total_score / len(actors_list)
     return 50
 
+# New Feature: Director Experience
+def director_experience(director, df):
+    """
+    Calculate the number of movies a director has directed before.
+    """
+    if isinstance(director, str):
+        return len(df[df['Director'] == director])
+    return 0
+
 # Add all features from previous and new ones
 features = [
     'Year', 'Director_Popularity', 'Runtime', 'Budget', 'Movie_Popularity',
     'Genre_Sentiment', 'BoxOffice', 'Awards_Count', 'Genre_Diversity',
     'Release_Month_Sentiment', 'Weekend_Release', 'Sequel', 
     'Critic_Reviews_Sentiment', 'Audience_Engagement_Score', 'Social_Media_Buzz',
-    'Actors_Popularity_Score'
+    'Actors_Popularity_Score', 'Director_Experience'
 ]
 
 # Handle missing values
