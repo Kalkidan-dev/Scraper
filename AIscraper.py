@@ -42,6 +42,14 @@ def international_release_indicator(country):
         countries = country.split(', ')
         return 1 if len(countries) > 1 else 0
     return 0
+# New Feature: Critics vs Audience Rating Disparity
+def critics_vs_audience_disparity(critics_rating, audience_rating):
+    """
+    Calculate the absolute difference between critics' and audience ratings.
+    """
+    if critics_rating is not None and audience_rating is not None:
+        return abs(critics_rating - audience_rating)
+    return 0.0
 
 # Function to analyze the sentiment of movie genre
 def analyze_genre_sentiment(genre):
