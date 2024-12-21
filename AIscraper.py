@@ -51,6 +51,16 @@ def critics_vs_audience_disparity(critics_rating, audience_rating):
         return abs(critics_rating - audience_rating)
     return 0.0
 
+# New Feature: Budget-to-BoxOffice Ratio
+def budget_to_boxoffice_ratio(budget, box_office):
+    """
+    Calculate the ratio of budget to box office earnings.
+    """
+    if budget > 0 and box_office > 0:
+        return budget / box_office
+    return 0.0
+
+
 # Function to analyze the sentiment of movie genre
 def analyze_genre_sentiment(genre):
     sentiment_score = analyzer.polarity_scores(genre)
