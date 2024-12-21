@@ -59,6 +59,18 @@ def budget_to_boxoffice_ratio(budget, box_office):
     if budget > 0 and box_office > 0:
         return budget / box_office
     return 0.0
+# New Feature: Franchise Indicator
+def franchise_indicator(title):
+    """
+    Check if a movie title contains keywords commonly associated with franchises.
+    """
+    franchise_keywords = ['Marvel', 'Avengers', 'Star Wars', 'Harry Potter', 
+                          'Fast & Furious', 'Mission Impossible', 'Transformers', 
+                          'Spider-Man', 'Batman', 'Superman', 'Jurassic']
+    for keyword in franchise_keywords:
+        if keyword.lower() in title.lower():
+            return 1
+    return 0
 
 
 # Function to analyze the sentiment of movie genre
