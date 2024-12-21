@@ -32,6 +32,16 @@ def get_movie_data(title):
     except requests.exceptions.RequestException as e:
         print(f"Request error for title '{title}': {e}")
         return None
+        
+# New Feature: International Release Indicator
+def international_release_indicator(country):
+    """
+    Check if a movie was released in multiple countries.
+    """
+    if isinstance(country, str):
+        countries = country.split(', ')
+        return 1 if len(countries) > 1 else 0
+    return 0
 
 # Function to analyze the sentiment of movie genre
 def analyze_genre_sentiment(genre):
