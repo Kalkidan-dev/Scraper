@@ -72,6 +72,28 @@ def franchise_indicator(title):
             return 1
     return 0
 
+# New Feature: Holiday Release Indicator
+def holiday_release_indicator(release_date):
+    """
+    Check if the release date falls within a holiday season.
+    """
+    holidays = {
+        'New Year': ['01-01'],
+        'Valentine\'s Day': ['02-14'],
+        'Thanksgiving': ['11-24', '11-25', '11-26', '11-27', '11-28'],
+        'Christmas': ['12-24', '12-25', '12-26']
+    }
+    
+    if isinstance(release_date, str) and release_date:
+        try:
+            release_month_day = datetime.strptime(release_date, '%d %b %Y').strftime('%m-%d')
+            for holiday, dates in holidays.items():
+                if release_month_day in dates:
+                    return 1
+        except ValueError:
+            return 0
+    return 0
+
 
 # Function to analyze the sentiment of movie genre
 def analyze_genre_sentiment(genre):
