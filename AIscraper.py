@@ -93,6 +93,37 @@ def holiday_release_indicator(release_date):
         except ValueError:
             return 0
     return 0
+# New Feature: Seasonal Genre Popularity
+def seasonal_genre_popularity(genre, release_date):
+    """
+    Assign a score to the genre based on its popularity during the release month.
+    """
+    seasonal_popularity = {
+        'January': {'Drama': 0.7, 'Action': 0.4, 'Comedy': 0.6},
+        'February': {'Romance': 1.0, 'Drama': 0.8, 'Comedy': 0.7},
+        'March': {'Action': 0.9, 'Thriller': 0.8, 'Comedy': 0.5},
+        'April': {'Comedy': 0.8, 'Family': 0.9, 'Drama': 0.6},
+        'May': {'Action': 1.0, 'Adventure': 0.9, 'Sci-Fi': 0.8},
+        'June': {'Action': 0.9, 'Adventure': 1.0, 'Family': 0.9},
+        'July': {'Action': 1.0, 'Adventure': 1.0, 'Comedy': 0.8},
+        'August': {'Action': 0.8, 'Thriller': 0.7, 'Comedy': 0.6},
+        'September': {'Drama': 0.9, 'Thriller': 0.8, 'Action': 0.6},
+        'October': {'Horror': 1.0, 'Thriller': 0.9, 'Action': 0.5},
+        'November': {'Drama': 0.8, 'Family': 1.0, 'Romance': 0.7},
+        'December': {'Family': 1.0, 'Drama': 0.9, 'Fantasy': 0.8},
+    }
+    
+    if isinstance(genre, str) and isinstance(release_date, str) and release_date:
+        try:
+            release_month = datetime.strptime(release_date, '%d %b %Y').strftime('%B')
+            genres = genre.split(', ')
+            total_score = 0
+            for g in genres:
+                total_score += seasonal_popularity.get(release_month, {}).get(g.strip(), 0)
+            return total_score / len(genres) if genres else 0
+        except ValueError:
+            return 0
+    return 0
 
 
 # Function to analyze the sentiment of movie genre
