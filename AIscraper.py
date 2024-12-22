@@ -195,6 +195,25 @@ def seasonal_popularity_score(release_date):
         except ValueError:
             return 0.0
     return 0.0
+# New Feature: Director Collaboration Frequency
+def director_collaboration_frequency(director, actors, df):
+    """
+    Calculate how often a director collaborates with the same actors.
+    """
+    if isinstance(director, str) and isinstance(actors, str):
+        # Split the actors into a list
+        actor_list = actors.split(', ')
+        
+        # Filter the dataset for movies by the same director
+        director_movies = df[df['Director'] == director]
+        
+        # Count collaborations with the same actors
+        collaboration_count = 0
+        for actor in actor_list:
+            collaboration_count += director_movies['Actors'].apply(lambda x: actor in x if isinstance(x, str) else False).sum()
+        
+        return collaboration_count / len(actor_list) if len(actor_list) > 0 else 0
+    return 0
 
 
 # Function to analyze the sentiment of movie genre
