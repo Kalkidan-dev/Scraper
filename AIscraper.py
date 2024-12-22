@@ -150,6 +150,52 @@ def star_power_index(actors, director):
     # Combine scores into a Star Power Index
     return (actor_score + director_score) / 2
 
+# New Feature: Genre Familiarity Index
+def genre_familiarity_index(director, genre, df):
+    """
+    Calculate how familiar a director is with the genres of the current movie.
+    """
+    if isinstance(director, str) and isinstance(genre, str):
+        # Split the genres into a list
+        genres = genre.split(', ')
+        # Filter the dataset for movies by this director
+        director_movies = df[df['Director'] == director]
+        # Count the occurrence of each genre in the director's previous movies
+        genre_count = sum(director_movies['Genre'].str.contains(g, case=False, na=False).sum() for g in genres)
+        # Normalize by the number of genres in the current movie
+        return genre_count / len(genres) if len(genres) > 0 else 0
+    return 0
+# New Feature: Seasonal Popularity Score
+def seasonal_popularity_score(release_date):
+    """
+    Assign a seasonal popularity score based on the release date.
+    """
+    if isinstance(release_date, str) and release_date:
+        try:
+            # Parse the release date to extract the month
+            release_month = datetime.strptime(release_date, '%d %b %Y').month
+            
+            # Seasonal popularity scores (values can be adjusted based on real data)
+            season_scores = {
+                'Winter': 0.8,  # December, January, February
+                'Spring': 0.7,  # March, April, May
+                'Summer': 1.0,  # June, July, August
+                'Fall': 0.6     # September, October, November
+            }
+            
+            # Assign seasons based on the month
+            if release_month in [12, 1, 2]:
+                return season_scores['Winter']
+            elif release_month in [3, 4, 5]:
+                return season_scores['Spring']
+            elif release_month in [6, 7, 8]:
+                return season_scores['Summer']
+            elif release_month in [9, 10, 11]:
+                return season_scores['Fall']
+        except ValueError:
+            return 0.0
+    return 0.0
+
 
 # Function to analyze the sentiment of movie genre
 def analyze_genre_sentiment(genre):
