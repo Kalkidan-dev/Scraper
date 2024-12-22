@@ -125,6 +125,31 @@ def seasonal_genre_popularity(genre, release_date):
             return 0
     return 0
 
+# New Feature: Star Power Index
+def star_power_index(actors, director):
+    """
+    Calculate the star power index based on actors' and director's popularity.
+    """
+    # Predefined popularity scores (replace or expand this dictionary with real data if available)
+    predefined_popularity = {
+        'Robert Downey Jr.': 95, 'Scarlett Johansson': 90, 'Leonardo DiCaprio': 92,
+        'Chris Evans': 88, 'Brad Pitt': 85, 'Angelina Jolie': 87, 'Tom Cruise': 93,
+        'Christopher Nolan': 97, 'Steven Spielberg': 96, 'Quentin Tarantino': 94,
+        'Martin Scorsese': 95, 'James Cameron': 98, 'Ridley Scott': 92
+    }
+    
+    # Calculate actors' popularity
+    actor_score = 0
+    if isinstance(actors, str):
+        actor_list = actors.split(', ')
+        actor_score = sum(predefined_popularity.get(actor, 50) for actor in actor_list) / len(actor_list)
+    
+    # Calculate director's popularity
+    director_score = predefined_popularity.get(director, 50) if isinstance(director, str) else 50
+    
+    # Combine scores into a Star Power Index
+    return (actor_score + director_score) / 2
+
 
 # Function to analyze the sentiment of movie genre
 def analyze_genre_sentiment(genre):
