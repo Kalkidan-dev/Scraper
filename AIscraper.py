@@ -214,6 +214,19 @@ def director_collaboration_frequency(director, actors, df):
         
         return collaboration_count / len(actor_list) if len(actor_list) > 0 else 0
     return 0
+# New feature: Categorize movies by runtime
+def categorize_movie_length(runtime):
+    """
+    Categorize movies into 'Short', 'Average', and 'Long' based on runtime.
+    """
+    if pd.notnull(runtime):
+        if runtime < 90:
+            return "Short"
+        elif 90 <= runtime <= 150:
+            return "Average"
+        else:
+            return "Long"
+    return "Unknown"  # Handle missing or unknown runtime
 
 
 # Function to analyze the sentiment of movie genre
