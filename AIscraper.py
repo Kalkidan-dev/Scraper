@@ -227,6 +227,15 @@ def categorize_movie_length(runtime):
         else:
             return "Long"
     return "Unknown"  # Handle missing or unknown runtime
+ # New feature: Calculate critical reception sentiment
+def get_critical_reception_sentiment(plot):
+    """
+    Use VADER sentiment analysis to calculate the sentiment of the plot.
+    """
+    if isinstance(plot, str):
+        sentiment = analyzer.polarity_scores(plot)
+        return sentiment['compound']
+    return 0  # Default to neutral sentiment if plot is missing
 
 
 # Function to analyze the sentiment of movie genre
