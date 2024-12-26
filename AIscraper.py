@@ -236,7 +236,7 @@ def get_critical_reception_sentiment(plot):
         sentiment = analyzer.polarity_scores(plot)
         return sentiment['compound']
     return 0  # Default to neutral sentiment if plot is missing
-
+ 
 
 # Function to analyze the sentiment of movie genre
 def analyze_genre_sentiment(genre):
