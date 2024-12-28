@@ -2,6 +2,8 @@ import requests
 import pandas as pd
 from datetime import datetime
 from textblob import TextBlob
+import re
+import random
 
 # Function to fetch movie data from OMDb API
 def fetch_movie_data(title, api_key="your_api_key_here"):
@@ -33,7 +35,6 @@ def extract_awards_count(awards_text):
     if not awards_text:
         return 0
     try:
-        import re
         match = re.search(r"(\d+) win", awards_text, re.IGNORECASE)
         return int(match.group(1)) if match else 0
     except Exception:
@@ -42,9 +43,31 @@ def extract_awards_count(awards_text):
 # Function to simulate streaming platform availability
 def simulate_streaming_availability(title):
     platforms = ["Netflix", "Amazon Prime", "Hulu", "Disney+"]
-    import random
     available_platforms = random.sample(platforms, random.randint(1, len(platforms)))
     return available_platforms
+
+# Function to estimate director's popularity
+def get_director_popularity(director, api_key):
+    if not director:
+        return 0.0
+    search_url = f"http://www.omdbapi.com/?s={director}&type=movie&apikey={api_key}"
+    response = requests.get(search_url)
+    if response.status_code != 200:
+        return 0.0
+
+    search_results = response.json()
+    if search_results.get("Response") != "True":
+        return 0.0
+
+    total_rating = 0.0
+    movie_count = 0
+    for movie in search_results.get("Search", []):
+        movie_data = fetch_movie_data(movie.get("Title"), api_key)
+        if movie_data and movie_data.get("Response") == "True" and movie_data.get("imdbRating"):
+            total_rating += float(movie_data.get("imdbRating"))
+            movie_count += 1
+
+    return total_rating / movie_count if movie_count > 0 else 0.0
 
 # Main function to process movie data
 def process_movie_data(titles, api_key):
@@ -56,6 +79,7 @@ def process_movie_data(titles, api_key):
             holiday_release = is_holiday_release(movie_data.get("Released", ""))
             awards_count = extract_awards_count(movie_data.get("Awards", ""))
             streaming_platforms = simulate_streaming_availability(title)
+            director_popularity = get_director_popularity(movie_data.get("Director", ""), api_key)
 
             data.append({
                 "Title": movie_data.get("Title"),
@@ -64,6 +88,7 @@ def process_movie_data(titles, api_key):
                 "Holiday Release": holiday_release,
                 "Awards Count": awards_count,
                 "Streaming Platforms": ", ".join(streaming_platforms),
+                "Director Popularity": director_popularity,
             })
     
     return pd.DataFrame(data)
