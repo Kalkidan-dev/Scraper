@@ -92,15 +92,16 @@ def get_actor_popularity(actor, api_key):
 
     return total_rating / movie_count if movie_count > 0 else 0.0
 
-# New feature: Function to extract box office performance
-def extract_box_office(box_office_text):
-    if not box_office_text or "N/A" in box_office_text:
-        return 0.0
+# New feature: Function to extract movie runtime
+def extract_runtime(runtime_text):
+    if not runtime_text or "N/A" in runtime_text:
+        return 0
     try:
-        box_office_text = box_office_text.strip().replace(",", "").replace("$", "")
-        return float(box_office_text) if box_office_text else 0.0
-    except ValueError:
-        return 0.0
+        # Extract the number of minutes from the runtime string
+        runtime_minutes = int(re.search(r'(\d+) min', runtime_text).group(1)) if "min" in runtime_text else 0
+        return runtime_minutes
+    except (ValueError, AttributeError):
+        return 0
 
 # Main function to process movie data
 def process_movie_data(titles, api_key):
@@ -116,6 +117,7 @@ def process_movie_data(titles, api_key):
             lead_actor = movie_data.get("Actors", "").split(",")[0] if movie_data.get("Actors") else ""
             actor_popularity = get_actor_popularity(lead_actor, api_key)
             box_office = extract_box_office(movie_data.get("BoxOffice", ""))
+            runtime = extract_runtime(movie_data.get("Runtime", ""))
 
             data.append({
                 "Title": movie_data.get("Title"),
@@ -127,6 +129,7 @@ def process_movie_data(titles, api_key):
                 "Director Popularity": director_popularity,
                 "Actor Popularity": actor_popularity,
                 "Box Office": box_office,
+                "Runtime (minutes)": runtime,  # New feature
             })
     
     return pd.DataFrame(data)
