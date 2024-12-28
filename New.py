@@ -92,6 +92,16 @@ def get_actor_popularity(actor, api_key):
 
     return total_rating / movie_count if movie_count > 0 else 0.0
 
+# New feature: Function to extract box office performance
+def extract_box_office(box_office_text):
+    if not box_office_text or "N/A" in box_office_text:
+        return 0.0
+    try:
+        box_office_text = box_office_text.strip().replace(",", "").replace("$", "")
+        return float(box_office_text) if box_office_text else 0.0
+    except ValueError:
+        return 0.0
+
 # Main function to process movie data
 def process_movie_data(titles, api_key):
     data = []
@@ -105,6 +115,7 @@ def process_movie_data(titles, api_key):
             director_popularity = get_director_popularity(movie_data.get("Director", ""), api_key)
             lead_actor = movie_data.get("Actors", "").split(",")[0] if movie_data.get("Actors") else ""
             actor_popularity = get_actor_popularity(lead_actor, api_key)
+            box_office = extract_box_office(movie_data.get("BoxOffice", ""))
 
             data.append({
                 "Title": movie_data.get("Title"),
@@ -115,6 +126,7 @@ def process_movie_data(titles, api_key):
                 "Streaming Platforms": ", ".join(streaming_platforms),
                 "Director Popularity": director_popularity,
                 "Actor Popularity": actor_popularity,
+                "Box Office": box_office,
             })
     
     return pd.DataFrame(data)
