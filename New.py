@@ -69,6 +69,29 @@ def get_director_popularity(director, api_key):
 
     return total_rating / movie_count if movie_count > 0 else 0.0
 
+# Function to estimate actor popularity
+def get_actor_popularity(actor, api_key):
+    if not actor:
+        return 0.0
+    search_url = f"http://www.omdbapi.com/?s={actor}&type=movie&apikey={api_key}"
+    response = requests.get(search_url)
+    if response.status_code != 200:
+        return 0.0
+
+    search_results = response.json()
+    if search_results.get("Response") != "True":
+        return 0.0
+
+    total_rating = 0.0
+    movie_count = 0
+    for movie in search_results.get("Search", []):
+        movie_data = fetch_movie_data(movie.get("Title"), api_key)
+        if movie_data and movie_data.get("Response") == "True" and movie_data.get("imdbRating"):
+            total_rating += float(movie_data.get("imdbRating"))
+            movie_count += 1
+
+    return total_rating / movie_count if movie_count > 0 else 0.0
+
 # Main function to process movie data
 def process_movie_data(titles, api_key):
     data = []
@@ -80,6 +103,8 @@ def process_movie_data(titles, api_key):
             awards_count = extract_awards_count(movie_data.get("Awards", ""))
             streaming_platforms = simulate_streaming_availability(title)
             director_popularity = get_director_popularity(movie_data.get("Director", ""), api_key)
+            lead_actor = movie_data.get("Actors", "").split(",")[0] if movie_data.get("Actors") else ""
+            actor_popularity = get_actor_popularity(lead_actor, api_key)
 
             data.append({
                 "Title": movie_data.get("Title"),
@@ -89,6 +114,7 @@ def process_movie_data(titles, api_key):
                 "Awards Count": awards_count,
                 "Streaming Platforms": ", ".join(streaming_platforms),
                 "Director Popularity": director_popularity,
+                "Actor Popularity": actor_popularity,
             })
     
     return pd.DataFrame(data)
