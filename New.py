@@ -101,6 +101,20 @@ def predict_box_office_success(imdb_rating, director_popularity, actor_popularit
              genre_sentiment * 20)
     return "Box Office Hit" if score > 80 else "Likely Average"
 
+def estimate_franchise_potential(genre, awards_count, imdb_rating, director_popularity, actor_popularity):
+    franchise_genres = ["Action", "Adventure", "Sci-Fi", "Fantasy"]
+    is_franchise_genre = any(g.strip() in franchise_genres for g in genre.split(","))
+    
+    score = (
+        (10 if is_franchise_genre else 0) +
+        awards_count * 2 +
+        imdb_rating * 10 +
+        director_popularity * 5 +
+        actor_popularity * 5
+    )
+    return "High Potential" if score > 70 else "Low Potential"
+
+
 # Main function to process movie data
 def process_movie_data(titles, api_key):
     data = []
