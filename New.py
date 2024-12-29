@@ -92,12 +92,14 @@ def get_actor_popularity(actor, api_key):
 
     return total_rating / movie_count if movie_count > 0 else 0.0
 
-# New feature: Predict if the movie is likely to win an award
-def predict_award_likelihood(imdb_rating, awards_count, holiday_release):
-    score = imdb_rating * 10 + awards_count * 5
-    if holiday_release:
-        score += 10  # Boost for holiday releases
-    return "Likely to Win" if score > 75 else "Unlikely to Win"
+# New feature: Predict box office success
+def predict_box_office_success(imdb_rating, director_popularity, actor_popularity, holiday_release, genre_sentiment):
+    score = (imdb_rating * 10 + 
+             director_popularity * 5 + 
+             actor_popularity * 5 + 
+             (10 if holiday_release else 0) + 
+             genre_sentiment * 20)
+    return "Box Office Hit" if score > 80 else "Likely Average"
 
 # Main function to process movie data
 def process_movie_data(titles, api_key):
@@ -114,6 +116,7 @@ def process_movie_data(titles, api_key):
             actor_popularity = get_actor_popularity(lead_actor, api_key)
             imdb_rating = float(movie_data.get("imdbRating", 0))
             award_prediction = predict_award_likelihood(imdb_rating, awards_count, holiday_release)
+            box_office_prediction = predict_box_office_success(imdb_rating, director_popularity, actor_popularity, holiday_release, genre_sentiment)
 
             data.append({
                 "Title": movie_data.get("Title"),
@@ -125,7 +128,8 @@ def process_movie_data(titles, api_key):
                 "Streaming Platforms": ", ".join(streaming_platforms),
                 "Director Popularity": director_popularity,
                 "Actor Popularity": actor_popularity,
-                "Award Prediction": award_prediction,  # New feature
+                "Award Prediction": award_prediction,
+                "Box Office Prediction": box_office_prediction,  # New feature
             })
     
     return pd.DataFrame(data)
