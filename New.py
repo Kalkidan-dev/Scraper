@@ -92,16 +92,12 @@ def get_actor_popularity(actor, api_key):
 
     return total_rating / movie_count if movie_count > 0 else 0.0
 
-# New feature: Function to extract movie runtime
-def extract_runtime(runtime_text):
-    if not runtime_text or "N/A" in runtime_text:
-        return 0
-    try:
-        # Extract the number of minutes from the runtime string
-        runtime_minutes = int(re.search(r'(\d+) min', runtime_text).group(1)) if "min" in runtime_text else 0
-        return runtime_minutes
-    except (ValueError, AttributeError):
-        return 0
+# New feature: Predict if the movie is likely to win an award
+def predict_award_likelihood(imdb_rating, awards_count, holiday_release):
+    score = imdb_rating * 10 + awards_count * 5
+    if holiday_release:
+        score += 10  # Boost for holiday releases
+    return "Likely to Win" if score > 75 else "Unlikely to Win"
 
 # Main function to process movie data
 def process_movie_data(titles, api_key):
@@ -116,20 +112,20 @@ def process_movie_data(titles, api_key):
             director_popularity = get_director_popularity(movie_data.get("Director", ""), api_key)
             lead_actor = movie_data.get("Actors", "").split(",")[0] if movie_data.get("Actors") else ""
             actor_popularity = get_actor_popularity(lead_actor, api_key)
-            box_office = extract_box_office(movie_data.get("BoxOffice", ""))
-            runtime = extract_runtime(movie_data.get("Runtime", ""))
+            imdb_rating = float(movie_data.get("imdbRating", 0))
+            award_prediction = predict_award_likelihood(imdb_rating, awards_count, holiday_release)
 
             data.append({
                 "Title": movie_data.get("Title"),
                 "Year": movie_data.get("Year"),
+                "IMDb Rating": imdb_rating,
                 "Genre Sentiment": genre_sentiment,
                 "Holiday Release": holiday_release,
                 "Awards Count": awards_count,
                 "Streaming Platforms": ", ".join(streaming_platforms),
                 "Director Popularity": director_popularity,
                 "Actor Popularity": actor_popularity,
-                "Box Office": box_office,
-                "Runtime (minutes)": runtime,  # New feature
+                "Award Prediction": award_prediction,  # New feature
             })
     
     return pd.DataFrame(data)
