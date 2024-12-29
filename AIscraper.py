@@ -214,6 +214,9 @@ def director_collaboration_frequency(director, actors, df):
         
         return collaboration_count / len(actor_list) if len(actor_list) > 0 else 0
     return 0
+
+
+
 # New feature: Categorize movies by runtime
 def categorize_movie_length(runtime):
     """
