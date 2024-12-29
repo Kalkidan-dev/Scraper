@@ -115,7 +115,20 @@ def estimate_franchise_potential(genre, awards_count, imdb_rating, director_popu
     return "High Potential" if score > 70 else "Low Potential"
 
 
-# Main function to process movie data
+# New feature: Estimate international appeal
+def estimate_international_appeal(genre, imdb_rating, director_popularity, awards_count):
+    international_genres = ["Drama", "Action", "Adventure", "Sci-Fi", "Fantasy", "Animation"]
+    is_international_genre = any(g.strip() in international_genres for g in genre.split(","))
+    
+    score = (
+        (15 if is_international_genre else 0) +
+        imdb_rating * 8 +
+        director_popularity * 6 +
+        awards_count * 3
+    )
+    return "High Appeal" if score > 75 else "Moderate Appeal" if score > 50 else "Low Appeal"
+
+# Update process_movie_data to include international appeal
 def process_movie_data(titles, api_key):
     data = []
     for title in titles:
@@ -129,8 +142,9 @@ def process_movie_data(titles, api_key):
             lead_actor = movie_data.get("Actors", "").split(",")[0] if movie_data.get("Actors") else ""
             actor_popularity = get_actor_popularity(lead_actor, api_key)
             imdb_rating = float(movie_data.get("imdbRating", 0))
-            award_prediction = predict_award_likelihood(imdb_rating, awards_count, holiday_release)
             box_office_prediction = predict_box_office_success(imdb_rating, director_popularity, actor_popularity, holiday_release, genre_sentiment)
+            franchise_potential = estimate_franchise_potential(movie_data.get("Genre", ""), awards_count, imdb_rating, director_popularity, actor_popularity)
+            international_appeal = estimate_international_appeal(movie_data.get("Genre", ""), imdb_rating, director_popularity, awards_count)
 
             data.append({
                 "Title": movie_data.get("Title"),
@@ -142,8 +156,9 @@ def process_movie_data(titles, api_key):
                 "Streaming Platforms": ", ".join(streaming_platforms),
                 "Director Popularity": director_popularity,
                 "Actor Popularity": actor_popularity,
-                "Award Prediction": award_prediction,
-                "Box Office Prediction": box_office_prediction,  # New feature
+                "Box Office Prediction": box_office_prediction,
+                "Franchise Potential": franchise_potential,
+                "International Appeal": international_appeal,  # New feature
             })
     
     return pd.DataFrame(data)
