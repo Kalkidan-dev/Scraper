@@ -128,7 +128,19 @@ def estimate_international_appeal(genre, imdb_rating, director_popularity, award
     )
     return "High Appeal" if score > 75 else "Moderate Appeal" if score > 50 else "Low Appeal"
 
-# Update process_movie_data to include international appeal
+# New feature: Calculate critical acclaim score
+def calculate_critical_acclaim(imdb_rating, awards_count, plot):
+    if not plot:
+        return 0.0
+    plot_sentiment = TextBlob(plot).sentiment.polarity  # Analyze plot sentiment
+    score = (
+        imdb_rating * 8 +  # Heavily weigh IMDb rating
+        awards_count * 5 +  # Moderate weight for awards
+        plot_sentiment * 10  # Sentiment score of the plot
+    )
+    return round(score, 2)
+
+# Update process_movie_data to include critical acclaim score
 def process_movie_data(titles, api_key):
     data = []
     for title in titles:
@@ -145,6 +157,7 @@ def process_movie_data(titles, api_key):
             box_office_prediction = predict_box_office_success(imdb_rating, director_popularity, actor_popularity, holiday_release, genre_sentiment)
             franchise_potential = estimate_franchise_potential(movie_data.get("Genre", ""), awards_count, imdb_rating, director_popularity, actor_popularity)
             international_appeal = estimate_international_appeal(movie_data.get("Genre", ""), imdb_rating, director_popularity, awards_count)
+            critical_acclaim = calculate_critical_acclaim(imdb_rating, awards_count, movie_data.get("Plot", ""))
 
             data.append({
                 "Title": movie_data.get("Title"),
@@ -158,7 +171,8 @@ def process_movie_data(titles, api_key):
                 "Actor Popularity": actor_popularity,
                 "Box Office Prediction": box_office_prediction,
                 "Franchise Potential": franchise_potential,
-                "International Appeal": international_appeal,  # New feature
+                "International Appeal": international_appeal,
+                "Critical Acclaim": critical_acclaim,  # New feature
             })
     
     return pd.DataFrame(data)
