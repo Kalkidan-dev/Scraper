@@ -152,7 +152,23 @@ def calculate_audience_reception(imdb_rating, user_reviews_count, reviews):
     )
     return round(score, 2)
 
-# Update process_movie_data to include audience reception score
+# New feature: Calculate cultural impact score
+def calculate_cultural_impact(imdb_rating, box_office, genre, popular_culture_mentions):
+    # Popular culture mentions could be fetched from social media data or analyzed from the movie's presence in memes, trends, etc.
+    cultural_genres = ["Drama", "Comedy", "Action", "Adventure", "Sci-Fi"]
+    is_culturally_impactful_genre = any(g.strip() in cultural_genres for g in genre.split(","))
+    
+    # Estimate the impact based on multiple factors
+    score = (
+        (15 if is_culturally_impactful_genre else 0) +
+        (box_office / 1000000) * 6 +  # Box office performance, scaled
+        imdb_rating * 5 +  # IMDb rating as a strong indicator
+        popular_culture_mentions * 4  # Mentions in popular culture (e.g., memes, quotes)
+    )
+    
+    return round(score, 2)
+
+# Update process_movie_data to include cultural impact score
 def process_movie_data(titles, api_key):
     data = []
     for title in titles:
@@ -166,13 +182,14 @@ def process_movie_data(titles, api_key):
             lead_actor = movie_data.get("Actors", "").split(",")[0] if movie_data.get("Actors") else ""
             actor_popularity = get_actor_popularity(lead_actor, api_key)
             imdb_rating = float(movie_data.get("imdbRating", 0))
+            box_office = float(movie_data.get("BoxOffice", "0").replace(",", "")) if movie_data.get("BoxOffice") else 0.0
+            popular_culture_mentions = random.randint(1, 100)  # For now, simulate with a random number
             box_office_prediction = predict_box_office_success(imdb_rating, director_popularity, actor_popularity, holiday_release, genre_sentiment)
             franchise_potential = estimate_franchise_potential(movie_data.get("Genre", ""), awards_count, imdb_rating, director_popularity, actor_popularity)
             international_appeal = estimate_international_appeal(movie_data.get("Genre", ""), imdb_rating, director_popularity, awards_count)
             critical_acclaim = calculate_critical_acclaim(imdb_rating, awards_count, movie_data.get("Plot", ""))
-            user_reviews = movie_data.get("Plot", "")  # Use plot as a substitute for user reviews, or adjust as needed
-            user_reviews_count = int(movie_data.get("imdbVotes", 0).replace(",", "")) if movie_data.get("imdbVotes") else 0
-            audience_reception = calculate_audience_reception(imdb_rating, user_reviews_count, user_reviews)
+            audience_reception = calculate_audience_reception(imdb_rating, int(movie_data.get("imdbVotes", 0).replace(",", "")), movie_data.get("Plot", ""))
+            cultural_impact = calculate_cultural_impact(imdb_rating, box_office, movie_data.get("Genre", ""), popular_culture_mentions)
 
             data.append({
                 "Title": movie_data.get("Title"),
@@ -188,7 +205,8 @@ def process_movie_data(titles, api_key):
                 "Franchise Potential": franchise_potential,
                 "International Appeal": international_appeal,
                 "Critical Acclaim": critical_acclaim,
-                "Audience Reception": audience_reception,  # New feature
+                "Audience Reception": audience_reception,
+                "Cultural Impact": cultural_impact,  # New feature
             })
     
     return pd.DataFrame(data)
