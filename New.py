@@ -224,7 +224,20 @@ def calculate_international_appeal(imdb_rating, genre, release_countries):
     
     return round(score, 2)
 
-# Update process_movie_data to include international appeal score
+# New feature: Calculate fanbase growth potential
+def calculate_fanbase_growth(imdb_rating, streaming_platforms, social_media_mentions):
+    # A higher IMDb rating increases the chance of a movie attracting a loyal fanbase.
+    # More streaming platforms and more social media mentions can help the fanbase grow over time.
+
+    platform_score = len(streaming_platforms) * 2  # More platforms = higher score
+    social_media_score = social_media_mentions * 0.1  # More mentions indicate growing popularity
+
+    # Combine the scores with the IMDb rating to get the overall fanbase growth potential.
+    score = (imdb_rating * 5) + platform_score + social_media_score
+
+    return round(score, 2)
+
+# Update process_movie_data to include fanbase growth potential
 def process_movie_data(titles, api_key):
     data = []
     for title in titles:
@@ -244,12 +257,14 @@ def process_movie_data(titles, api_key):
             popular_culture_mentions = random.randint(1, 100)  # Simulated with a random number
             box_office_prediction = predict_box_office_success(imdb_rating, director_popularity, actor_popularity, holiday_release, genre_sentiment)
             franchise_potential = estimate_franchise_potential(movie_data.get("Genre", ""), awards_count, imdb_rating, director_popularity, actor_popularity)
-            international_appeal = calculate_international_appeal(imdb_rating, movie_data.get("Genre", ""), release_countries)  # New feature
+            international_appeal = calculate_international_appeal(imdb_rating, movie_data.get("Genre", ""), release_countries)
             critical_acclaim = calculate_critical_acclaim(imdb_rating, awards_count, movie_data.get("Plot", ""))
             audience_reception = calculate_audience_reception(imdb_rating, imdb_votes, movie_data.get("Plot", ""))
             cultural_impact = calculate_cultural_impact(imdb_rating, box_office, movie_data.get("Genre", ""), popular_culture_mentions)
             sequel_potential = calculate_sequel_potential(imdb_rating, box_office, movie_data.get("Genre", ""), awards_count, franchise_potential)
             critical_reception = calculate_critical_reception(imdb_rating, imdb_votes, awards_count)
+            social_media_mentions = random.randint(50, 500)  # Simulated social media mentions
+            fanbase_growth = calculate_fanbase_growth(imdb_rating, streaming_platforms, social_media_mentions)  # New feature
 
             data.append({
                 "Title": movie_data.get("Title"),
@@ -263,12 +278,13 @@ def process_movie_data(titles, api_key):
                 "Actor Popularity": actor_popularity,
                 "Box Office Prediction": box_office_prediction,
                 "Franchise Potential": franchise_potential,
-                "International Appeal": international_appeal,  # New feature
+                "International Appeal": international_appeal,
                 "Critical Acclaim": critical_acclaim,
                 "Audience Reception": audience_reception,
                 "Cultural Impact": cultural_impact,
                 "Sequel Potential": sequel_potential,
                 "Critical Reception": critical_reception,
+                "Fanbase Growth Potential": fanbase_growth,  # New feature
             })
     
     return pd.DataFrame(data)
