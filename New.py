@@ -140,7 +140,19 @@ def calculate_critical_acclaim(imdb_rating, awards_count, plot):
     )
     return round(score, 2)
 
-# Update process_movie_data to include critical acclaim score
+# New feature: Calculate audience reception score
+def calculate_audience_reception(imdb_rating, user_reviews_count, reviews):
+    if not reviews:
+        return 0.0
+    review_sentiment = TextBlob(reviews).sentiment.polarity  # Sentiment analysis of user reviews
+    score = (
+        imdb_rating * 5 +  # Weight IMDb rating
+        user_reviews_count * 2 +  # Weight for number of reviews
+        review_sentiment * 10  # Sentiment analysis of user reviews
+    )
+    return round(score, 2)
+
+# Update process_movie_data to include audience reception score
 def process_movie_data(titles, api_key):
     data = []
     for title in titles:
@@ -158,6 +170,9 @@ def process_movie_data(titles, api_key):
             franchise_potential = estimate_franchise_potential(movie_data.get("Genre", ""), awards_count, imdb_rating, director_popularity, actor_popularity)
             international_appeal = estimate_international_appeal(movie_data.get("Genre", ""), imdb_rating, director_popularity, awards_count)
             critical_acclaim = calculate_critical_acclaim(imdb_rating, awards_count, movie_data.get("Plot", ""))
+            user_reviews = movie_data.get("Plot", "")  # Use plot as a substitute for user reviews, or adjust as needed
+            user_reviews_count = int(movie_data.get("imdbVotes", 0).replace(",", "")) if movie_data.get("imdbVotes") else 0
+            audience_reception = calculate_audience_reception(imdb_rating, user_reviews_count, user_reviews)
 
             data.append({
                 "Title": movie_data.get("Title"),
@@ -172,7 +187,8 @@ def process_movie_data(titles, api_key):
                 "Box Office Prediction": box_office_prediction,
                 "Franchise Potential": franchise_potential,
                 "International Appeal": international_appeal,
-                "Critical Acclaim": critical_acclaim,  # New feature
+                "Critical Acclaim": critical_acclaim,
+                "Audience Reception": audience_reception,  # New feature
             })
     
     return pd.DataFrame(data)
