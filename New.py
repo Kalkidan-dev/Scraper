@@ -92,152 +92,42 @@ def get_actor_popularity(actor, api_key):
 
     return total_rating / movie_count if movie_count > 0 else 0.0
 
-# New feature: Predict box office success
-def predict_box_office_success(imdb_rating, director_popularity, actor_popularity, holiday_release, genre_sentiment):
-    score = (imdb_rating * 10 + 
-             director_popularity * 5 + 
-             actor_popularity * 5 + 
-             (10 if holiday_release else 0) + 
-             genre_sentiment * 20)
-    return "Box Office Hit" if score > 80 else "Likely Average"
+# Function to estimate rewatch value
+def estimate_rewatch_value(imdb_rating, plot_sentiment, awards_count):
+    """A movie with high IMDb rating, positive plot sentiment, and many awards is likely to have rewatch value."""
+    score = (imdb_rating * 8 +
+             plot_sentiment * 10 +
+             awards_count * 3)
+    return "High Rewatch Value" if score > 70 else "Moderate Rewatch Value" if score > 50 else "Low Rewatch Value"
 
-def estimate_franchise_potential(genre, awards_count, imdb_rating, director_popularity, actor_popularity):
-    franchise_genres = ["Action", "Adventure", "Sci-Fi", "Fantasy"]
-    is_franchise_genre = any(g.strip() in franchise_genres for g in genre.split(","))
-    
-    score = (
-        (10 if is_franchise_genre else 0) +
-        awards_count * 2 +
-        imdb_rating * 10 +
-        director_popularity * 5 +
-        actor_popularity * 5
-    )
-    return "High Potential" if score > 70 else "Low Potential"
+# Function to estimate franchise potential
+def estimate_franchise_potential(imdb_rating, genre_sentiment, awards_count):
+    """Estimate the potential of a movie to become a successful franchise."""
+    score = (imdb_rating * 5 +
+             genre_sentiment * 10 +
+             awards_count * 2)
+    return "High Franchise Potential" if score > 60 else "Moderate Franchise Potential" if score > 40 else "Low Franchise Potential"
 
+# New Feature: Estimate Cinematography Potential
+def estimate_cinematography_potential(imdb_rating, awards_text):
+    cinematography_keywords = ["cinematography", "visual effects", "visuals"]
+    cinematography_awards = any(keyword in awards_text.lower() for keyword in cinematography_keywords)
+    score = imdb_rating * 10 + (20 if cinematography_awards else 0)
+    return "High Cinematography Potential" if score > 80 else "Moderate Cinematography Potential" if score > 50 else "Low Cinematography Potential"
 
-# New feature: Estimate international appeal
-def estimate_international_appeal(genre, imdb_rating, director_popularity, awards_count):
-    international_genres = ["Drama", "Action", "Adventure", "Sci-Fi", "Fantasy", "Animation"]
-    is_international_genre = any(g.strip() in international_genres for g in genre.split(","))
-    
-    score = (
-        (15 if is_international_genre else 0) +
-        imdb_rating * 8 +
-        director_popularity * 6 +
-        awards_count * 3
-    )
-    return "High Appeal" if score > 75 else "Moderate Appeal" if score > 50 else "Low Appeal"
+# New Feature: Estimate Social Media Buzz
+def estimate_social_media_buzz(release_year, imdb_rating, genre_sentiment):
+    current_year = datetime.now().year
+    recency_factor = max(0, 10 - (current_year - release_year))  # More recent movies get higher scores
+    score = (imdb_rating * 5 + genre_sentiment * 5 + recency_factor * 10)
+    return "High Buzz Potential" if score > 80 else "Moderate Buzz Potential" if score > 50 else "Low Buzz Potential"
 
-# New feature: Calculate critical acclaim score
-def calculate_critical_acclaim(imdb_rating, awards_count, plot):
-    if not plot:
-        return 0.0
-    plot_sentiment = TextBlob(plot).sentiment.polarity  # Analyze plot sentiment
-    score = (
-        imdb_rating * 8 +  # Heavily weigh IMDb rating
-        awards_count * 5 +  # Moderate weight for awards
-        plot_sentiment * 10  # Sentiment score of the plot
-    )
-    return round(score, 2)
+# New Feature: Estimate Box Office Success
+def estimate_box_office_success(imdb_rating, awards_count, genre_sentiment):
+    score = (imdb_rating * 6 + awards_count * 3 + genre_sentiment * 10)
+    return "High Box Office Success" if score > 75 else "Moderate Box Office Success" if score > 50 else "Low Box Office Success"
 
-# New feature: Calculate audience reception score
-def calculate_audience_reception(imdb_rating, user_reviews_count, reviews):
-    if not reviews:
-        return 0.0
-    review_sentiment = TextBlob(reviews).sentiment.polarity  # Sentiment analysis of user reviews
-    score = (
-        imdb_rating * 5 +  # Weight IMDb rating
-        user_reviews_count * 2 +  # Weight for number of reviews
-        review_sentiment * 10  # Sentiment analysis of user reviews
-    )
-    return round(score, 2)
-
-# New feature: Calculate cultural impact score
-def calculate_cultural_impact(imdb_rating, box_office, genre, popular_culture_mentions):
-    # Popular culture mentions could be fetched from social media data or analyzed from the movie's presence in memes, trends, etc.
-    cultural_genres = ["Drama", "Comedy", "Action", "Adventure", "Sci-Fi"]
-    is_culturally_impactful_genre = any(g.strip() in cultural_genres for g in genre.split(","))
-    
-    # Estimate the impact based on multiple factors
-    score = (
-        (15 if is_culturally_impactful_genre else 0) +
-        (box_office / 1000000) * 6 +  # Box office performance, scaled
-        imdb_rating * 5 +  # IMDb rating as a strong indicator
-        popular_culture_mentions * 4  # Mentions in popular culture (e.g., memes, quotes)
-    )
-    
-    return round(score, 2)
-# New feature: Calculate sequel potential score
-def calculate_sequel_potential(imdb_rating, box_office, genre, awards_count, franchise_potential):
-    # If the genre is in the list of popular franchises, the sequel potential is higher
-    franchise_genres = ["Action", "Adventure", "Sci-Fi", "Fantasy", "Superhero"]
-    is_franchise_genre = any(g.strip() in franchise_genres for g in genre.split(","))
-    
-    # Estimate sequel potential based on box office, genre, and other factors
-    score = (
-        (15 if is_franchise_genre else 0) +  # Weight for genre being part of popular franchises
-        (box_office / 1000000) * 4 +  # Box office, scaled
-        imdb_rating * 6 +  # IMDb rating
-        awards_count * 3 +  # Awards won as a factor
-        franchise_potential * 8  # Franchise potential as a strong indicator
-    )
-    
-    return round(score, 2)
-
-# New feature: Calculate critical reception score
-def calculate_critical_reception(imdb_rating, imdb_votes, awards_count):
-    # Critical reception is influenced by the IMDb rating, the number of votes (indicating broad opinion),
-    # and the number of prestigious awards the movie has won.
-    
-    score = (
-        imdb_rating * 5 +  # Higher IMDb rating is more important
-        (imdb_votes / 10000) * 2 +  # More reviews lead to better reception
-        awards_count * 3  # More awards indicate critical acclaim
-    )
-    
-    return round(score, 2)
-
-# New feature: Calculate critical reception score
-def calculate_critical_reception(imdb_rating, imdb_votes, awards_count):
-    # Critical reception is influenced by the IMDb rating, the number of votes (indicating broad opinion),
-    # and the number of prestigious awards the movie has won.
-    
-    score = (
-        imdb_rating * 5 +  # Higher IMDb rating is more important
-        (imdb_votes / 10000) * 2 +  # More reviews lead to better reception
-        awards_count * 3  # More awards indicate critical acclaim
-    )
-    
-    return round(score, 2)
-
-# New feature: Calculate international appeal score
-def calculate_international_appeal(imdb_rating, genre, release_countries):
-    # Assume that some genres have broader international appeal, like action, adventure, and fantasy
-    global_genres = ["Action", "Adventure", "Sci-Fi", "Fantasy"]
-    
-    # Estimate score based on IMDb rating, genre, and the number of countries the movie is released in
-    genre_score = 10 if any(g.strip() in global_genres for g in genre.split(",")) else 5
-    country_score = len(release_countries) * 0.5  # More countries, higher score
-    
-    # International appeal score is higher with better IMDb ratings and wider global reach
-    score = (imdb_rating * 3) + (genre_score * 2) + (country_score * 4)
-    
-    return round(score, 2)
-
-# New feature: Calculate fanbase growth potential
-def calculate_fanbase_growth(imdb_rating, streaming_platforms, social_media_mentions):
-    # A higher IMDb rating increases the chance of a movie attracting a loyal fanbase.
-    # More streaming platforms and more social media mentions can help the fanbase grow over time.
-
-    platform_score = len(streaming_platforms) * 2  # More platforms = higher score
-    social_media_score = social_media_mentions * 0.1  # More mentions indicate growing popularity
-
-    # Combine the scores with the IMDb rating to get the overall fanbase growth potential.
-    score = (imdb_rating * 5) + platform_score + social_media_score
-
-    return round(score, 2)
-
-# Update process_movie_data to include fanbase growth potential
+# Update process_movie_data to include the new feature
 def process_movie_data(titles, api_key):
     data = []
     for title in titles:
@@ -251,24 +141,21 @@ def process_movie_data(titles, api_key):
             lead_actor = movie_data.get("Actors", "").split(",")[0] if movie_data.get("Actors") else ""
             actor_popularity = get_actor_popularity(lead_actor, api_key)
             imdb_rating = float(movie_data.get("imdbRating", 0))
-            imdb_votes = int(movie_data.get("imdbVotes", 0).replace(",", "")) if movie_data.get("imdbVotes") else 0
-            box_office = float(movie_data.get("BoxOffice", "0").replace(",", "")) if movie_data.get("BoxOffice") else 0.0
-            release_countries = movie_data.get("Country", "").split(",") if movie_data.get("Country") else []
-            popular_culture_mentions = random.randint(1, 100)  # Simulated with a random number
-            box_office_prediction = predict_box_office_success(imdb_rating, director_popularity, actor_popularity, holiday_release, genre_sentiment)
-            franchise_potential = estimate_franchise_potential(movie_data.get("Genre", ""), awards_count, imdb_rating, director_popularity, actor_popularity)
-            international_appeal = calculate_international_appeal(imdb_rating, movie_data.get("Genre", ""), release_countries)
-            critical_acclaim = calculate_critical_acclaim(imdb_rating, awards_count, movie_data.get("Plot", ""))
-            audience_reception = calculate_audience_reception(imdb_rating, imdb_votes, movie_data.get("Plot", ""))
-            cultural_impact = calculate_cultural_impact(imdb_rating, box_office, movie_data.get("Genre", ""), popular_culture_mentions)
-            sequel_potential = calculate_sequel_potential(imdb_rating, box_office, movie_data.get("Genre", ""), awards_count, franchise_potential)
-            critical_reception = calculate_critical_reception(imdb_rating, imdb_votes, awards_count)
-            social_media_mentions = random.randint(50, 500)  # Simulated social media mentions
-            fanbase_growth = calculate_fanbase_growth(imdb_rating, streaming_platforms, social_media_mentions)  # New feature
+            plot_sentiment = TextBlob(movie_data.get("Plot", "")).sentiment.polarity if movie_data.get("Plot") else 0
+            rewatch_value = estimate_rewatch_value(imdb_rating, plot_sentiment, awards_count)
+            franchise_potential = estimate_franchise_potential(imdb_rating, genre_sentiment, awards_count)
+            cinematography_potential = estimate_cinematography_potential(imdb_rating, movie_data.get("Awards", ""))
+            
+            try:
+                release_year = int(movie_data.get("Year", 0))
+            except ValueError:
+                release_year = 0
+            
+            social_media_buzz = estimate_social_media_buzz(release_year, imdb_rating, genre_sentiment)
+            box_office_success = estimate_box_office_success(imdb_rating, awards_count, genre_sentiment)
 
             data.append({
                 "Title": movie_data.get("Title"),
-                "Year": movie_data.get("Year"),
                 "IMDb Rating": imdb_rating,
                 "Genre Sentiment": genre_sentiment,
                 "Holiday Release": holiday_release,
@@ -276,15 +163,11 @@ def process_movie_data(titles, api_key):
                 "Streaming Platforms": ", ".join(streaming_platforms),
                 "Director Popularity": director_popularity,
                 "Actor Popularity": actor_popularity,
-                "Box Office Prediction": box_office_prediction,
+                "Rewatch Value": rewatch_value,
                 "Franchise Potential": franchise_potential,
-                "International Appeal": international_appeal,
-                "Critical Acclaim": critical_acclaim,
-                "Audience Reception": audience_reception,
-                "Cultural Impact": cultural_impact,
-                "Sequel Potential": sequel_potential,
-                "Critical Reception": critical_reception,
-                "Fanbase Growth Potential": fanbase_growth,  # New feature
+                "Cinematography Potential": cinematography_potential,
+                "Social Media Buzz Potential": social_media_buzz,
+                "Box Office Success": box_office_success,
             })
     
     return pd.DataFrame(data)
