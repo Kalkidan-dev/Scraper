@@ -141,6 +141,53 @@ def estimate_cultural_influence(plot, awards_text):
     score = sum(1 for keyword in cultural_keywords if keyword in combined_text)
     return "High Cultural Influence" if score > 5 else "Moderate Cultural Influence" if score > 2 else "Low Cultural Influence"
 
+# Function to calculate Diversity Index for cast
+def calculate_diversity_index(cast_list):
+    if not cast_list:
+        return 0.0  # No data, no diversity
+
+    # Dummy dataset for demonstration (you can use APIs or databases for real data)
+    cast_details = {
+        "Leonardo DiCaprio": {"ethnicity": "Caucasian", "gender": "Male", "nationality": "USA"},
+        "Morgan Freeman": {"ethnicity": "African-American", "gender": "Male", "nationality": "USA"},
+        "Marion Cotillard": {"ethnicity": "Caucasian", "gender": "Female", "nationality": "France"},
+        # Add more actors for real calculations
+    }
+
+    ethnicities = set()
+    genders = set()
+    nationalities = set()
+
+    for actor in cast_list:
+        details = cast_details.get(actor.strip())
+        if details:
+            ethnicities.add(details["ethnicity"])
+            genders.add(details["gender"])
+            nationalities.add(details["nationality"])
+
+    # Diversity Index is the average of unique categories divided by total actors
+    diversity_score = (
+        len(ethnicities) + len(genders) + len(nationalities)
+    ) / (3 * len(cast_list))
+
+    return round(diversity_score * 100, 2)  # Scale to a percentage
+
+# Update process_movie_data to include Diversity Index
+def process_movie_data(titles, api_key):
+    data = []
+    for title in titles:
+        movie_data = fetch_movie_data(title, api_key)
+        if movie_data and movie_data.get("Response") == "True":
+            cast = movie_data.get("Actors", "").split(",") if movie_data.get("Actors") else []
+            diversity_index = calculate_diversity_index(cast)
+            # Other features...
+            data.append({
+                "Title": movie_data.get("Title"),
+                "Diversity Index": diversity_index,
+                # Add other features here
+            })
+    return pd.DataFrame(data)
+
 
 # Function to calculate climate suitability indicator
 def estimate_climate_suitability(release_date, genre):
