@@ -188,6 +188,13 @@ def process_movie_data(titles, api_key):
             })
     return pd.DataFrame(data)
 
+# New Feature: Estimate Cinematography Potential
+def estimate_cinematography_potential(imdb_rating, awards_text):
+    cinematography_keywords = ["cinematography", "visual effects", "visuals"]
+    cinematography_awards = any(keyword in awards_text.lower() for keyword in cinematography_keywords)
+    score = imdb_rating * 10 + (20 if cinematography_awards else 0)
+    return "High Cinematography Potential" if score > 80 else "Moderate Cinematography Potential" if score > 50 else "Low Cinematography Potential"
+
 
 # Function to calculate climate suitability indicator
 def estimate_climate_suitability(release_date, genre):
