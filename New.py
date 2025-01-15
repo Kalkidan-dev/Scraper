@@ -195,8 +195,12 @@ def estimate_cinematography_potential(imdb_rating, awards_text):
     score = imdb_rating * 10 + (20 if cinematography_awards else 0)
     return "High Cinematography Potential" if score > 80 else "Moderate Cinematography Potential" if score > 50 else "Low Cinematography Potential"
 
+# New Feature: Estimate Marketing Effectiveness
+def estimate_marketing_effectiveness(imdb_rating, social_media_buzz, box_office_success):
+    score = (imdb_rating * 6 + (10 if social_media_buzz == "High Buzz Potential" else 0) + (10 if box_office_success == "High Box Office Success" else 0))
+    return "Highly Effective Marketing" if score > 80 else "Moderately Effective Marketing" if score > 50 else "Ineffective Marketing"
 
-# Function to calculate climate suitability indicator
+# Function to calculate climate suitability indicators
 def estimate_climate_suitability(release_date, genre):
     try:
         release_month = datetime.strptime(release_date, "%d %b %Y").month
@@ -235,45 +239,40 @@ def process_movie_data(titles, api_key):
     for title in titles:
         movie_data = fetch_movie_data(title, api_key)
         if movie_data and movie_data.get("Response") == "True":
-            genre_sentiment = analyze_genre_sentiment(movie_data.get("Genre", ""))
-            holiday_release = is_holiday_release(movie_data.get("Released", ""))
-            awards_count = extract_awards_count(movie_data.get("Awards", ""))
-            streaming_platforms = simulate_streaming_availability(title)
-            director_popularity = get_director_popularity(movie_data.get("Director", ""), api_key)
-            lead_actor = movie_data.get("Actors", "").split(",")[0] if movie_data.get("Actors") else ""
-            actor_popularity = get_actor_popularity(lead_actor, api_key)
+            # Existing processing (genre sentiment, awards count, etc.)
             imdb_rating = float(movie_data.get("imdbRating", 0))
+            genre_sentiment = analyze_genre_sentiment(movie_data.get("Genre", ""))
             plot_sentiment = TextBlob(movie_data.get("Plot", "")).sentiment.polarity if movie_data.get("Plot") else 0
-            rewatch_value = estimate_rewatch_value(imdb_rating, plot_sentiment, awards_count)
-            franchise_potential = estimate_franchise_potential(imdb_rating, genre_sentiment, awards_count)
-            cinematography_potential = estimate_cinematography_potential(imdb_rating, movie_data.get("Awards", ""))
-            
-            try:
-                release_year = int(movie_data.get("Year", 0))
-            except ValueError:
-                release_year = 0
-            
-            social_media_buzz = estimate_social_media_buzz(release_year, imdb_rating, genre_sentiment)
+            awards_count = extract_awards_count(movie_data.get("Awards", ""))
+            social_media_buzz = estimate_social_media_buzz(int(movie_data.get("Year", 0)), imdb_rating, genre_sentiment)
             box_office_success = estimate_box_office_success(imdb_rating, awards_count, genre_sentiment)
-            climate_suitability = estimate_climate_suitability(movie_data.get("Released", ""), movie_data.get("Genre", ""))
+            rewatch_value = estimate_rewatch_value(imdb_rating, plot_sentiment, awards_count)
+            # New features
+            audience_appeal = estimate_audience_appeal(imdb_rating, genre_sentiment, awards_count)
+            long_term_streaming_popularity = estimate_long_term_streaming_popularity(imdb_rating, genre_sentiment, social_media_buzz)
+            international_appeal = estimate_international_appeal(imdb_rating, calculate_diversity_index(movie_data.get("Actors", "").split(",")), movie_data.get("Genre", ""))
+            critical_reception = estimate_critical_reception(imdb_rating, plot_sentiment)
+            viewer_retention = estimate_viewer_retention(imdb_rating, rewatch_value, social_media_buzz)
+            storyline_impact = estimate_storyline_impact(imdb_rating, plot_sentiment, genre_sentiment)
+            marketing_effectiveness = estimate_marketing_effectiveness(imdb_rating, social_media_buzz, box_office_success)
 
             data.append({
                 "Title": movie_data.get("Title"),
                 "IMDb Rating": imdb_rating,
                 "Genre Sentiment": genre_sentiment,
-                "Holiday Release": holiday_release,
                 "Awards Count": awards_count,
-                "Streaming Platforms": ", ".join(streaming_platforms),
-                "Director Popularity": director_popularity,
-                "Actor Popularity": actor_popularity,
-                "Rewatch Value": rewatch_value,
-                "Franchise Potential": franchise_potential,
-                "Cinematography Potential": cinematography_potential,
-                "Social Media Buzz Potential": social_media_buzz,
+                "Social Media Buzz": social_media_buzz,
                 "Box Office Success": box_office_success,
-                "Climate Suitability": climate_suitability,
+                "Rewatch Value": rewatch_value,
+                "Audience Appeal": audience_appeal,
+                "Long-Term Streaming Popularity": long_term_streaming_popularity,
+                "International Appeal": international_appeal,
+                "Critical Reception": critical_reception,
+                "Viewer Retention": viewer_retention,
+                "Storyline Impact": storyline_impact,
+                "Marketing Effectiveness": marketing_effectiveness,
             })
-    
+
     return pd.DataFrame(data)
 
 # Example usage
