@@ -68,6 +68,12 @@ def get_director_popularity(director, api_key):
             movie_count += 1
 
     return total_rating / movie_count if movie_count > 0 else 0.0
+# New Feature: Estimate Soundtrack Popularity
+def estimate_soundtrack_popularity(imdb_rating, awards_text):
+    soundtrack_keywords = ["music", "soundtrack", "score", "original song"]
+    soundtrack_awards = any(keyword in awards_text.lower() for keyword in soundtrack_keywords)
+    score = imdb_rating * 8 + (30 if soundtrack_awards else 0)
+    return "High Soundtrack Popularity" if score > 80 else "Moderate Soundtrack Popularity" if score > 50 else "Low Soundtrack Popularity"
 
 # Function to estimate actor popularity
 def get_actor_popularity(actor, api_key):
@@ -166,6 +172,51 @@ def process_movie_data(titles, api_key):
                 "Rewatch Value": rewatch_value,
                 "Franchise Potential": franchise_potential,
                 "Cinematography Potential": cinematography_potential,
+                "Social Media Buzz Potential": social_media_buzz,
+                "Box Office Success": box_office_success,
+            })
+    
+    return pd.DataFrame(data)
+def process_movie_data(titles, api_key):
+    data = []
+    for title in titles:
+        movie_data = fetch_movie_data(title, api_key)
+        if movie_data and movie_data.get("Response") == "True":
+            genre_sentiment = analyze_genre_sentiment(movie_data.get("Genre", ""))
+            holiday_release = is_holiday_release(movie_data.get("Released", ""))
+            awards_count = extract_awards_count(movie_data.get("Awards", ""))
+            streaming_platforms = simulate_streaming_availability(title)
+            director_popularity = get_director_popularity(movie_data.get("Director", ""), api_key)
+            lead_actor = movie_data.get("Actors", "").split(",")[0] if movie_data.get("Actors") else ""
+            actor_popularity = get_actor_popularity(lead_actor, api_key)
+            imdb_rating = float(movie_data.get("imdbRating", 0))
+            plot_sentiment = TextBlob(movie_data.get("Plot", "")).sentiment.polarity if movie_data.get("Plot") else 0
+            rewatch_value = estimate_rewatch_value(imdb_rating, plot_sentiment, awards_count)
+            franchise_potential = estimate_franchise_potential(imdb_rating, genre_sentiment, awards_count)
+            cinematography_potential = estimate_cinematography_potential(imdb_rating, movie_data.get("Awards", ""))
+            soundtrack_popularity = estimate_soundtrack_popularity(imdb_rating, movie_data.get("Awards", ""))
+
+            try:
+                release_year = int(movie_data.get("Year", 0))
+            except ValueError:
+                release_year = 0
+            
+            social_media_buzz = estimate_social_media_buzz(release_year, imdb_rating, genre_sentiment)
+            box_office_success = estimate_box_office_success(imdb_rating, awards_count, genre_sentiment)
+
+            data.append({
+                "Title": movie_data.get("Title"),
+                "IMDb Rating": imdb_rating,
+                "Genre Sentiment": genre_sentiment,
+                "Holiday Release": holiday_release,
+                "Awards Count": awards_count,
+                "Streaming Platforms": ", ".join(streaming_platforms),
+                "Director Popularity": director_popularity,
+                "Actor Popularity": actor_popularity,
+                "Rewatch Value": rewatch_value,
+                "Franchise Potential": franchise_potential,
+                "Cinematography Potential": cinematography_potential,
+                "Soundtrack Popularity": soundtrack_popularity,
                 "Social Media Buzz Potential": social_media_buzz,
                 "Box Office Success": box_office_success,
             })
