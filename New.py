@@ -133,7 +133,49 @@ def estimate_box_office_success(imdb_rating, awards_count, genre_sentiment):
     score = (imdb_rating * 6 + awards_count * 3 + genre_sentiment * 10)
     return "High Box Office Success" if score > 75 else "Moderate Box Office Success" if score > 50 else "Low Box Office Success"
 
-# Update process_movie_data to include the new feature
+# Function to estimate cultural influence
+def estimate_cultural_influence(plot, awards_text):
+    cultural_keywords = ["diversity", "inclusion", "trailblazer", "revolutionary", 
+                          "groundbreaking", "historic", "global", "impactful"]
+    combined_text = f"{plot} {awards_text}".lower()
+    score = sum(1 for keyword in cultural_keywords if keyword in combined_text)
+    return "High Cultural Influence" if score > 5 else "Moderate Cultural Influence" if score > 2 else "Low Cultural Influence"
+
+
+# Function to calculate climate suitability indicator
+def estimate_climate_suitability(release_date, genre):
+    try:
+        release_month = datetime.strptime(release_date, "%d %b %Y").month
+    except ValueError:
+        return "Unknown"
+
+    # Define seasonal preferences
+    season_preferences = {
+        "Summer": ["Action", "Adventure", "Superhero"],
+        "Winter": ["Family", "Holiday", "Animation"],
+        "Spring": ["Comedy", "Romance", "Action"],
+        "Fall": ["Drama", "Biography", "Historical"]
+    }
+
+    # Determine the season
+    if release_month in [6, 7, 8]:
+        season = "Summer"
+    elif release_month in [11, 12]:
+        season = "Winter"
+    elif release_month in [3, 4, 5]:
+        season = "Spring"
+    elif release_month in [9, 10]:
+        season = "Fall"
+    else:
+        season = "Unknown"
+
+    # Check if the genre matches the season's preferences
+    for preferred_genre in season_preferences.get(season, []):
+        if preferred_genre in genre:
+            return f"Highly Suitable for {season}"
+    return f"Less Suitable for {season}"
+
+# Update process_movie_data to include Climate Suitability
 def process_movie_data(titles, api_key):
     data = []
     for title in titles:
@@ -159,6 +201,7 @@ def process_movie_data(titles, api_key):
             
             social_media_buzz = estimate_social_media_buzz(release_year, imdb_rating, genre_sentiment)
             box_office_success = estimate_box_office_success(imdb_rating, awards_count, genre_sentiment)
+            climate_suitability = estimate_climate_suitability(movie_data.get("Released", ""), movie_data.get("Genre", ""))
 
             data.append({
                 "Title": movie_data.get("Title"),
@@ -174,51 +217,7 @@ def process_movie_data(titles, api_key):
                 "Cinematography Potential": cinematography_potential,
                 "Social Media Buzz Potential": social_media_buzz,
                 "Box Office Success": box_office_success,
-            })
-    
-    return pd.DataFrame(data)
-def process_movie_data(titles, api_key):
-    data = []
-    for title in titles:
-        movie_data = fetch_movie_data(title, api_key)
-        if movie_data and movie_data.get("Response") == "True":
-            genre_sentiment = analyze_genre_sentiment(movie_data.get("Genre", ""))
-            holiday_release = is_holiday_release(movie_data.get("Released", ""))
-            awards_count = extract_awards_count(movie_data.get("Awards", ""))
-            streaming_platforms = simulate_streaming_availability(title)
-            director_popularity = get_director_popularity(movie_data.get("Director", ""), api_key)
-            lead_actor = movie_data.get("Actors", "").split(",")[0] if movie_data.get("Actors") else ""
-            actor_popularity = get_actor_popularity(lead_actor, api_key)
-            imdb_rating = float(movie_data.get("imdbRating", 0))
-            plot_sentiment = TextBlob(movie_data.get("Plot", "")).sentiment.polarity if movie_data.get("Plot") else 0
-            rewatch_value = estimate_rewatch_value(imdb_rating, plot_sentiment, awards_count)
-            franchise_potential = estimate_franchise_potential(imdb_rating, genre_sentiment, awards_count)
-            cinematography_potential = estimate_cinematography_potential(imdb_rating, movie_data.get("Awards", ""))
-            soundtrack_popularity = estimate_soundtrack_popularity(imdb_rating, movie_data.get("Awards", ""))
-
-            try:
-                release_year = int(movie_data.get("Year", 0))
-            except ValueError:
-                release_year = 0
-            
-            social_media_buzz = estimate_social_media_buzz(release_year, imdb_rating, genre_sentiment)
-            box_office_success = estimate_box_office_success(imdb_rating, awards_count, genre_sentiment)
-
-            data.append({
-                "Title": movie_data.get("Title"),
-                "IMDb Rating": imdb_rating,
-                "Genre Sentiment": genre_sentiment,
-                "Holiday Release": holiday_release,
-                "Awards Count": awards_count,
-                "Streaming Platforms": ", ".join(streaming_platforms),
-                "Director Popularity": director_popularity,
-                "Actor Popularity": actor_popularity,
-                "Rewatch Value": rewatch_value,
-                "Franchise Potential": franchise_potential,
-                "Cinematography Potential": cinematography_potential,
-                "Soundtrack Popularity": soundtrack_popularity,
-                "Social Media Buzz Potential": social_media_buzz,
-                "Box Office Success": box_office_success,
+                "Climate Suitability": climate_suitability,
             })
     
     return pd.DataFrame(data)
@@ -226,7 +225,7 @@ def process_movie_data(titles, api_key):
 # Example usage
 def main():
     api_key = "your_api_key_here"
-    movie_titles = ["Inception", "The Dark Knight", "Interstellar"]
+    movie_titles = ["Inception", "Frozen", "Avengers: Endgame"]
     result_df = process_movie_data(movie_titles, api_key)
     print(result_df)
 
