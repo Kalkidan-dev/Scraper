@@ -208,6 +208,12 @@ def estimate_cinematography_potential(imdb_rating, awards_text):
            "Moderate Cinematography Potential" if score > 50 else \
            "Low Cinematography Potential"
 
+def estimate_audience_appeal(imdb_rating, genre_sentiment, awards_count):
+    score = imdb_rating * 5 + genre_sentiment * 10 + awards_count * 3
+    return "High Audience Appeal" if score > 75 else \
+           "Moderate Audience Appeal" if score > 50 else \
+           "Low Audience Appeal"
+
 
 # Function to calculate climate suitability indicators
 def estimate_climate_suitability(release_date, genre):
@@ -265,6 +271,7 @@ def process_movie_data(titles, api_key):
             storyline_impact = estimate_storyline_impact(imdb_rating, plot_sentiment, genre_sentiment)
             marketing_effectiveness = estimate_marketing_effectiveness(imdb_rating, social_media_buzz, box_office_success)
             cinematography_potential = estimate_cinematography_potential(imdb_rating, movie_data.get("Awards", ""))
+            audience_appeal = estimate_audience_appeal(imdb_rating, genre_sentiment, awards_count)
 
             data.append({
                 "Title": movie_data.get("Title"),
