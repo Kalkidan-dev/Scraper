@@ -200,6 +200,15 @@ def estimate_marketing_effectiveness(imdb_rating, social_media_buzz, box_office_
     score = (imdb_rating * 6 + (10 if social_media_buzz == "High Buzz Potential" else 0) + (10 if box_office_success == "High Box Office Success" else 0))
     return "Highly Effective Marketing" if score > 80 else "Moderately Effective Marketing" if score > 50 else "Ineffective Marketing"
 
+def estimate_cinematography_potential(imdb_rating, awards_text):
+    cinematography_keywords = ["cinematography", "visual effects", "visuals"]
+    cinematography_awards = any(keyword in awards_text.lower() for keyword in cinematography_keywords)
+    score = imdb_rating * 10 + (20 if cinematography_awards else 0)
+    return "High Cinematography Potential" if score > 80 else \
+           "Moderate Cinematography Potential" if score > 50 else \
+           "Low Cinematography Potential"
+
+
 # Function to calculate climate suitability indicators
 def estimate_climate_suitability(release_date, genre):
     try:
@@ -255,6 +264,7 @@ def process_movie_data(titles, api_key):
             viewer_retention = estimate_viewer_retention(imdb_rating, rewatch_value, social_media_buzz)
             storyline_impact = estimate_storyline_impact(imdb_rating, plot_sentiment, genre_sentiment)
             marketing_effectiveness = estimate_marketing_effectiveness(imdb_rating, social_media_buzz, box_office_success)
+            cinematography_potential = estimate_cinematography_potential(imdb_rating, movie_data.get("Awards", ""))
 
             data.append({
                 "Title": movie_data.get("Title"),
