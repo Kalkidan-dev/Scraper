@@ -214,6 +214,12 @@ def estimate_audience_appeal(imdb_rating, genre_sentiment, awards_count):
            "Moderate Audience Appeal" if score > 50 else \
            "Low Audience Appeal"
 
+def estimate_long_term_streaming_popularity(imdb_rating, genre_sentiment, social_media_buzz):
+    score = imdb_rating * 5 + genre_sentiment * 10 + (10 if social_media_buzz == "High Buzz Potential" else 5)
+    return "High Long-Term Popularity" if score > 70 else \
+           "Moderate Long-Term Popularity" if score > 50 else \
+           "Low Long-Term Popularity"
+
 
 # Function to calculate climate suitability indicators
 def estimate_climate_suitability(release_date, genre):
