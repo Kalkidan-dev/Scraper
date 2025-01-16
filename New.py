@@ -247,6 +247,24 @@ def calculate_director_and_cast_influence(director, cast, historical_data):
     combined_influence = (director_score * 0.6) + (cast_score * 0.4)
     return combined_influence
 
+def calculate_budget_revenue_ratio(budget, revenue):
+    """
+    Calculate the budget-to-revenue ratio for a movie.
+    
+    Args:
+        budget (float): Production budget of the movie.
+        revenue (float): Box office revenue of the movie.
+        
+    Returns:
+        float: Budget-to-revenue ratio.
+    """
+    # Handle missing or zero values
+    if budget == 0 or revenue == 0:
+        return 1.5  # Default ratio
+    
+    return budget / revenue
+
+
 
 # Function to calculate climate suitability indicators
 def estimate_climate_suitability(release_date, genre):
@@ -305,6 +323,11 @@ def process_movie_data(titles, api_key):
             marketing_effectiveness = estimate_marketing_effectiveness(imdb_rating, social_media_buzz, box_office_success)
             cinematography_potential = estimate_cinematography_potential(imdb_rating, movie_data.get("Awards", ""))
             audience_appeal = estimate_audience_appeal(imdb_rating, genre_sentiment, awards_count)
+            influence_score = calculate_director_and_cast_influence(director, cast, historical_data)
+            movie_data['Budget-Revenue Ratio'] = movie_data.apply(
+    lambda row: calculate_budget_revenue_ratio(row['Budget'], row['Revenue']), axis=1
+)
+
 
             data.append({
                 "Title": movie_data.get("Title"),
