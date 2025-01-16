@@ -219,6 +219,33 @@ def estimate_long_term_streaming_popularity(imdb_rating, genre_sentiment, social
     return "High Long-Term Popularity" if score > 70 else \
            "Moderate Long-Term Popularity" if score > 50 else \
            "Low Long-Term Popularity"
+def calculate_director_and_cast_influence(director, cast, historical_data):
+    """
+    Calculate the influence score of the director and cast based on historical data.
+    
+    Args:
+        director (str): The name of the director.
+        cast (list): List of main cast members.
+        historical_data (DataFrame): A DataFrame containing past movie data with IMDb ratings.
+        
+    Returns:
+        float: Combined influence score.
+    """
+    # Calculate director score
+    director_movies = historical_data[historical_data['Director'] == director]
+    director_score = director_movies['IMDb Rating'].mean() if not director_movies.empty else 5.0  # Default score
+    
+    # Calculate cast score
+    cast_scores = []
+    for actor in cast:
+        actor_movies = historical_data[historical_data['Cast'].apply(lambda x: actor in x)]
+        actor_score = actor_movies['IMDb Rating'].mean() if not actor_movies.empty else 5.0  # Default score
+        cast_scores.append(actor_score)
+    cast_score = sum(cast_scores) / len(cast_scores) if cast_scores else 5.0  # Default score
+    
+    # Combine scores
+    combined_influence = (director_score * 0.6) + (cast_score * 0.4)
+    return combined_influence
 
 
 # Function to calculate climate suitability indicators
