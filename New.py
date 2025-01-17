@@ -299,57 +299,59 @@ def estimate_climate_suitability(release_date, genre):
             return f"Highly Suitable for {season}"
     return f"Less Suitable for {season}"
 
-# Update process_movie_data to include Climate Suitability
-def process_movie_data(titles, api_key, historical_data):
+# Function to calculate diversity in movie themes
+def calculate_theme_diversity(plot):
+    """
+    Analyze the diversity in movie themes based on the plot.
+    
+    Args:
+        plot (str): The movie's plot description.
+    
+    Returns:
+        str: The diversity level in themes.
+    """
+    if not plot:
+        return "Unknown"
+
+    # Keywords representing diversity and inclusion
+    diversity_keywords = [
+        "inclusion", "representation", "diversity", "equality", "equity",
+        "justice", "identity", "culture", "community", "global"
+    ]
+    theme_count = sum(1 for keyword in diversity_keywords if keyword in plot.lower())
+    
+    if theme_count > 5:
+        return "High Diversity in Themes"
+    elif theme_count > 2:
+        return "Moderate Diversity in Themes"
+    else:
+        return "Low Diversity in Themes"
+
+# Update process_movie_data to include Theme Diversity
+def process_movie_data(titles, api_key):
     data = []
     for title in titles:
         movie_data = fetch_movie_data(title, api_key)
         if movie_data and movie_data.get("Response") == "True":
-            # Extract basic data
+            # Existing processing
             imdb_rating = float(movie_data.get("imdbRating", 0))
-            genre = movie_data.get("Genre", "")
-            genre_sentiment = analyze_genre_sentiment(genre)
-            plot = movie_data.get("Plot", "")
-            plot_sentiment = TextBlob(plot).sentiment.polarity if plot else 0
-            awards_text = movie_data.get("Awards", "")
-            awards_count = extract_awards_count(awards_text)
-            release_date = movie_data.get("Released", "")
-            cast = movie_data.get("Actors", "").split(", ") if movie_data.get("Actors") else []
-            director = movie_data.get("Director", "")
-            release_year = int(movie_data.get("Year", 0))
-
-            # Calculate features
-            diversity_index = calculate_diversity_index(cast)
-            social_media_buzz = estimate_social_media_buzz(release_year, imdb_rating, genre_sentiment)
-            box_office_success = estimate_box_office_success(imdb_rating, awards_count, genre_sentiment)
-            rewatch_value = estimate_rewatch_value(imdb_rating, plot_sentiment, awards_count)
-            climate_suitability = estimate_climate_suitability(release_date, genre)
-            audience_appeal = estimate_audience_appeal(imdb_rating, genre_sentiment, awards_count)
-            long_term_streaming_popularity = estimate_long_term_streaming_popularity(imdb_rating, genre_sentiment, social_media_buzz)
-            marketing_effectiveness = estimate_marketing_effectiveness(imdb_rating, social_media_buzz, box_office_success)
-            cinematography_potential = estimate_cinematography_potential(imdb_rating, awards_text)
-            director_cast_influence = calculate_director_and_cast_influence(director, cast, historical_data)
-
-            # Append all calculated metrics
+            genre_sentiment = analyze_genre_sentiment(movie_data.get("Genre", ""))
+            plot_sentiment = TextBlob(movie_data.get("Plot", "")).sentiment.polarity if movie_data.get("Plot") else 0
+            awards_count = extract_awards_count(movie_data.get("Awards", ""))
+            social_media_buzz = estimate_social_media_buzz(int(movie_data.get("Year", 0)), imdb_rating, genre_sentiment)
+            diversity_in_themes = calculate_theme_diversity(movie_data.get("Plot", ""))
+            
+            # Add the new feature along with others to the DataFrame
             data.append({
                 "Title": movie_data.get("Title"),
-                "IMDB Rating": imdb_rating,
-                "Genre": genre,
+                "IMDb Rating": imdb_rating,
                 "Genre Sentiment": genre_sentiment,
                 "Awards Count": awards_count,
                 "Social Media Buzz": social_media_buzz,
-                "Box Office Success": box_office_success,
-                "Rewatch Value": rewatch_value,
-                "Climate Suitability": climate_suitability,
-                "Audience Appeal": audience_appeal,
-                "Long-Term Streaming Popularity": long_term_streaming_popularity,
-                "Marketing Effectiveness": marketing_effectiveness,
-                "Cinematography Potential": cinematography_potential,
-                "Diversity Index": diversity_index,
-                "Director and Cast Influence": director_cast_influence,
+                "Diversity in Themes": diversity_in_themes,
+                # Include other features...
             })
     return pd.DataFrame(data)
-
 
 # Example usage
 def main():
