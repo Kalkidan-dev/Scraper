@@ -130,41 +130,71 @@ def calculate_budget_revenue_ratio(budget, revenue):
         return 1.5
     return budget / revenue
 
-# Function to process movie data
+from textblob import TextBlob
+
+# Function to calculate critics sentiment based on reviews or awards
+def calculate_critic_sentiment(awards_text):
+    # For simplicity, we will use the presence of positive or negative keywords in awards text
+    positive_keywords = ["winner", "award", "critically acclaimed", "best"]
+    negative_keywords = ["worst", "flop", "bad", "disappointing"]
+    
+    # Count positive and negative keywords in the awards text
+    positive_count = sum(1 for keyword in positive_keywords if keyword in awards_text.lower())
+    negative_count = sum(1 for keyword in negative_keywords if keyword in awards_text.lower())
+    
+    return positive_count - negative_count  # Positive value means more positive sentiment
+
+# Function to calculate audience sentiment based on IMDb rating
+def calculate_audience_sentiment(imdb_rating):
+    # Audience sentiment could be interpreted from IMDb rating
+    if imdb_rating >= 7.5:
+        return 1  # Positive sentiment
+    elif imdb_rating >= 5.0:
+        return 0  # Neutral sentiment
+    else:
+        return -1  # Negative sentiment
+
+# Function to compare critics vs audience sentiment
+def compare_sentiment(awards_text, imdb_rating):
+    critic_sentiment = calculate_critic_sentiment(awards_text)
+    audience_sentiment = calculate_audience_sentiment(imdb_rating)
+    
+    # Compare the sentiments
+    if critic_sentiment > 0 and audience_sentiment > 0:
+        comparison = "Aligned Positive"
+    elif critic_sentiment < 0 and audience_sentiment < 0:
+        comparison = "Aligned Negative"
+    elif critic_sentiment == audience_sentiment:
+        comparison = "Aligned Neutral"
+    else:
+        comparison = "Discrepant Sentiment"
+    
+    return comparison
+
+# Integrating this new feature in the movie data processing
 def process_movie_data(titles, api_key):
     data = []
-    historical_data = pd.DataFrame([])  # Placeholder for real historical data
-
     for title in titles:
         movie_data = fetch_movie_data(title, api_key)
         if movie_data and movie_data.get("Response") == "True":
             imdb_rating = float(movie_data.get("imdbRating", 0))
-            genre_sentiment = analyze_genre_sentiment(movie_data.get("Genre", ""))
-            awards_count = extract_awards_count(movie_data.get("Awards", ""))
-            diversity_in_themes = calculate_theme_diversity(movie_data.get("Plot", ""))
-            release_date = movie_data.get("Released", "")
-            climate_suitability = estimate_climate_suitability(release_date, movie_data.get("Genre", ""))
-            cast = movie_data.get("Actors", "").split(",") if movie_data.get("Actors") else []
-            diversity_index = calculate_diversity_index(cast)
-            director = movie_data.get("Director", "")
-            director_cast_influence = calculate_director_and_cast_influence(director, cast, historical_data)
-
+            awards_text = movie_data.get("Awards", "")
+            
+            # Use the new feature to get critics vs audience sentiment
+            sentiment_comparison = compare_sentiment(awards_text, imdb_rating)
+            
+            # Add the sentiment comparison along with other features to the DataFrame
             data.append({
                 "Title": movie_data.get("Title"),
                 "IMDb Rating": imdb_rating,
-                "Genre Sentiment": genre_sentiment,
-                "Awards Count": awards_count,
-                "Diversity in Themes": diversity_in_themes,
-                "Climate Suitability": climate_suitability,
-                "Diversity Index": diversity_index,
-                "Director and Cast Influence": director_cast_influence,
+                "Critics vs Audience Sentiment": sentiment_comparison,
+                # Include other features...
             })
-
     return pd.DataFrame(data)
 
 # Example usage
 def main():
-    api_key = "your_api_key_here"
+    api_key = '121c5367'
     movie_titles = ["Inception", "Frozen", "Avengers: Endgame"]
     result_df = process_movie_data(movie_titles, api_key)
     print(result_df)
