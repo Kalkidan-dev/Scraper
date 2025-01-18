@@ -108,41 +108,44 @@ def compare_sentiment(awards_text, imdb_rating):
         return "Aligned Neutral"
     else:
         return "Discrepant Sentiment"
+# Function to calculate Box Office Analysis
+def box_office_analysis(budget, revenue):
+    if not budget or not revenue or budget == 0:
+        return "Unknown"
+    profit_margin = (revenue - budget) / budget
+    if profit_margin > 1.0:
+        return "High Success"
+    elif profit_margin > 0:
+        return "Moderate Success"
+    else:
+        return "Flop"
 
-# Process Movie Data with All Features
+# Updating the process_movie_data function to include the feature
 def process_movie_data(titles, api_key):
     data = []
     for title in titles:
         movie_data = fetch_movie_data(title, api_key)
         if movie_data and movie_data.get("Response") == "True":
-            genres = movie_data.get("Genre", "")
             imdb_rating = float(movie_data.get("imdbRating", 0))
             awards_text = movie_data.get("Awards", "")
-            release_date = movie_data.get("Released", "")
-            cast = movie_data.get("Actors", "").split(",") if movie_data.get("Actors") else []
+            budget = float(movie_data.get("Budget", 0))  # Replace with actual budget source
+            revenue = float(movie_data.get("BoxOffice", 0))  # Replace with actual revenue source
             
-            # Calculate Features
-            genre_sentiment = analyze_genre_sentiment(genres)
-            awards_count = extract_awards_count(awards_text)
-            diversity_index = calculate_diversity_index(cast)
-            climate_suitability = estimate_climate_suitability(release_date, genres)
             sentiment_comparison = compare_sentiment(awards_text, imdb_rating)
+            box_office_result = box_office_analysis(budget, revenue)
             
-            # Append Results
             data.append({
                 "Title": movie_data.get("Title"),
                 "IMDb Rating": imdb_rating,
-                "Genre Sentiment": genre_sentiment,
-                "Awards Count": awards_count,
-                "Diversity Index": diversity_index,
-                "Climate Suitability": climate_suitability,
-                "Critics vs Audience Sentiment": sentiment_comparison
+                "Critics vs Audience Sentiment": sentiment_comparison,
+                "Box Office Analysis": box_office_result,
+                # Include other features...
             })
     return pd.DataFrame(data)
 
-# Example Usage
+# Example usage
 def main():
-    api_key = '121c5367'  # Replace with your actual OMDb API key
+    api_key = '121c5367'
     movie_titles = ["Inception", "Frozen", "Avengers: Endgame"]
     result_df = process_movie_data(movie_titles, api_key)
     print(result_df)
