@@ -3,7 +3,6 @@ import pandas as pd
 from datetime import datetime
 from textblob import TextBlob
 import re
-import random
 
 # Function to fetch movie data from OMDb API
 def fetch_movie_data(title, api_key="your_api_key_here"):
@@ -14,6 +13,7 @@ def fetch_movie_data(title, api_key="your_api_key_here"):
     else:
         return None
 
+# Existing Features
 # Function to analyze genre sentiment
 def analyze_genre_sentiment(genres):
     sentiment_scores = []
@@ -36,30 +36,22 @@ def extract_awards_count(awards_text):
 def calculate_diversity_index(cast_list):
     if not cast_list:
         return 0.0
-
     # Dummy dataset for demonstration
     cast_details = {
         "Leonardo DiCaprio": {"ethnicity": "Caucasian", "gender": "Male", "nationality": "USA"},
         "Morgan Freeman": {"ethnicity": "African-American", "gender": "Male", "nationality": "USA"},
         "Marion Cotillard": {"ethnicity": "Caucasian", "gender": "Female", "nationality": "France"},
-        # Add more actors for real calculations
     }
-
-    ethnicities = set()
-    genders = set()
-    nationalities = set()
-
+    ethnicities, genders, nationalities = set(), set(), set()
     for actor in cast_list:
         details = cast_details.get(actor.strip())
         if details:
             ethnicities.add(details["ethnicity"])
             genders.add(details["gender"])
             nationalities.add(details["nationality"])
-
     diversity_score = (
         len(ethnicities) + len(genders) + len(nationalities)
     ) / (3 * len(cast_list))
-
     return round(diversity_score * 100, 2)
 
 # Function to estimate climate suitability
@@ -68,14 +60,12 @@ def estimate_climate_suitability(release_date, genre):
         release_month = datetime.strptime(release_date, "%d %b %Y").month
     except ValueError:
         return "Unknown"
-
     season_preferences = {
         "Summer": ["Action", "Adventure", "Superhero"],
         "Winter": ["Family", "Holiday", "Animation"],
         "Spring": ["Comedy", "Romance", "Action"],
         "Fall": ["Drama", "Biography", "Historical"]
     }
-
     if release_month in [6, 7, 8]:
         season = "Summer"
     elif release_month in [11, 12]:
@@ -86,67 +76,20 @@ def estimate_climate_suitability(release_date, genre):
         season = "Fall"
     else:
         season = "Unknown"
-
     for preferred_genre in season_preferences.get(season, []):
         if preferred_genre in genre:
             return f"Highly Suitable for {season}"
     return f"Less Suitable for {season}"
 
-# Function to calculate Diversity in Themes
-def calculate_theme_diversity(plot):
-    if not plot:
-        return "Unknown"
-
-    diversity_keywords = [
-        "inclusion", "representation", "diversity", "equality", "equity",
-        "justice", "identity", "culture", "community", "global"
-    ]
-    theme_count = sum(1 for keyword in diversity_keywords if keyword in plot.lower())
-
-    if theme_count > 5:
-        return "High Diversity in Themes"
-    elif theme_count > 2:
-        return "Moderate Diversity in Themes"
-    else:
-        return "Low Diversity in Themes"
-
-# Function to calculate Director and Cast Influence
-def calculate_director_and_cast_influence(director, cast, historical_data):
-    director_movies = historical_data[historical_data['Director'] == director]
-    director_score = director_movies['IMDb Rating'].mean() if not director_movies.empty else 5.0
-
-    cast_scores = []
-    for actor in cast:
-        actor_movies = historical_data[historical_data['Cast'].apply(lambda x: actor in x)]
-        actor_score = actor_movies['IMDb Rating'].mean() if not actor_movies.empty else 5.0
-        cast_scores.append(actor_score)
-    cast_score = sum(cast_scores) / len(cast_scores) if cast_scores else 5.0
-
-    return (director_score * 0.6) + (cast_score * 0.4)
-
-# Function to calculate Budget-to-Revenue Ratio
-def calculate_budget_revenue_ratio(budget, revenue):
-    if budget == 0 or revenue == 0:
-        return 1.5
-    return budget / revenue
-
-from textblob import TextBlob
-
-# Function to calculate critics sentiment based on reviews or awards
+# New Feature: Comparing Critics vs Audience Sentiment
 def calculate_critic_sentiment(awards_text):
-    # For simplicity, we will use the presence of positive or negative keywords in awards text
     positive_keywords = ["winner", "award", "critically acclaimed", "best"]
     negative_keywords = ["worst", "flop", "bad", "disappointing"]
-    
-    # Count positive and negative keywords in the awards text
     positive_count = sum(1 for keyword in positive_keywords if keyword in awards_text.lower())
     negative_count = sum(1 for keyword in negative_keywords if keyword in awards_text.lower())
-    
     return positive_count - negative_count  # Positive value means more positive sentiment
 
-# Function to calculate audience sentiment based on IMDb rating
 def calculate_audience_sentiment(imdb_rating):
-    # Audience sentiment could be interpreted from IMDb rating
     if imdb_rating >= 7.5:
         return 1  # Positive sentiment
     elif imdb_rating >= 5.0:
@@ -154,47 +97,52 @@ def calculate_audience_sentiment(imdb_rating):
     else:
         return -1  # Negative sentiment
 
-# Function to compare critics vs audience sentiment
 def compare_sentiment(awards_text, imdb_rating):
     critic_sentiment = calculate_critic_sentiment(awards_text)
     audience_sentiment = calculate_audience_sentiment(imdb_rating)
-    
-    # Compare the sentiments
     if critic_sentiment > 0 and audience_sentiment > 0:
-        comparison = "Aligned Positive"
+        return "Aligned Positive"
     elif critic_sentiment < 0 and audience_sentiment < 0:
-        comparison = "Aligned Negative"
+        return "Aligned Negative"
     elif critic_sentiment == audience_sentiment:
-        comparison = "Aligned Neutral"
+        return "Aligned Neutral"
     else:
-        comparison = "Discrepant Sentiment"
-    
-    return comparison
+        return "Discrepant Sentiment"
 
-# Integrating this new feature in the movie data processing
+# Process Movie Data with All Features
 def process_movie_data(titles, api_key):
     data = []
     for title in titles:
         movie_data = fetch_movie_data(title, api_key)
         if movie_data and movie_data.get("Response") == "True":
+            genres = movie_data.get("Genre", "")
             imdb_rating = float(movie_data.get("imdbRating", 0))
             awards_text = movie_data.get("Awards", "")
+            release_date = movie_data.get("Released", "")
+            cast = movie_data.get("Actors", "").split(",") if movie_data.get("Actors") else []
             
-            # Use the new feature to get critics vs audience sentiment
+            # Calculate Features
+            genre_sentiment = analyze_genre_sentiment(genres)
+            awards_count = extract_awards_count(awards_text)
+            diversity_index = calculate_diversity_index(cast)
+            climate_suitability = estimate_climate_suitability(release_date, genres)
             sentiment_comparison = compare_sentiment(awards_text, imdb_rating)
             
-            # Add the sentiment comparison along with other features to the DataFrame
+            # Append Results
             data.append({
                 "Title": movie_data.get("Title"),
                 "IMDb Rating": imdb_rating,
-                "Critics vs Audience Sentiment": sentiment_comparison,
-                # Include other features...
+                "Genre Sentiment": genre_sentiment,
+                "Awards Count": awards_count,
+                "Diversity Index": diversity_index,
+                "Climate Suitability": climate_suitability,
+                "Critics vs Audience Sentiment": sentiment_comparison
             })
     return pd.DataFrame(data)
 
-# Example usage
+# Example Usage
 def main():
-    api_key = '121c5367'
+    api_key = '121c5367'  # Replace with your actual OMDb API key
     movie_titles = ["Inception", "Frozen", "Avengers: Endgame"]
     result_df = process_movie_data(movie_titles, api_key)
     print(result_df)
