@@ -120,7 +120,36 @@ def box_office_analysis(budget, revenue):
     else:
         return "Flop"
 
-# Updating the process_movie_data function to include the feature
+# Function to calculate Viewer Engagement
+def calculate_viewer_engagement(runtime, genres):
+    if not runtime or not genres:
+        return "Unknown"
+    
+    # Categorize runtime
+    try:
+        runtime = int(runtime.replace(" min", ""))
+        if runtime < 90:
+            runtime_category = "Short"
+        elif 90 <= runtime <= 150:
+            runtime_category = "Moderate"
+        else:
+            runtime_category = "Long"
+    except ValueError:
+        return "Unknown"
+    
+    # Assign weights to genres
+    high_engagement_genres = ["Drama", "Fantasy", "Mystery", "Sci-Fi"]
+    genre_weight = sum(1 for genre in genres.split(",") if genre.strip() in high_engagement_genres)
+    
+    # Combine metrics
+    if runtime_category == "Long" and genre_weight >= 2:
+        return "High Engagement"
+    elif runtime_category == "Moderate" and genre_weight >= 1:
+        return "Moderate Engagement"
+    else:
+        return "Low Engagement"
+
+# Updating the process_movie_data function to include the Viewer Engagement feature
 def process_movie_data(titles, api_key):
     data = []
     for title in titles:
@@ -128,17 +157,17 @@ def process_movie_data(titles, api_key):
         if movie_data and movie_data.get("Response") == "True":
             imdb_rating = float(movie_data.get("imdbRating", 0))
             awards_text = movie_data.get("Awards", "")
-            budget = float(movie_data.get("Budget", 0))  # Replace with actual budget source
-            revenue = float(movie_data.get("BoxOffice", 0))  # Replace with actual revenue source
+            runtime = movie_data.get("Runtime", "")
+            genres = movie_data.get("Genre", "")
             
             sentiment_comparison = compare_sentiment(awards_text, imdb_rating)
-            box_office_result = box_office_analysis(budget, revenue)
+            viewer_engagement = calculate_viewer_engagement(runtime, genres)
             
             data.append({
                 "Title": movie_data.get("Title"),
                 "IMDb Rating": imdb_rating,
                 "Critics vs Audience Sentiment": sentiment_comparison,
-                "Box Office Analysis": box_office_result,
+                "Viewer Engagement": viewer_engagement,
                 # Include other features...
             })
     return pd.DataFrame(data)
