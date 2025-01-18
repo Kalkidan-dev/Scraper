@@ -184,7 +184,22 @@ def calculate_international_appeal(languages, countries, cast_list):
     except Exception as e:
         return "Unknown"
 
-# Updating the process_movie_data function to include the International Appeal Score feature
+# Function to calculate Franchise Potential Score
+def calculate_franchise_potential(genre, revenue, imdb_rating):
+    franchise_genres = ["Action", "Adventure", "Sci-Fi", "Superhero", "Fantasy", "Animation"]
+    genre_factor = any(g in genre for g in franchise_genres)
+    
+    # Normalize revenue for scoring (example: divide by 1 billion to scale it)
+    revenue_score = revenue / 1_000_000_000 if revenue else 0
+    
+    # Adjust IMDb rating for scoring
+    imdb_score = imdb_rating / 10 if imdb_rating else 0
+    
+    # Franchise potential formula
+    franchise_score = (0.5 * genre_factor) + (0.3 * revenue_score) + (0.2 * imdb_score)
+    return round(franchise_score * 100, 2)  # Scale to percentage
+
+# Update the process_movie_data function to include Franchise Potential Score
 def process_movie_data(titles, api_key):
     data = []
     for title in titles:
@@ -197,10 +212,13 @@ def process_movie_data(titles, api_key):
             languages = movie_data.get("Language", "")
             countries = movie_data.get("Country", "")
             cast = movie_data.get("Actors", "").split(",")
-            
+            box_office = movie_data.get("BoxOffice", "")
+            revenue = int(re.sub(r"[^\d]", "", box_office)) if box_office else 0  # Extract revenue
+
             sentiment_comparison = compare_sentiment(awards_text, imdb_rating)
             viewer_engagement = calculate_viewer_engagement(runtime, genres)
             international_appeal = calculate_international_appeal(languages, countries, cast)
+            franchise_potential = calculate_franchise_potential(genres, revenue, imdb_rating)
             
             data.append({
                 "Title": movie_data.get("Title"),
@@ -208,6 +226,7 @@ def process_movie_data(titles, api_key):
                 "Critics vs Audience Sentiment": sentiment_comparison,
                 "Viewer Engagement": viewer_engagement,
                 "International Appeal Score": international_appeal,
+                "Franchise Potential Score": franchise_potential,
                 # Include other features...
             })
     return pd.DataFrame(data)
