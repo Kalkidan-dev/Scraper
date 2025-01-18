@@ -149,7 +149,42 @@ def calculate_viewer_engagement(runtime, genres):
     else:
         return "Low Engagement"
 
-# Updating the process_movie_data function to include the Viewer Engagement feature
+# Function to calculate International Appeal Score
+def calculate_international_appeal(languages, countries, cast_list):
+    if not languages or not countries:
+        return "Unknown"
+    
+    try:
+        # Count number of languages
+        language_count = len(languages.split(","))
+        
+        # Count number of production countries
+        country_count = len(countries.split(","))
+        
+        # Dummy dataset for cast details (for demonstration)
+        cast_details = {
+            "Leonardo DiCaprio": {"nationality": "USA"},
+            "Morgan Freeman": {"nationality": "USA"},
+            "Marion Cotillard": {"nationality": "France"},
+            # Add more actors for real calculations
+        }
+        
+        # Count unique nationalities in the cast
+        cast_nationalities = set()
+        for actor in cast_list:
+            details = cast_details.get(actor.strip())
+            if details:
+                cast_nationalities.add(details["nationality"])
+        cast_nationality_count = len(cast_nationalities)
+        
+        # Calculate International Appeal Score
+        appeal_score = (language_count * 0.4) + (country_count * 0.4) + (cast_nationality_count * 0.2)
+        return round(appeal_score, 2)
+    
+    except Exception as e:
+        return "Unknown"
+
+# Updating the process_movie_data function to include the International Appeal Score feature
 def process_movie_data(titles, api_key):
     data = []
     for title in titles:
@@ -159,15 +194,20 @@ def process_movie_data(titles, api_key):
             awards_text = movie_data.get("Awards", "")
             runtime = movie_data.get("Runtime", "")
             genres = movie_data.get("Genre", "")
+            languages = movie_data.get("Language", "")
+            countries = movie_data.get("Country", "")
+            cast = movie_data.get("Actors", "").split(",")
             
             sentiment_comparison = compare_sentiment(awards_text, imdb_rating)
             viewer_engagement = calculate_viewer_engagement(runtime, genres)
+            international_appeal = calculate_international_appeal(languages, countries, cast)
             
             data.append({
                 "Title": movie_data.get("Title"),
                 "IMDb Rating": imdb_rating,
                 "Critics vs Audience Sentiment": sentiment_comparison,
                 "Viewer Engagement": viewer_engagement,
+                "International Appeal Score": international_appeal,
                 # Include other features...
             })
     return pd.DataFrame(data)
