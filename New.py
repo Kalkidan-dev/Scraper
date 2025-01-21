@@ -301,7 +301,24 @@ def calculate_sequel_potential(genre, revenue, imdb_rating, is_part_of_franchise
     sequel_score = (0.4 * genre_factor) + (0.3 * revenue_score) + (0.2 * imdb_score) + (0.1 * franchise_factor)
     return round(sequel_score * 100, 2)  # Scale to percentage
 
-# Update process_movie_data to include Sequel Potential Score
+# Function to calculate Social Media Buzz Score
+def calculate_social_media_buzz(title):
+    # Dummy dataset for demonstration
+    social_media_data = {
+        "Inception": {"mentions": 150_000, "engagements": 2_500_000},
+        "Frozen": {"mentions": 200_000, "engagements": 3_000_000},
+        "Avengers: Endgame": {"mentions": 500_000, "engagements": 10_000_000},
+    }
+    buzz_data = social_media_data.get(title, {"mentions": 0, "engagements": 0})
+    
+    # Calculate Buzz Score
+    mentions_score = buzz_data["mentions"] / 1_000_000  # Normalize mentions
+    engagements_score = buzz_data["engagements"] / 10_000_000  # Normalize engagements
+    buzz_score = (0.6 * mentions_score) + (0.4 * engagements_score)
+    
+    return round(buzz_score * 100, 2)  # Scale to percentage
+
+# Update process_movie_data to include Social Media Buzz Score
 def process_movie_data(titles, api_key):
     data = []
     for title in titles:
@@ -323,6 +340,7 @@ def process_movie_data(titles, api_key):
             international_appeal = calculate_international_appeal(languages, countries, cast)
             franchise_potential = calculate_franchise_potential(genres, revenue, imdb_rating)
             sequel_potential = calculate_sequel_potential(genres, revenue, imdb_rating, is_part_of_franchise)
+            social_media_buzz = calculate_social_media_buzz(title)
 
             data.append({
                 "Title": movie_data.get("Title"),
@@ -332,6 +350,7 @@ def process_movie_data(titles, api_key):
                 "International Appeal Score": international_appeal,
                 "Franchise Potential Score": franchise_potential,
                 "Sequel Potential Score": sequel_potential,
+                "Social Media Buzz Score": social_media_buzz,
             })
     return pd.DataFrame(data)
 
