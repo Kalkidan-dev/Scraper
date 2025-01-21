@@ -199,8 +199,61 @@ def calculate_franchise_potential(genre, revenue, imdb_rating):
     franchise_score = (0.5 * genre_factor) + (0.3 * revenue_score) + (0.2 * imdb_score)
     return round(franchise_score * 100, 2)  # Scale to percentage
 
-# Update the process_movie_data function to include Franchise Potential Score
+# Function to calculate Audience Demographics Appeal
+def calculate_audience_demographics_appeal(genres):
+    demographic_preferences = {
+        "Family": {"Kids": 0.7, "Teens": 0.5, "Adults": 0.3},
+        "Action": {"Kids": 0.4, "Teens": 0.8, "Adults": 0.7},
+        "Romance": {"Teens": 0.6, "Adults": 0.8},
+        "Comedy": {"Kids": 0.6, "Teens": 0.7, "Adults": 0.6},
+        "Drama": {"Adults": 0.9},
+        "Animation": {"Kids": 0.9, "Teens": 0.6}
+    }
+    appeal_scores = {"Kids": 0, "Teens": 0, "Adults": 0}
+    for genre in genres.split(","):
+        genre = genre.strip()
+        if genre in demographic_preferences:
+            for group, score in demographic_preferences[genre].items():
+                appeal_scores[group] += score
+    # Normalize scores
+    total_genres = len(genres.split(","))
+    for group in appeal_scores:
+        appeal_scores[group] = round(appeal_scores[group] / total_genres, 2)
+    return appeal_scores
+
+# Update process_movie_data to include Audience Demographics Appeal
 def process_movie_data(titles, api_key):
+    data = []
+    for title in titles:
+        movie_data = fetch_movie_data(title, api_key)
+        if movie_data and movie_data.get("Response") == "True":
+            imdb_rating = float(movie_data.get("imdbRating", 0))
+            awards_text = movie_data.get("Awards", "")
+            runtime = movie_data.get("Runtime", "")
+            genres = movie_data.get("Genre", "")
+            languages = movie_data.get("Language", "")
+            countries = movie_data.get("Country", "")
+            cast = movie_data.get("Actors", "").split(",")
+            box_office = movie_data.get("BoxOffice", "")
+            revenue = int(re.sub(r"[^\d]", "", box_office)) if box_office else 0
+
+            sentiment_comparison = compare_sentiment(awards_text, imdb_rating)
+            viewer_engagement = calculate_viewer_engagement(runtime, genres)
+            international_appeal = calculate_international_appeal(languages, countries, cast)
+            franchise_potential = calculate_franchise_potential(genres, revenue, imdb_rating)
+            audience_demographics = calculate_audience_demographics_appeal(genres)
+            
+            data.append({
+                "Title": movie_data.get("Title"),
+                "IMDb Rating": imdb_rating,
+                "Critics vs Audience Sentiment": sentiment_comparison,
+                "Viewer Engagement": viewer_engagement,
+                "International Appeal Score": international_appeal,
+                "Franchise Potential Score": franchise_potential,
+                "Audience Demographics Appeal": audience_demographics,
+            })
+    return pd.DataFrame(data)
+
     data = []
     for title in titles:
         movie_data = fetch_movie_data(title, api_key)
