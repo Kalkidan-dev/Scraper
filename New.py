@@ -321,69 +321,6 @@ def process_movie_data(titles, api_key):
             })
     return pd.DataFrame(data)
 
-    data = []
-    for title in titles:
-        movie_data = fetch_movie_data(title, api_key)
-        if movie_data and movie_data.get("Response") == "True":
-            imdb_rating = float(movie_data.get("imdbRating", 0))
-            awards_text = movie_data.get("Awards", "")
-            runtime = movie_data.get("Runtime", "")
-            genres = movie_data.get("Genre", "")
-            languages = movie_data.get("Language", "")
-            countries = movie_data.get("Country", "")
-            cast = movie_data.get("Actors", "").split(",")
-            box_office = movie_data.get("BoxOffice", "")
-            revenue = int(re.sub(r"[^\d]", "", box_office)) if box_office else 0
-
-            sentiment_comparison = compare_sentiment(awards_text, imdb_rating)
-            viewer_engagement = calculate_viewer_engagement(runtime, genres)
-            international_appeal = calculate_international_appeal(languages, countries, cast)
-            franchise_potential = calculate_franchise_potential(genres, revenue, imdb_rating)
-            genre_diversity_score = calculate_genre_diversity(genres)
-            star_power_index = calculate_star_power_index(cast)
-
-            data.append({
-                "Title": movie_data.get("Title"),
-                "IMDb Rating": imdb_rating,
-                "Critics vs Audience Sentiment": sentiment_comparison,
-                "Viewer Engagement": viewer_engagement,
-                "International Appeal Score": international_appeal,
-                "Franchise Potential Score": franchise_potential,
-                "Genre Diversity Score": genre_diversity_score,
-                "Star Power Index": star_power_index,
-            })
-    return pd.DataFrame(data)
-
-    data = []
-    for title in titles:
-        movie_data = fetch_movie_data(title, api_key)
-        if movie_data and movie_data.get("Response") == "True":
-            imdb_rating = float(movie_data.get("imdbRating", 0))
-            awards_text = movie_data.get("Awards", "")
-            runtime = movie_data.get("Runtime", "")
-            genres = movie_data.get("Genre", "")
-            languages = movie_data.get("Language", "")
-            countries = movie_data.get("Country", "")
-            cast = movie_data.get("Actors", "").split(",")
-            box_office = movie_data.get("BoxOffice", "")
-            revenue = int(re.sub(r"[^\d]", "", box_office)) if box_office else 0
-
-            sentiment_comparison = compare_sentiment(awards_text, imdb_rating)
-            viewer_engagement = calculate_viewer_engagement(runtime, genres)
-            international_appeal = calculate_international_appeal(languages, countries, cast)
-            franchise_potential = calculate_franchise_potential(genres, revenue, imdb_rating)
-            genre_diversity_score = calculate_genre_diversity(genres)
-
-            data.append({
-                "Title": movie_data.get("Title"),
-                "IMDb Rating": imdb_rating,
-                "Critics vs Audience Sentiment": sentiment_comparison,
-                "Viewer Engagement": viewer_engagement,
-                "International Appeal Score": international_appeal,
-                "Franchise Potential Score": franchise_potential,
-                "Genre Diversity Score": genre_diversity_score,
-            })
-    return pd.DataFrame(data)
 
 # Example usage
 def main():
