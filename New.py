@@ -283,7 +283,25 @@ def calculate_soundtrack_popularity(soundtrack_artists):
     # Average soundtrack popularity score
     return round(total_score / artist_count, 2) if artist_count > 0 else 0.0
 
-# Update process_movie_data to include Soundtrack Popularity Score
+# Function to calculate Sequel Potential Score
+def calculate_sequel_potential(genre, revenue, imdb_rating, is_part_of_franchise):
+    sequel_genres = ["Action", "Adventure", "Sci-Fi", "Fantasy", "Animation", "Superhero"]
+    genre_factor = any(g in genre for g in sequel_genres)
+    
+    # Normalize revenue for scoring (e.g., divide by 1 billion to scale it)
+    revenue_score = revenue / 1_000_000_000 if revenue else 0
+    
+    # Adjust IMDb rating for scoring
+    imdb_score = imdb_rating / 10 if imdb_rating else 0
+    
+    # Consider if the movie is already part of a franchise
+    franchise_factor = 1 if is_part_of_franchise else 0.5
+    
+    # Sequel potential formula
+    sequel_score = (0.4 * genre_factor) + (0.3 * revenue_score) + (0.2 * imdb_score) + (0.1 * franchise_factor)
+    return round(sequel_score * 100, 2)  # Scale to percentage
+
+# Update process_movie_data to include Sequel Potential Score
 def process_movie_data(titles, api_key):
     data = []
     for title in titles:
@@ -296,17 +314,15 @@ def process_movie_data(titles, api_key):
             languages = movie_data.get("Language", "")
             countries = movie_data.get("Country", "")
             cast = movie_data.get("Actors", "").split(",")
-            soundtrack_artists = movie_data.get("Music", "")  # Assumes 'Music' key contains soundtrack artist info
             box_office = movie_data.get("BoxOffice", "")
             revenue = int(re.sub(r"[^\d]", "", box_office)) if box_office else 0
+            is_part_of_franchise = "Series" in movie_data.get("Type", "")  # Assuming 'Type' indicates franchise
 
             sentiment_comparison = compare_sentiment(awards_text, imdb_rating)
             viewer_engagement = calculate_viewer_engagement(runtime, genres)
             international_appeal = calculate_international_appeal(languages, countries, cast)
             franchise_potential = calculate_franchise_potential(genres, revenue, imdb_rating)
-            genre_diversity_score = calculate_genre_diversity(genres)
-            star_power_index = calculate_star_power_index(cast)
-            soundtrack_popularity = calculate_soundtrack_popularity(soundtrack_artists)
+            sequel_potential = calculate_sequel_potential(genres, revenue, imdb_rating, is_part_of_franchise)
 
             data.append({
                 "Title": movie_data.get("Title"),
@@ -315,9 +331,7 @@ def process_movie_data(titles, api_key):
                 "Viewer Engagement": viewer_engagement,
                 "International Appeal Score": international_appeal,
                 "Franchise Potential Score": franchise_potential,
-                "Genre Diversity Score": genre_diversity_score,
-                "Star Power Index": star_power_index,
-                "Soundtrack Popularity Score": soundtrack_popularity,
+                "Sequel Potential Score": sequel_potential,
             })
     return pd.DataFrame(data)
 
