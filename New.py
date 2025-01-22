@@ -390,7 +390,27 @@ def analyze_sequels_and_prequels(movie_title):
     score = 50 + (avg_related_rating * 5) if is_sequel else 20
     return round(score, 2)
 
-# Update process_movie_data to include Sequels and Prequels Analysis
+# Function to calculate Social Media Buzz Score
+def calculate_social_media_buzz(movie_title):
+    # Dummy dataset for demonstration purposes
+    social_media_data = {
+        "Inception": {"mentions": 150000, "trending_score": 85},
+        "Frozen": {"mentions": 200000, "trending_score": 90},
+        "Avengers: Endgame": {"mentions": 500000, "trending_score": 95},
+    }
+
+    movie_data = social_media_data.get(movie_title, None)
+    if not movie_data:
+        return "Unknown"
+
+    # Calculate buzz score as a weighted average of mentions and trending score
+    mentions_score = movie_data["mentions"] / 10000  # Normalize mentions
+    trending_score = movie_data["trending_score"] * 0.5  # Weight trending score
+    buzz_score = round(mentions_score + trending_score, 2)
+
+    return min(buzz_score, 100)  # Cap score at 100
+
+# Update process_movie_data to include Social Media Buzz Score
 def process_movie_data(titles, api_key):
     data = []
     for title in titles:
@@ -411,39 +431,6 @@ def process_movie_data(titles, api_key):
             international_appeal = calculate_international_appeal(languages, countries, cast)
             franchise_potential = calculate_franchise_potential(genres, revenue, imdb_rating)
             social_media_buzz = calculate_social_media_buzz(movie_data.get("Title"))
-            sequels_and_prequels_score = analyze_sequels_and_prequels(movie_data.get("Title"))
-
-            data.append({
-                "Title": movie_data.get("Title"),
-                "IMDb Rating": imdb_rating,
-                "Critics vs Audience Sentiment": sentiment_comparison,
-                "Viewer Engagement": viewer_engagement,
-                "International Appeal Score": international_appeal,
-                "Franchise Potential Score": franchise_potential,
-                "Social Media Buzz Score": social_media_buzz,
-                "Sequels and Prequels Score": sequels_and_prequels_score,
-            })
-    return pd.DataFrame(data)
-
-    data = []
-    for title in titles:
-        movie_data = fetch_movie_data(title, api_key)
-        if movie_data and movie_data.get("Response") == "True":
-            imdb_rating = float(movie_data.get("imdbRating", 0))
-            awards_text = movie_data.get("Awards", "")
-            runtime = movie_data.get("Runtime", "")
-            genres = movie_data.get("Genre", "")
-            languages = movie_data.get("Language", "")
-            countries = movie_data.get("Country", "")
-            cast = movie_data.get("Actors", "").split(",")
-            box_office = movie_data.get("BoxOffice", "")
-            revenue = int(re.sub(r"[^\d]", "", box_office)) if box_office else 0
-
-            sentiment_comparison = compare_sentiment(awards_text, imdb_rating)
-            viewer_engagement = calculate_viewer_engagement(runtime, genres)
-            international_appeal = calculate_international_appeal(languages, countries, cast)
-            franchise_potential = calculate_franchise_potential(genres, revenue, imdb_rating)
-            social_media_buzz = calculate_social_media_buzz(movie_data.get("Title"))
 
             data.append({
                 "Title": movie_data.get("Title"),
@@ -455,6 +442,7 @@ def process_movie_data(titles, api_key):
                 "Social Media Buzz Score": social_media_buzz,
             })
     return pd.DataFrame(data)
+
 
 # Example usage
 def main():
