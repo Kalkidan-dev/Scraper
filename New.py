@@ -336,7 +336,29 @@ def calculate_sequel_potential(genres, revenue, imdb_rating, is_part_of_franchis
     )
     return round(sequel_score * 100, 2)  # Scale to percentage
 
-# Update process_movie_data to include Sequel Potential Score
+# Function to calculate Social Media Buzz Score
+def calculate_social_media_buzz(movie_title):
+    # Dummy dataset for social media analysis
+    social_media_data = {
+        "Inception": {"mentions": 120000, "hashtags": 45000, "likes": 800000},
+        "Frozen": {"mentions": 200000, "hashtags": 60000, "likes": 1000000},
+        "Avengers: Endgame": {"mentions": 500000, "hashtags": 150000, "likes": 3000000},
+    }
+
+    movie_stats = social_media_data.get(movie_title, None)
+    if not movie_stats:
+        return "Unknown"
+
+    # Normalize values for scoring
+    mention_score = movie_stats["mentions"] / 1_000_000
+    hashtag_score = movie_stats["hashtags"] / 100_000
+    like_score = movie_stats["likes"] / 10_000_000
+
+    # Social media buzz formula
+    buzz_score = (0.4 * mention_score) + (0.3 * hashtag_score) + (0.3 * like_score)
+    return round(buzz_score * 100, 2)  # Scale to percentage
+
+# Update process_movie_data to include Social Media Buzz Score
 def process_movie_data(titles, api_key):
     data = []
     for title in titles:
@@ -351,13 +373,12 @@ def process_movie_data(titles, api_key):
             cast = movie_data.get("Actors", "").split(",")
             box_office = movie_data.get("BoxOffice", "")
             revenue = int(re.sub(r"[^\d]", "", box_office)) if box_office else 0
-            is_part_of_franchise = "Series" in movie_data.get("Type", "")  # Assuming 'Type' indicates franchise
 
             sentiment_comparison = compare_sentiment(awards_text, imdb_rating)
             viewer_engagement = calculate_viewer_engagement(runtime, genres)
             international_appeal = calculate_international_appeal(languages, countries, cast)
             franchise_potential = calculate_franchise_potential(genres, revenue, imdb_rating)
-            sequel_potential = calculate_sequel_potential(genres, revenue, imdb_rating, is_part_of_franchise)
+            social_media_buzz = calculate_social_media_buzz(movie_data.get("Title"))
 
             data.append({
                 "Title": movie_data.get("Title"),
@@ -366,7 +387,7 @@ def process_movie_data(titles, api_key):
                 "Viewer Engagement": viewer_engagement,
                 "International Appeal Score": international_appeal,
                 "Franchise Potential Score": franchise_potential,
-                "Sequel Potential Score": sequel_potential,
+                "Social Media Buzz Score": social_media_buzz,
             })
     return pd.DataFrame(data)
 
