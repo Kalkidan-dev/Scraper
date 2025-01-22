@@ -430,7 +430,23 @@ def calculate_soundtrack_popularity(movie_title):
 
     return min(soundtrack_score, 100)  # Cap score at 100
 
-# Update process_movie_data to include Soundtrack Popularity Score
+# Function to calculate Sequel Potential Score
+def calculate_sequel_potential(genre, revenue, imdb_rating):
+    # Genres commonly associated with sequels
+    sequel_genres = ["Action", "Adventure", "Sci-Fi", "Fantasy", "Superhero", "Animation"]
+    genre_factor = any(g in genre for g in sequel_genres)
+
+    # Normalize revenue for scoring (example: divide by 1 billion to scale it)
+    revenue_score = revenue / 1_000_000_000 if revenue else 0
+
+    # Adjust IMDb rating for scoring
+    imdb_score = imdb_rating / 10 if imdb_rating else 0
+
+    # Sequel potential formula
+    sequel_score = (0.4 * genre_factor) + (0.4 * revenue_score) + (0.2 * imdb_score)
+    return round(sequel_score * 100, 2)  # Scale to percentage
+
+# Update process_movie_data to include Sequel Potential Score
 def process_movie_data(titles, api_key):
     data = []
     for title in titles:
@@ -450,7 +466,7 @@ def process_movie_data(titles, api_key):
             viewer_engagement = calculate_viewer_engagement(runtime, genres)
             international_appeal = calculate_international_appeal(languages, countries, cast)
             franchise_potential = calculate_franchise_potential(genres, revenue, imdb_rating)
-            soundtrack_popularity = calculate_soundtrack_popularity(movie_data.get("Title"))
+            sequel_potential = calculate_sequel_potential(genres, revenue, imdb_rating)
 
             data.append({
                 "Title": movie_data.get("Title"),
@@ -459,7 +475,7 @@ def process_movie_data(titles, api_key):
                 "Viewer Engagement": viewer_engagement,
                 "International Appeal Score": international_appeal,
                 "Franchise Potential Score": franchise_potential,
-                "Soundtrack Popularity Score": soundtrack_popularity,
+                "Sequel Potential Score": sequel_potential,
             })
     return pd.DataFrame(data)
 
