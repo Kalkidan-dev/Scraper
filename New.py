@@ -410,7 +410,27 @@ def calculate_social_media_buzz(movie_title):
 
     return min(buzz_score, 100)  # Cap score at 100
 
-# Update process_movie_data to include Social Media Buzz Score
+# Function to calculate Soundtrack Popularity Score
+def calculate_soundtrack_popularity(movie_title):
+    # Dummy dataset for demonstration purposes
+    soundtrack_data = {
+        "Inception": {"album_sales": 200000, "chart_rank": 5},
+        "Frozen": {"album_sales": 1000000, "chart_rank": 1},
+        "Avengers: Endgame": {"album_sales": 500000, "chart_rank": 3},
+    }
+
+    movie_data = soundtrack_data.get(movie_title, None)
+    if not movie_data:
+        return "Unknown"
+
+    # Calculate popularity score based on album sales and chart rank
+    sales_score = movie_data["album_sales"] / 100000  # Normalize album sales
+    rank_score = (10 - movie_data["chart_rank"]) * 10  # Higher rank is better
+    soundtrack_score = round((sales_score * 0.6) + (rank_score * 0.4), 2)
+
+    return min(soundtrack_score, 100)  # Cap score at 100
+
+# Update process_movie_data to include Soundtrack Popularity Score
 def process_movie_data(titles, api_key):
     data = []
     for title in titles:
@@ -430,7 +450,7 @@ def process_movie_data(titles, api_key):
             viewer_engagement = calculate_viewer_engagement(runtime, genres)
             international_appeal = calculate_international_appeal(languages, countries, cast)
             franchise_potential = calculate_franchise_potential(genres, revenue, imdb_rating)
-            social_media_buzz = calculate_social_media_buzz(movie_data.get("Title"))
+            soundtrack_popularity = calculate_soundtrack_popularity(movie_data.get("Title"))
 
             data.append({
                 "Title": movie_data.get("Title"),
@@ -439,7 +459,7 @@ def process_movie_data(titles, api_key):
                 "Viewer Engagement": viewer_engagement,
                 "International Appeal Score": international_appeal,
                 "Franchise Potential Score": franchise_potential,
-                "Social Media Buzz Score": social_media_buzz,
+                "Soundtrack Popularity Score": soundtrack_popularity,
             })
     return pd.DataFrame(data)
 
