@@ -318,7 +318,25 @@ def calculate_social_media_buzz(title):
     
     return round(buzz_score * 100, 2)  # Scale to percentage
 
-# Update process_movie_data to include Social Media Buzz Score
+# Function to calculate Sequel Potential Score
+def calculate_sequel_potential(genres, revenue, imdb_rating, is_part_of_franchise):
+    sequel_genres = ["Action", "Adventure", "Sci-Fi", "Fantasy", "Animation"]
+    genre_factor = any(genre.strip() in sequel_genres for genre in genres.split(","))
+    
+    # Normalize revenue and IMDb rating for scoring
+    revenue_score = revenue / 1_000_000_000 if revenue else 0  # Scale revenue
+    imdb_score = imdb_rating / 10 if imdb_rating else 0  # Scale IMDb rating
+
+    # Sequel potential formula
+    sequel_score = (
+        (0.5 * genre_factor) +
+        (0.3 * revenue_score) +
+        (0.1 * imdb_score) +
+        (0.1 if is_part_of_franchise else 0)
+    )
+    return round(sequel_score * 100, 2)  # Scale to percentage
+
+# Update process_movie_data to include Sequel Potential Score
 def process_movie_data(titles, api_key):
     data = []
     for title in titles:
@@ -340,7 +358,6 @@ def process_movie_data(titles, api_key):
             international_appeal = calculate_international_appeal(languages, countries, cast)
             franchise_potential = calculate_franchise_potential(genres, revenue, imdb_rating)
             sequel_potential = calculate_sequel_potential(genres, revenue, imdb_rating, is_part_of_franchise)
-            social_media_buzz = calculate_social_media_buzz(title)
 
             data.append({
                 "Title": movie_data.get("Title"),
@@ -350,10 +367,8 @@ def process_movie_data(titles, api_key):
                 "International Appeal Score": international_appeal,
                 "Franchise Potential Score": franchise_potential,
                 "Sequel Potential Score": sequel_potential,
-                "Social Media Buzz Score": social_media_buzz,
             })
     return pd.DataFrame(data)
-
 
 # Example usage
 def main():
