@@ -556,21 +556,60 @@ def calculate_language_influence(languages):
     # Normalize the score based on the number of languages
     return round(score / len(language_list), 2)
 
+# Function to calculate age group suitability
+def calculate_age_group_suitability(genre, content_rating):
+    if not genre or not content_rating:
+        return "Unknown"
+
+    # Define age group preferences based on genres
+    age_group_preferences = {
+        "Children": ["Animation", "Family", "Fantasy", "Adventure"],
+        "Teenagers": ["Action", "Romance", "Comedy", "Superhero"],
+        "Adults": ["Drama", "Thriller", "Horror", "Crime"],
+        "Seniors": ["Biography", "Historical", "Documentary"]
+    }
+
+    # Match content rating to broad age groups
+    content_rating_mapping = {
+        "G": "Children",
+        "PG": "Children/Teenagers",
+        "PG-13": "Teenagers/Adults",
+        "R": "Adults",
+        "NC-17": "Adults",
+        # Add more ratings if applicable
+    }
+
+    # Determine the primary audience from content rating
+    primary_audience = content_rating_mapping.get(content_rating, "Unknown")
+
+    # Check genre alignment with each age group
+    suitability = []
+    for age_group, preferred_genres in age_group_preferences.items():
+        for preferred_genre in preferred_genres:
+            if preferred_genre in genre:
+                suitability.append(age_group)
+
+    if not suitability:
+        return f"Suitable for {primary_audience}" if primary_audience != "Unknown" else "Unknown"
+    return f"Suitable for {', '.join(set(suitability))}"
+
 # Integrate the feature into the process_movie_data function
-def process_movie_data_with_language_influence(titles, api_key):
+def process_movie_data_with_age_group_suitability(titles, api_key):
     data = []
     for title in titles:
         movie_data = fetch_movie_data(title, api_key)
         if movie_data and movie_data.get("Response") == "True":
-            languages = movie_data.get("Language", "")
+            genre = movie_data.get("Genre", "")
+            content_rating = movie_data.get("Rated", "")
 
-            # Use the new feature to calculate language influence
-            language_influence_score = calculate_language_influence(languages)
+            # Use the new feature to calculate age group suitability
+            age_group_suitability = calculate_age_group_suitability(genre, content_rating)
 
             data.append({
                 "Title": movie_data.get("Title"),
-                "Languages": languages,
-                "Language Influence Score": language_influence_score,
+                "Genre": genre,
+                "Content Rating": content_rating,
+                "Age Group Suitability": age_group_suitability,
                 # Include other features...
             })
     return pd.DataFrame(data)
@@ -578,8 +617,8 @@ def process_movie_data_with_language_influence(titles, api_key):
 # Example usage
 def main():
     api_key = '121c5367'
-    movie_titles = ["Inception", "Parasite", "Coco"]
-    result_df = process_movie_data_with_language_influence(movie_titles, api_key)
+    movie_titles = ["Finding Nemo", "The Dark Knight", "The Godfather"]
+    result_df = process_movie_data_with_age_group_suitability(movie_titles, api_key)
     print(result_df)
 
 if __name__ == "__main__":
