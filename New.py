@@ -459,7 +459,31 @@ def analyze_social_media_buzz(title):
     buzz_score = (0.4 * (mentions / 100000)) + (0.3 * (hashtags / 10000)) + (0.3 * (sentiment_score + 1) / 2)
     return round(buzz_score * 100, 2)  # Scale to percentage
 
-# Update the process_movie_data function to include Social Media Buzz
+# Function to calculate streaming platform compatibility
+def calculate_streaming_compatibility(runtime, genres):
+    # Define preferred genres for streaming platforms
+    streaming_preferred_genres = [
+        "Drama", "Comedy", "Thriller", "Documentary", "Romance", "Sci-Fi"
+    ]
+
+    # Score based on genres
+    genre_score = sum(1 for genre in genres.split(",") if genre.strip() in streaming_preferred_genres)
+    genre_score = genre_score / len(streaming_preferred_genres)
+
+    # Score based on runtime (optimal streaming runtime: 90-120 minutes)
+    runtime_minutes = int(re.search(r"(\d+)", runtime).group(1)) if runtime else 0
+    if 90 <= runtime_minutes <= 120:
+        runtime_score = 1.0
+    elif 60 <= runtime_minutes < 90 or 120 < runtime_minutes <= 150:
+        runtime_score = 0.7
+    else:
+        runtime_score = 0.4
+
+    # Combine genre and runtime scores
+    compatibility_score = (0.6 * genre_score) + (0.4 * runtime_score)
+    return round(compatibility_score * 100, 2)
+
+# Update process_movie_data function to include Streaming Platform Compatibility
 def process_movie_data(titles, api_key):
     data = []
     for title in titles:
@@ -480,6 +504,7 @@ def process_movie_data(titles, api_key):
             international_appeal = calculate_international_appeal(languages, countries, cast)
             franchise_potential = calculate_franchise_potential(genres, revenue, imdb_rating)
             social_media_buzz = analyze_social_media_buzz(movie_data.get("Title"))
+            streaming_compatibility = calculate_streaming_compatibility(runtime, genres)
 
             data.append({
                 "Title": movie_data.get("Title"),
@@ -489,21 +514,10 @@ def process_movie_data(titles, api_key):
                 "International Appeal Score": international_appeal,
                 "Franchise Potential Score": franchise_potential,
                 "Social Media Buzz Score": social_media_buzz,
+                "Streaming Compatibility Score": streaming_compatibility,
                 # Include other features...
             })
     return pd.DataFrame(data)
-
-# Example usage
-def main():
-    api_key = '121c5367'
-    movie_titles = ["Inception", "Frozen", "Avengers: Endgame"]
-    result_df = process_movie_data(movie_titles, api_key)
-    print(result_df)
-
-if __name__ == "__main__":
-    main()
-
-
 
 # Example usage
 def main():
