@@ -446,7 +446,20 @@ def calculate_sequel_potential(genre, revenue, imdb_rating):
     sequel_score = (0.4 * genre_factor) + (0.4 * revenue_score) + (0.2 * imdb_score)
     return round(sequel_score * 100, 2)  # Scale to percentage
 
-# Update process_movie_data to include Sequel Potential Score
+import random
+
+# Function to simulate social media buzz analysis
+def analyze_social_media_buzz(title):
+    # Dummy implementation: Randomly generate social media metrics
+    mentions = random.randint(1000, 100000)  # Number of mentions
+    hashtags = random.randint(100, 10000)    # Number of unique hashtags
+    sentiment_score = random.uniform(-1, 1)  # Sentiment score (-1 to 1)
+
+    # Calculate buzz score (weighted formula)
+    buzz_score = (0.4 * (mentions / 100000)) + (0.3 * (hashtags / 10000)) + (0.3 * (sentiment_score + 1) / 2)
+    return round(buzz_score * 100, 2)  # Scale to percentage
+
+# Update the process_movie_data function to include Social Media Buzz
 def process_movie_data(titles, api_key):
     data = []
     for title in titles:
@@ -460,13 +473,13 @@ def process_movie_data(titles, api_key):
             countries = movie_data.get("Country", "")
             cast = movie_data.get("Actors", "").split(",")
             box_office = movie_data.get("BoxOffice", "")
-            revenue = int(re.sub(r"[^\d]", "", box_office)) if box_office else 0
+            revenue = int(re.sub(r"[^\d]", "", box_office)) if box_office else 0  # Extract revenue
 
             sentiment_comparison = compare_sentiment(awards_text, imdb_rating)
             viewer_engagement = calculate_viewer_engagement(runtime, genres)
             international_appeal = calculate_international_appeal(languages, countries, cast)
             franchise_potential = calculate_franchise_potential(genres, revenue, imdb_rating)
-            sequel_potential = calculate_sequel_potential(genres, revenue, imdb_rating)
+            social_media_buzz = analyze_social_media_buzz(movie_data.get("Title"))
 
             data.append({
                 "Title": movie_data.get("Title"),
@@ -475,9 +488,21 @@ def process_movie_data(titles, api_key):
                 "Viewer Engagement": viewer_engagement,
                 "International Appeal Score": international_appeal,
                 "Franchise Potential Score": franchise_potential,
-                "Sequel Potential Score": sequel_potential,
+                "Social Media Buzz Score": social_media_buzz,
+                # Include other features...
             })
     return pd.DataFrame(data)
+
+# Example usage
+def main():
+    api_key = '121c5367'
+    movie_titles = ["Inception", "Frozen", "Avengers: Endgame"]
+    result_df = process_movie_data(movie_titles, api_key)
+    print(result_df)
+
+if __name__ == "__main__":
+    main()
+
 
 
 # Example usage
