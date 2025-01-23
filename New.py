@@ -527,22 +527,50 @@ def estimate_audience_age_group(genre, plot, mpaa_rating):
     return mpaa_based_group
 
 # Integrate the feature into the process_movie_data function
-def process_movie_data_with_age_group(titles, api_key):
+# Function to calculate language influence score
+def calculate_language_influence(languages):
+    if not languages:
+        return 0.0
+
+    # Assign influence scores to common languages (example values, can be adjusted)
+    language_influence = {
+        "English": 1.0,
+        "Mandarin": 0.9,
+        "Spanish": 0.8,
+        "Hindi": 0.7,
+        "French": 0.6,
+        "Arabic": 0.6,
+        "Portuguese": 0.5,
+        "Russian": 0.5,
+        "Japanese": 0.5,
+        "German": 0.4,
+        # Add more languages if needed
+    }
+
+    score = 0.0
+    language_list = [lang.strip() for lang in languages.split(",")]
+
+    for lang in language_list:
+        score += language_influence.get(lang, 0.2)  # Default influence score for less common languages
+
+    # Normalize the score based on the number of languages
+    return round(score / len(language_list), 2)
+
+# Integrate the feature into the process_movie_data function
+def process_movie_data_with_language_influence(titles, api_key):
     data = []
     for title in titles:
         movie_data = fetch_movie_data(title, api_key)
         if movie_data and movie_data.get("Response") == "True":
-            genre = movie_data.get("Genre", "")
-            plot = movie_data.get("Plot", "")
-            mpaa_rating = movie_data.get("Rated", "")
+            languages = movie_data.get("Language", "")
 
-            # Use the new feature to estimate audience age group
-            age_group = estimate_audience_age_group(genre, plot, mpaa_rating)
+            # Use the new feature to calculate language influence
+            language_influence_score = calculate_language_influence(languages)
 
             data.append({
                 "Title": movie_data.get("Title"),
-                "Genre": genre,
-                "Age Group": age_group,
+                "Languages": languages,
+                "Language Influence Score": language_influence_score,
                 # Include other features...
             })
     return pd.DataFrame(data)
@@ -550,8 +578,8 @@ def process_movie_data_with_age_group(titles, api_key):
 # Example usage
 def main():
     api_key = '121c5367'
-    movie_titles = ["Inception", "Frozen", "Avengers: Endgame"]
-    result_df = process_movie_data_with_age_group(movie_titles, api_key)
+    movie_titles = ["Inception", "Parasite", "Coco"]
+    result_df = process_movie_data_with_language_influence(movie_titles, api_key)
     print(result_df)
 
 if __name__ == "__main__":
