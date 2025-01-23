@@ -495,18 +495,54 @@ def check_streaming_availability(movie_title):
     
     return streaming_data.get(movie_title, ["Not Available"])
 
-# Integrating this feature in the movie data processing
-def process_movie_data_with_streaming(titles, api_key):
+# Function to estimate target audience age group
+def estimate_audience_age_group(genre, plot, mpaa_rating):
+    # Define genre and plot-based age group preferences
+    age_group_preferences = {
+        "Kids": ["Animation", "Family", "Adventure"],
+        "Teens": ["Action", "Comedy", "Fantasy"],
+        "Adults": ["Drama", "Thriller", "Horror"],
+        "All Ages": ["Biography", "Historical", "Documentary"]
+    }
+
+    # Default MPAA-based age group
+    if mpaa_rating in ["G"]:
+        return "Kids"
+    elif mpaa_rating in ["PG"]:
+        return "Kids to Teens"
+    elif mpaa_rating in ["PG-13"]:
+        return "Teens to Adults"
+    elif mpaa_rating in ["R", "NC-17"]:
+        return "Adults"
+    else:
+        mpaa_based_group = "All Ages"
+
+    # Determine age group based on genre and plot
+    for age_group, genres in age_group_preferences.items():
+        for keyword in genres:
+            if keyword in genre or keyword in plot:
+                return age_group
+
+    # Fall back to MPAA-based group if no match
+    return mpaa_based_group
+
+# Integrate the feature into the process_movie_data function
+def process_movie_data_with_age_group(titles, api_key):
     data = []
     for title in titles:
         movie_data = fetch_movie_data(title, api_key)
         if movie_data and movie_data.get("Response") == "True":
-            streaming_platforms = check_streaming_availability(movie_data.get("Title"))
-            
-            # Add the streaming platforms along with other features to the DataFrame
+            genre = movie_data.get("Genre", "")
+            plot = movie_data.get("Plot", "")
+            mpaa_rating = movie_data.get("Rated", "")
+
+            # Use the new feature to estimate audience age group
+            age_group = estimate_audience_age_group(genre, plot, mpaa_rating)
+
             data.append({
                 "Title": movie_data.get("Title"),
-                "Streaming Platforms": ", ".join(streaming_platforms),
+                "Genre": genre,
+                "Age Group": age_group,
                 # Include other features...
             })
     return pd.DataFrame(data)
@@ -515,7 +551,7 @@ def process_movie_data_with_streaming(titles, api_key):
 def main():
     api_key = '121c5367'
     movie_titles = ["Inception", "Frozen", "Avengers: Endgame"]
-    result_df = process_movie_data_with_streaming(movie_titles, api_key)
+    result_df = process_movie_data_with_age_group(movie_titles, api_key)
     print(result_df)
 
 if __name__ == "__main__":
