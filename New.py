@@ -593,32 +593,58 @@ def calculate_age_group_suitability(genre, content_rating):
         return f"Suitable for {primary_audience}" if primary_audience != "Unknown" else "Unknown"
     return f"Suitable for {', '.join(set(suitability))}"
 
-# Integrate the feature into the process_movie_data function
-def process_movie_data_with_age_group_suitability(titles, api_key):
+# Function to calculate runtime suitability for different age groups
+def calculate_runtime_suitability(runtime, age_group):
+    if not runtime or not age_group:
+        return "Unknown"
+
+    runtime_minutes = int(runtime.replace(" min", "")) if "min" in runtime else 0
+
+    # Define typical runtime preferences by age group
+    runtime_preferences = {
+        "Children": (30, 90),  # Suitable for 30-90 mins
+        "Teenagers": (90, 150),  # Suitable for 90-150 mins
+        "Adults": (90, 180),  # Suitable for 90-180 mins
+        "Seniors": (60, 150),  # Suitable for 60-150 mins
+    }
+
+    for group, (min_time, max_time) in runtime_preferences.items():
+        if group in age_group and min_time <= runtime_minutes <= max_time:
+            return "Suitable"
+    return "Not Suitable"
+
+# Integrate runtime suitability into process_movie_data function
+def process_movie_data_with_runtime_suitability(titles, api_key):
     data = []
     for title in titles:
         movie_data = fetch_movie_data(title, api_key)
         if movie_data and movie_data.get("Response") == "True":
             genre = movie_data.get("Genre", "")
             content_rating = movie_data.get("Rated", "")
+            runtime = movie_data.get("Runtime", "")
 
-            # Use the new feature to calculate age group suitability
+            # Calculate age group suitability
             age_group_suitability = calculate_age_group_suitability(genre, content_rating)
+            
+            # Calculate runtime suitability
+            runtime_suitability = calculate_runtime_suitability(runtime, age_group_suitability)
 
             data.append({
                 "Title": movie_data.get("Title"),
                 "Genre": genre,
                 "Content Rating": content_rating,
+                "Runtime": runtime,
                 "Age Group Suitability": age_group_suitability,
+                "Runtime Suitability": runtime_suitability,
                 # Include other features...
             })
     return pd.DataFrame(data)
 
-# Example usage
+
 def main():
     api_key = '121c5367'
     movie_titles = ["Finding Nemo", "The Dark Knight", "The Godfather"]
-    result_df = process_movie_data_with_age_group_suitability(movie_titles, api_key)
+    result_df = process_movie_data_with_runtime_suitability(movie_titles, api_key)
     print(result_df)
 
 if __name__ == "__main__":
