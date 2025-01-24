@@ -687,30 +687,75 @@ def analyze_plot_sentiment(plot):
     else:
         return "Neutral"
 
-# Integrate sentiment analysis into the process_movie_data function
-def process_movie_data_with_sentiment_analysis(titles, api_key):
+# Function to calculate director's popularity score
+def calculate_director_popularity(director, imdb_rating, awards, box_office):
+    if not director:
+        return 0
+
+    # Define thresholds for successful movies
+    min_imdb_rating = 7.0
+    min_awards = 3
+    high_box_office = 50_000_000  # Example: $50M
+    
+    # Calculate box office revenue
+    box_office = int(box_office.replace("$", "").replace(",", "").strip()) if box_office else 0
+    
+    # Define a basic "popularity score" for each movie based on IMDb rating, awards, and box office
+    popularity_score = 0
+    if float(imdb_rating) >= min_imdb_rating:
+        popularity_score += 2
+    if int(awards) >= min_awards:
+        popularity_score += 2
+    if box_office >= high_box_office:
+        popularity_score += 1
+    
+    return popularity_score
+
+# Integrate director popularity score into the process_movie_data function
+def process_movie_data_with_director_popularity(titles, api_key):
     data = []
+    director_scores = {}  # To store director's cumulative popularity score
+    
     for title in titles:
         movie_data = fetch_movie_data(title, api_key)
         if movie_data and movie_data.get("Response") == "True":
-            plot = movie_data.get("Plot", "")
+            imdb_rating = movie_data.get("imdbRating", "0")
+            awards = movie_data.get("Awards", "0 wins").split(" ")[0]  # Extract number of wins
+            box_office = movie_data.get("BoxOffice", "$0")
+            director = movie_data.get("Director", "")
+
+            # Calculate director's popularity score
+            director_popularity = calculate_director_popularity(director, imdb_rating, awards, box_office)
             
-            # Perform sentiment analysis
-            plot_sentiment = analyze_plot_sentiment(plot)
+            # Accumulate popularity score by director
+            if director:
+                if director not in director_scores:
+                    director_scores[director] = 0
+                director_scores[director] += director_popularity
 
             data.append({
                 "Title": movie_data.get("Title"),
-                "Plot": plot,
-                "Plot Sentiment": plot_sentiment,
+                "Director": director,
+                "IMDb Rating": imdb_rating,
+                "Awards": awards,
+                "Box Office": box_office,
+                "Director Popularity Score": director_popularity,
                 # Include other features...
             })
+    
+    # Add cumulative popularity score for each director to the dataset
+    for row in data:
+        director = row["Director"]
+        if director:
+            row["Director Cumulative Popularity"] = director_scores.get(director, 0)
+    
     return pd.DataFrame(data)
 
 # Example usage
 def main():
     api_key = '121c5367'
-    movie_titles = ["The Pursuit of Happyness", "The Joker", "Zootopia"]
-    result_df = process_movie_data_with_sentiment_analysis(movie_titles, api_key)
+    movie_titles = ["Inception", "The Dark Knight", "Interstellar"]
+    result_df = process_movie_data_with_director_popularity(movie_titles, api_key)
     print(result_df)
 
 if __name__ == "__main__":
