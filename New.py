@@ -647,27 +647,45 @@ def predict_blockbuster(imdb_rating, awards, genre, box_office):
         return "Yes"
     return "No"
 
-# Integrate blockbuster prediction into the process_movie_data function
-def process_movie_data_with_blockbuster_prediction(titles, api_key):
+from datetime import datetime
+
+# Function to categorize release season
+def get_release_season(release_date):
+    if not release_date:
+        return "Unknown"
+    
+    # Parse the release date (assuming format: "DD MMM YYYY")
+    try:
+        date_object = datetime.strptime(release_date, "%d %b %Y")
+    except ValueError:
+        return "Unknown"
+    
+    month = date_object.month
+    if month in [12, 1, 2]:
+        return "Winter"
+    elif month in [3, 4, 5]:
+        return "Spring"
+    elif month in [6, 7, 8]:
+        return "Summer"
+    elif month in [9, 10, 11]:
+        return "Fall"
+    return "Unknown"
+
+# Integrate release season analysis into the process_movie_data function
+def process_movie_data_with_season_analysis(titles, api_key):
     data = []
     for title in titles:
         movie_data = fetch_movie_data(title, api_key)
         if movie_data and movie_data.get("Response") == "True":
-            imdb_rating = movie_data.get("imdbRating", "0")
-            awards = movie_data.get("Awards", "0 wins").split(" ")[0]  # Extract the number of wins
-            genre = movie_data.get("Genre", "")
-            box_office = movie_data.get("BoxOffice", "$0")
-
-            # Predict blockbuster status
-            blockbuster_status = predict_blockbuster(imdb_rating, awards, genre, box_office)
+            release_date = movie_data.get("Released", "")
+            
+            # Calculate release season
+            release_season = get_release_season(release_date)
 
             data.append({
                 "Title": movie_data.get("Title"),
-                "IMDb Rating": imdb_rating,
-                "Awards": awards,
-                "Genre": genre,
-                "Box Office": box_office,
-                "Blockbuster Status": blockbuster_status,
+                "Release Date": release_date,
+                "Release Season": release_season,
                 # Include other features...
             })
     return pd.DataFrame(data)
@@ -675,8 +693,8 @@ def process_movie_data_with_blockbuster_prediction(titles, api_key):
 # Example usage
 def main():
     api_key = '121c5367'
-    movie_titles = ["Avatar", "Parasite", "Toy Story"]
-    result_df = process_movie_data_with_blockbuster_prediction(movie_titles, api_key)
+    movie_titles = ["Frozen", "Titanic", "Avengers: Endgame"]
+    result_df = process_movie_data_with_season_analysis(movie_titles, api_key)
     print(result_df)
 
 if __name__ == "__main__":
