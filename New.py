@@ -711,51 +711,42 @@ def calculate_director_popularity(director, imdb_rating, awards, box_office):
     
     return popularity_score
 
-# Integrate director popularity score into the process_movie_data function
-def process_movie_data_with_director_popularity(titles, api_key):
+# Function to determine if a movie is part of a popular franchise
+def is_movie_in_franchise(title):
+    # Define popular franchises (you can add more as needed)
+    franchises = ["Marvel", "Star Wars", "Harry Potter", "Jurassic Park", "Fast & Furious", "Mission: Impossible", "Pirates of the Caribbean", "Transformers", "The Lord of the Rings"]
+
+    # Check if any franchise name is part of the movie title (case-insensitive)
+    for franchise in franchises:
+        if franchise.lower() in title.lower():
+            return True
+    return False
+
+# Integrate movie franchise indicator into the process_movie_data function
+def process_movie_data_with_franchise_indicator(titles, api_key):
     data = []
-    director_scores = {}  # To store director's cumulative popularity score
-    
     for title in titles:
         movie_data = fetch_movie_data(title, api_key)
         if movie_data and movie_data.get("Response") == "True":
-            imdb_rating = movie_data.get("imdbRating", "0")
-            awards = movie_data.get("Awards", "0 wins").split(" ")[0]  # Extract number of wins
-            box_office = movie_data.get("BoxOffice", "$0")
-            director = movie_data.get("Director", "")
-
-            # Calculate director's popularity score
-            director_popularity = calculate_director_popularity(director, imdb_rating, awards, box_office)
+            # Determine if the movie is part of a franchise
+            franchise_indicator = is_movie_in_franchise(movie_data.get("Title", ""))
             
-            # Accumulate popularity score by director
-            if director:
-                if director not in director_scores:
-                    director_scores[director] = 0
-                director_scores[director] += director_popularity
-
             data.append({
                 "Title": movie_data.get("Title"),
-                "Director": director,
-                "IMDb Rating": imdb_rating,
-                "Awards": awards,
-                "Box Office": box_office,
-                "Director Popularity Score": director_popularity,
+                "Genre": movie_data.get("Genre", ""),
+                "Director": movie_data.get("Director", ""),
+                "Release Date": movie_data.get("Released", ""),
+                "Franchise Indicator": "Yes" if franchise_indicator else "No",
                 # Include other features...
             })
-    
-    # Add cumulative popularity score for each director to the dataset
-    for row in data:
-        director = row["Director"]
-        if director:
-            row["Director Cumulative Popularity"] = director_scores.get(director, 0)
     
     return pd.DataFrame(data)
 
 # Example usage
 def main():
     api_key = '121c5367'
-    movie_titles = ["Inception", "The Dark Knight", "Interstellar"]
-    result_df = process_movie_data_with_director_popularity(movie_titles, api_key)
+    movie_titles = ["Avengers: Endgame", "The Matrix", "Fast & Furious 9"]
+    result_df = process_movie_data_with_franchise_indicator(movie_titles, api_key)
     print(result_df)
 
 if __name__ == "__main__":
