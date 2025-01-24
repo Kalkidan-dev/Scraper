@@ -613,38 +613,70 @@ def calculate_runtime_suitability(runtime, age_group):
             return "Suitable"
     return "Not Suitable"
 
-# Integrate runtime suitability into process_movie_data function
-def process_movie_data_with_runtime_suitability(titles, api_key):
+# Function to predict if a movie is a blockbuster
+def predict_blockbuster(imdb_rating, awards, genre, box_office):
+    # Define thresholds for a blockbuster
+    min_imdb_rating = 7.5
+    min_awards = 5
+    high_box_office = 100_000_000  # Example: $100M
+    
+    # Genre-based popularity (example scores)
+    genre_popularity = {
+        "Action": 1.2,
+        "Adventure": 1.1,
+        "Comedy": 1.0,
+        "Drama": 0.9,
+        "Horror": 0.8,
+        "Romance": 0.8,
+        "Animation": 1.3,
+        # Add more genres as needed
+    }
+    
+    # Calculate genre influence
+    genre_score = sum(genre_popularity.get(g.strip(), 1.0) for g in genre.split(","))
+    
+    # Normalize box office revenue
+    box_office = int(box_office.replace("$", "").replace(",", "").strip()) if box_office else 0
+    
+    # Predict blockbuster status
+    if (
+        float(imdb_rating) >= min_imdb_rating
+        and int(awards) >= min_awards
+        and box_office >= high_box_office * genre_score
+    ):
+        return "Yes"
+    return "No"
+
+# Integrate blockbuster prediction into the process_movie_data function
+def process_movie_data_with_blockbuster_prediction(titles, api_key):
     data = []
     for title in titles:
         movie_data = fetch_movie_data(title, api_key)
         if movie_data and movie_data.get("Response") == "True":
+            imdb_rating = movie_data.get("imdbRating", "0")
+            awards = movie_data.get("Awards", "0 wins").split(" ")[0]  # Extract the number of wins
             genre = movie_data.get("Genre", "")
-            content_rating = movie_data.get("Rated", "")
-            runtime = movie_data.get("Runtime", "")
+            box_office = movie_data.get("BoxOffice", "$0")
 
-            # Calculate age group suitability
-            age_group_suitability = calculate_age_group_suitability(genre, content_rating)
-            
-            # Calculate runtime suitability
-            runtime_suitability = calculate_runtime_suitability(runtime, age_group_suitability)
+            # Predict blockbuster status
+            blockbuster_status = predict_blockbuster(imdb_rating, awards, genre, box_office)
 
             data.append({
                 "Title": movie_data.get("Title"),
+                "IMDb Rating": imdb_rating,
+                "Awards": awards,
                 "Genre": genre,
-                "Content Rating": content_rating,
-                "Runtime": runtime,
-                "Age Group Suitability": age_group_suitability,
-                "Runtime Suitability": runtime_suitability,
+                "Box Office": box_office,
+                "Blockbuster Status": blockbuster_status,
                 # Include other features...
             })
     return pd.DataFrame(data)
 
-
+# Example usage
 def main():
     api_key = '121c5367'
-    movie_titles = ["Finding Nemo", "The Dark Knight", "The Godfather"]
-    result_df = process_movie_data_with_runtime_suitability(movie_titles, api_key)
+    movie_titles = ["Avatar", "Parasite", "Toy Story"]
+    result_df = process_movie_data_with_blockbuster_prediction(movie_titles, api_key)
     print(result_df)
 
 if __name__ == "__main__":
