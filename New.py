@@ -671,21 +671,37 @@ def get_release_season(release_date):
         return "Fall"
     return "Unknown"
 
-# Integrate release season analysis into the process_movie_data function
-def process_movie_data_with_season_analysis(titles, api_key):
+from textblob import TextBlob
+
+# Function to perform sentiment analysis on a movie plot
+def analyze_plot_sentiment(plot):
+    if not plot:
+        return "Unknown"
+    
+    # Analyze sentiment using TextBlob
+    sentiment = TextBlob(plot).sentiment
+    if sentiment.polarity > 0.2:
+        return "Positive"
+    elif sentiment.polarity < -0.2:
+        return "Negative"
+    else:
+        return "Neutral"
+
+# Integrate sentiment analysis into the process_movie_data function
+def process_movie_data_with_sentiment_analysis(titles, api_key):
     data = []
     for title in titles:
         movie_data = fetch_movie_data(title, api_key)
         if movie_data and movie_data.get("Response") == "True":
-            release_date = movie_data.get("Released", "")
+            plot = movie_data.get("Plot", "")
             
-            # Calculate release season
-            release_season = get_release_season(release_date)
+            # Perform sentiment analysis
+            plot_sentiment = analyze_plot_sentiment(plot)
 
             data.append({
                 "Title": movie_data.get("Title"),
-                "Release Date": release_date,
-                "Release Season": release_season,
+                "Plot": plot,
+                "Plot Sentiment": plot_sentiment,
                 # Include other features...
             })
     return pd.DataFrame(data)
@@ -693,8 +709,8 @@ def process_movie_data_with_season_analysis(titles, api_key):
 # Example usage
 def main():
     api_key = '121c5367'
-    movie_titles = ["Frozen", "Titanic", "Avengers: Endgame"]
-    result_df = process_movie_data_with_season_analysis(movie_titles, api_key)
+    movie_titles = ["The Pursuit of Happyness", "The Joker", "Zootopia"]
+    result_df = process_movie_data_with_sentiment_analysis(movie_titles, api_key)
     print(result_df)
 
 if __name__ == "__main__":
