@@ -722,21 +722,40 @@ def is_movie_in_franchise(title):
             return True
     return False
 
-# Integrate movie franchise indicator into the process_movie_data function
-def process_movie_data_with_franchise_indicator(titles, api_key):
+# Function to calculate budget to box office ratio
+def calculate_budget_to_box_office_ratio(budget, box_office):
+    if not budget or not box_office:
+        return "Unknown"
+
+    # Remove non-numeric characters (currency symbols, commas, etc.)
+    budget = int(budget.replace("$", "").replace(",", "").strip()) if budget else 0
+    box_office = int(box_office.replace("$", "").replace(",", "").strip()) if box_office else 0
+
+    # Avoid division by zero
+    if box_office == 0:
+        return "No Box Office Data"
+    
+    # Calculate the ratio
+    ratio = box_office / budget
+    return round(ratio, 2)
+
+# Integrate budget to box office ratio into the process_movie_data function
+def process_movie_data_with_budget_ratio(titles, api_key):
     data = []
     for title in titles:
         movie_data = fetch_movie_data(title, api_key)
         if movie_data and movie_data.get("Response") == "True":
-            # Determine if the movie is part of a franchise
-            franchise_indicator = is_movie_in_franchise(movie_data.get("Title", ""))
-            
+            budget = movie_data.get("Budget", "$0")
+            box_office = movie_data.get("BoxOffice", "$0")
+
+            # Calculate budget to box office ratio
+            budget_to_box_office = calculate_budget_to_box_office_ratio(budget, box_office)
+
             data.append({
                 "Title": movie_data.get("Title"),
-                "Genre": movie_data.get("Genre", ""),
-                "Director": movie_data.get("Director", ""),
-                "Release Date": movie_data.get("Released", ""),
-                "Franchise Indicator": "Yes" if franchise_indicator else "No",
+                "Budget": budget,
+                "Box Office": box_office,
+                "Budget to Box Office Ratio": budget_to_box_office,
                 # Include other features...
             })
     
@@ -745,8 +764,8 @@ def process_movie_data_with_franchise_indicator(titles, api_key):
 # Example usage
 def main():
     api_key = '121c5367'
-    movie_titles = ["Avengers: Endgame", "The Matrix", "Fast & Furious 9"]
-    result_df = process_movie_data_with_franchise_indicator(movie_titles, api_key)
+    movie_titles = ["The Dark Knight", "Inception", "Avatar"]
+    result_df = process_movie_data_with_budget_ratio(movie_titles, api_key)
     print(result_df)
 
 if __name__ == "__main__":
