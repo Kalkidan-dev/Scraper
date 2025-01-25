@@ -739,23 +739,37 @@ def calculate_budget_to_box_office_ratio(budget, box_office):
     ratio = box_office / budget
     return round(ratio, 2)
 
-# Integrate budget to box office ratio into the process_movie_data function
-def process_movie_data_with_budget_ratio(titles, api_key):
+# Function to check if a movie is a sequel
+def is_sequel(title):
+    # Look for patterns in the title that indicate a sequel
+    sequel_patterns = [
+        r"\b2\b",            # Matches "2" (e.g., "Frozen 2")
+        r"\bII\b",           # Matches Roman numeral II
+        r"\bIII\b",          # Matches Roman numeral III
+        r"\bIV\b",           # Matches Roman numeral IV
+        r":",                # Matches colon, often used for subtitles
+        r"\bPart \d+\b",     # Matches "Part 2", "Part 3", etc.
+        r"\bChapter \d+\b"   # Matches "Chapter 2", "Chapter 3", etc.
+    ]
+    
+    # Check if any pattern matches the title
+    for pattern in sequel_patterns:
+        if re.search(pattern, title, re.IGNORECASE):
+            return True
+    return False
+
+# Integrate sequel indicator into the process_movie_data function
+def process_movie_data_with_sequel_indicator(titles, api_key):
     data = []
     for title in titles:
         movie_data = fetch_movie_data(title, api_key)
         if movie_data and movie_data.get("Response") == "True":
-            budget = movie_data.get("Budget", "$0")
-            box_office = movie_data.get("BoxOffice", "$0")
-
-            # Calculate budget to box office ratio
-            budget_to_box_office = calculate_budget_to_box_office_ratio(budget, box_office)
-
+            # Check if the movie is a sequel
+            sequel_indicator = is_sequel(movie_data.get("Title", ""))
+            
             data.append({
                 "Title": movie_data.get("Title"),
-                "Budget": budget,
-                "Box Office": box_office,
-                "Budget to Box Office Ratio": budget_to_box_office,
+                "Sequel Indicator": "Yes" if sequel_indicator else "No",
                 # Include other features...
             })
     
@@ -764,8 +778,8 @@ def process_movie_data_with_budget_ratio(titles, api_key):
 # Example usage
 def main():
     api_key = '121c5367'
-    movie_titles = ["The Dark Knight", "Inception", "Avatar"]
-    result_df = process_movie_data_with_budget_ratio(movie_titles, api_key)
+    movie_titles = ["Frozen", "Frozen 2", "The Godfather Part II", "John Wick: Chapter 3"]
+    result_df = process_movie_data_with_sequel_indicator(movie_titles, api_key)
     print(result_df)
 
 if __name__ == "__main__":
