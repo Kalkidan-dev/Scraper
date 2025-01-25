@@ -758,18 +758,43 @@ def is_sequel(title):
             return True
     return False
 
-# Integrate sequel indicator into the process_movie_data function
-def process_movie_data_with_sequel_indicator(titles, api_key):
+# Function to determine the season of a movie's release
+def determine_season(release_date):
+    if not release_date:
+        return "Unknown"
+    
+    # Parse the release date
+    try:
+        release_month = pd.to_datetime(release_date).month
+    except ValueError:
+        return "Unknown"
+    
+    # Map months to seasons
+    if release_month in [12, 1, 2]:
+        return "Winter"
+    elif release_month in [3, 4, 5]:
+        return "Spring"
+    elif release_month in [6, 7, 8]:
+        return "Summer"
+    elif release_month in [9, 10, 11]:
+        return "Fall"
+    return "Unknown"
+
+# Integrate seasonal release indicator into the process_movie_data function
+def process_movie_data_with_seasonal_release(titles, api_key):
     data = []
     for title in titles:
         movie_data = fetch_movie_data(title, api_key)
         if movie_data and movie_data.get("Response") == "True":
-            # Check if the movie is a sequel
-            sequel_indicator = is_sequel(movie_data.get("Title", ""))
-            
+            release_date = movie_data.get("Released", "")
+
+            # Determine the release season
+            release_season = determine_season(release_date)
+
             data.append({
                 "Title": movie_data.get("Title"),
-                "Sequel Indicator": "Yes" if sequel_indicator else "No",
+                "Release Date": release_date,
+                "Release Season": release_season,
                 # Include other features...
             })
     
@@ -778,8 +803,8 @@ def process_movie_data_with_sequel_indicator(titles, api_key):
 # Example usage
 def main():
     api_key = '121c5367'
-    movie_titles = ["Frozen", "Frozen 2", "The Godfather Part II", "John Wick: Chapter 3"]
-    result_df = process_movie_data_with_sequel_indicator(movie_titles, api_key)
+    movie_titles = ["Avatar", "Frozen", "The Dark Knight", "Avengers: Endgame"]
+    result_df = process_movie_data_with_seasonal_release(movie_titles, api_key)
     print(result_df)
 
 if __name__ == "__main__":
