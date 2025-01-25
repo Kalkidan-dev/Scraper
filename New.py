@@ -885,22 +885,61 @@ def estimate_budget_impact(budget):
     else:
         return "Blockbuster Budget"
 
-# Integrate production budget into the process_movie_data function
-def process_movie_data_with_budget_impact(titles, api_key):
+from textblob import TextBlob  # Ensure you have TextBlob installed: pip install textblob
+
+# Simulated dataset of critic reviews
+critic_reviews_data = {
+    "Inception": [
+        "A visually stunning masterpiece with mind-bending concepts.",
+        "Nolan's brilliance shines through, though it can be hard to follow at times.",
+        "A must-watch, but it requires attention to fully grasp the plot."
+    ],
+    "Frozen": [
+        "A heartwarming story for kids and adults alike.",
+        "The songs are memorable, but the story feels predictable at times.",
+        "Disney does it again with another magical movie."
+    ],
+    "Avengers: Endgame": [
+        "A satisfying conclusion to a decade-long journey.",
+        "Epic battles, emotional moments, and great character arcs.",
+        "A few pacing issues, but overall a cinematic triumph."
+    ],
+    # Add more reviews for other movies as needed
+}
+
+# Function to analyze review sentiment
+def analyze_review_sentiment(reviews):
+    if not reviews:
+        return {"Sentiment": "No Reviews", "Score": 0.0}
+    
+    sentiment_score = 0.0
+    for review in reviews:
+        analysis = TextBlob(review)
+        sentiment_score += analysis.sentiment.polarity  # Polarity ranges from -1 (negative) to 1 (positive)
+    
+    average_score = sentiment_score / len(reviews)
+    sentiment = (
+        "Positive" if average_score > 0.1 else
+        "Negative" if average_score < -0.1 else
+        "Neutral"
+    )
+    
+    return {"Sentiment": sentiment, "Score": round(average_score, 2)}
+
+# Integrate critic reviews sentiment into the process_movie_data function
+def process_movie_data_with_critic_sentiment(titles, api_key):
     data = []
     for title in titles:
         movie_data = fetch_movie_data(title, api_key)
         if movie_data and movie_data.get("Response") == "True":
-            # Get production budget
-            production_budget = get_production_budget(movie_data.get("Title"))
-            
-            # Estimate budget impact category
-            budget_impact = estimate_budget_impact(production_budget)
+            # Get critic reviews and analyze their sentiment
+            reviews = critic_reviews_data.get(movie_data.get("Title"), [])
+            sentiment_analysis = analyze_review_sentiment(reviews)
             
             data.append({
                 "Title": movie_data.get("Title"),
-                "Production Budget": production_budget,
-                "Budget Impact": budget_impact,
+                "Critic Sentiment": sentiment_analysis["Sentiment"],
+                "Sentiment Score": sentiment_analysis["Score"],
                 # Include other features...
             })
     
@@ -909,8 +948,8 @@ def process_movie_data_with_budget_impact(titles, api_key):
 # Example usage
 def main():
     api_key = '121c5367'
-    movie_titles = ["Inception", "Frozen", "The Godfather", "Avengers: Endgame"]
-    result_df = process_movie_data_with_budget_impact(movie_titles, api_key)
+    movie_titles = ["Inception", "Frozen", "Avengers: Endgame"]
+    result_df = process_movie_data_with_critic_sentiment(movie_titles, api_key)
     print(result_df)
 
 if __name__ == "__main__":
