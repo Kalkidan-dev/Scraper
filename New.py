@@ -815,21 +815,38 @@ def classify_box_office_success(box_office):
     else:
         return "Flop"
 
-# Integrate box office success classification into the process_movie_data function
-def process_movie_data_with_box_office_category(titles, api_key):
+# Simulated dataset for director popularity (can be replaced with real data)
+director_popularity_data = {
+    "Steven Spielberg": 95,
+    "Christopher Nolan": 90,
+    "James Cameron": 92,
+    "Quentin Tarantino": 88,
+    "Martin Scorsese": 85,
+    "Greta Gerwig": 80,
+    # Add more directors as needed
+}
+
+# Function to get director popularity score
+def get_director_popularity_score(director):
+    if not director:
+        return 50  # Default score for unknown directors
+    return director_popularity_data.get(director, 60)  # Return default for less-known directors
+
+# Integrate director popularity into the process_movie_data function
+def process_movie_data_with_director_popularity(titles, api_key):
     data = []
     for title in titles:
         movie_data = fetch_movie_data(title, api_key)
         if movie_data and movie_data.get("Response") == "True":
-            box_office = movie_data.get("BoxOffice", "")
+            director = movie_data.get("Director", "")
 
-            # Classify the box office success
-            box_office_category = classify_box_office_success(box_office)
+            # Get director popularity score
+            popularity_score = get_director_popularity_score(director)
 
             data.append({
                 "Title": movie_data.get("Title"),
-                "Box Office": box_office,
-                "Box Office Success": box_office_category,
+                "Director": director,
+                "Director Popularity Score": popularity_score,
                 # Include other features...
             })
     
@@ -838,8 +855,8 @@ def process_movie_data_with_box_office_category(titles, api_key):
 # Example usage
 def main():
     api_key = '121c5367'
-    movie_titles = ["Titanic", "Avatar", "The Godfather", "A Quiet Place"]
-    result_df = process_movie_data_with_box_office_category(movie_titles, api_key)
+    movie_titles = ["Inception", "Pulp Fiction", "Titanic", "The Social Network"]
+    result_df = process_movie_data_with_director_popularity(movie_titles, api_key)
     print(result_df)
 
 if __name__ == "__main__":
