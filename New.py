@@ -832,21 +832,42 @@ def get_director_popularity_score(director):
         return 50  # Default score for unknown directors
     return director_popularity_data.get(director, 60)  # Return default for less-known directors
 
-# Integrate director popularity into the process_movie_data function
-def process_movie_data_with_director_popularity(titles, api_key):
+import re
+
+# Function to check if a movie is a sequel
+def is_sequel(title):
+    if not title:
+        return "Unknown"
+    
+    # Check for common patterns indicating a sequel
+    sequel_patterns = [
+        r"\b[2-9]$",             # Titles ending with a number (e.g., "Toy Story 2")
+        r"[2-9]:",               # Titles with a number and colon (e.g., "Rocky 4: The Final Round")
+        r"Part\s[2-9]",          # Titles with "Part" followed by a number (e.g., "Harry Potter Part 2")
+        r"Chapter\s[2-9]",       # Titles with "Chapter" followed by a number (e.g., "It Chapter 2")
+        r"Volume\s[2-9]",        # Titles with "Volume" followed by a number (e.g., "Kill Bill Volume 2")
+        r"Revenge|Return|Saga",  # Keywords indicating sequels or franchises
+        r"Finale",               # Keywords indicating franchise conclusions
+    ]
+    
+    for pattern in sequel_patterns:
+        if re.search(pattern, title, re.IGNORECASE):
+            return "Sequel"
+    
+    return "Standalone"
+
+# Integrate sequel detection into the process_movie_data function
+def process_movie_data_with_sequel_indicator(titles, api_key):
     data = []
     for title in titles:
         movie_data = fetch_movie_data(title, api_key)
         if movie_data and movie_data.get("Response") == "True":
-            director = movie_data.get("Director", "")
-
-            # Get director popularity score
-            popularity_score = get_director_popularity_score(director)
+            # Determine if the movie is part of a sequel
+            sequel_status = is_sequel(movie_data.get("Title"))
 
             data.append({
                 "Title": movie_data.get("Title"),
-                "Director": director,
-                "Director Popularity Score": popularity_score,
+                "Sequel Indicator": sequel_status,
                 # Include other features...
             })
     
@@ -855,8 +876,8 @@ def process_movie_data_with_director_popularity(titles, api_key):
 # Example usage
 def main():
     api_key = '121c5367'
-    movie_titles = ["Inception", "Pulp Fiction", "Titanic", "The Social Network"]
-    result_df = process_movie_data_with_director_popularity(movie_titles, api_key)
+    movie_titles = ["The Dark Knight", "Frozen 2", "Inception", "The Matrix Revolutions"]
+    result_df = process_movie_data_with_sequel_indicator(movie_titles, api_key)
     print(result_df)
 
 if __name__ == "__main__":
