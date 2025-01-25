@@ -794,23 +794,42 @@ def calculate_score_gap(critic_score, audience_score):
     # Calculate the absolute difference
     return abs(critic_score - audience_score)
 
-# Integrate score gap calculation into the process_movie_data function
-def process_movie_data_with_score_gap(titles, api_key):
+# Function to classify box office success
+def classify_box_office_success(box_office):
+    if not box_office:
+        return "Unknown"
+    
+    # Remove special characters like $ and commas
+    try:
+        box_office = float(box_office.replace("$", "").replace(",", ""))
+    except ValueError:
+        return "Unknown"
+    
+    # Define thresholds for classification
+    if box_office >= 1_000_000_000:  # 1 billion or more
+        return "Blockbuster"
+    elif box_office >= 500_000_000:  # Between 500 million and 1 billion
+        return "Hit"
+    elif box_office >= 100_000_000:  # Between 100 million and 500 million
+        return "Average"
+    else:
+        return "Flop"
+
+# Integrate box office success classification into the process_movie_data function
+def process_movie_data_with_box_office_category(titles, api_key):
     data = []
     for title in titles:
         movie_data = fetch_movie_data(title, api_key)
         if movie_data and movie_data.get("Response") == "True":
-            critic_score = movie_data.get("Metascore", "0")  # Use Metascore as critic score
-            audience_score = movie_data.get("imdbRating", "0")  # Use IMDb rating as audience score
+            box_office = movie_data.get("BoxOffice", "")
 
-            # Calculate the score gap
-            score_gap = calculate_score_gap(critic_score, audience_score)
+            # Classify the box office success
+            box_office_category = classify_box_office_success(box_office)
 
             data.append({
                 "Title": movie_data.get("Title"),
-                "Critic Score": critic_score,
-                "Audience Score": audience_score,
-                "Critic vs. Audience Score Gap": score_gap,
+                "Box Office": box_office,
+                "Box Office Success": box_office_category,
                 # Include other features...
             })
     
@@ -819,8 +838,8 @@ def process_movie_data_with_score_gap(titles, api_key):
 # Example usage
 def main():
     api_key = '121c5367'
-    movie_titles = ["Joker", "The Shawshank Redemption", "Avatar", "Transformers"]
-    result_df = process_movie_data_with_score_gap(movie_titles, api_key)
+    movie_titles = ["Titanic", "Avatar", "The Godfather", "A Quiet Place"]
+    result_df = process_movie_data_with_box_office_category(movie_titles, api_key)
     print(result_df)
 
 if __name__ == "__main__":
