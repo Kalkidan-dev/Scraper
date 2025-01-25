@@ -856,18 +856,51 @@ def is_sequel(title):
     
     return "Standalone"
 
-# Integrate sequel detection into the process_movie_data function
-def process_movie_data_with_sequel_indicator(titles, api_key):
+# Simulated dataset for production budgets (can be replaced with real data or API integration)
+movie_budget_data = {
+    "Inception": 160_000_000,
+    "Frozen": 150_000_000,
+    "Avengers: Endgame": 356_000_000,
+    "The Dark Knight": 185_000_000,
+    "The Godfather": 6_000_000,
+    # Add more movies as needed
+}
+
+# Function to get a movie's production budget
+def get_production_budget(title):
+    if not title:
+        return "Unknown"
+    return movie_budget_data.get(title, "Estimate Unavailable")
+
+# Function to estimate budget impact category
+def estimate_budget_impact(budget):
+    if budget == "Unknown" or budget == "Estimate Unavailable":
+        return "Insufficient Data"
+    if budget <= 10_000_000:
+        return "Low Budget"
+    elif budget <= 50_000_000:
+        return "Moderate Budget"
+    elif budget <= 150_000_000:
+        return "High Budget"
+    else:
+        return "Blockbuster Budget"
+
+# Integrate production budget into the process_movie_data function
+def process_movie_data_with_budget_impact(titles, api_key):
     data = []
     for title in titles:
         movie_data = fetch_movie_data(title, api_key)
         if movie_data and movie_data.get("Response") == "True":
-            # Determine if the movie is part of a sequel
-            sequel_status = is_sequel(movie_data.get("Title"))
-
+            # Get production budget
+            production_budget = get_production_budget(movie_data.get("Title"))
+            
+            # Estimate budget impact category
+            budget_impact = estimate_budget_impact(production_budget)
+            
             data.append({
                 "Title": movie_data.get("Title"),
-                "Sequel Indicator": sequel_status,
+                "Production Budget": production_budget,
+                "Budget Impact": budget_impact,
                 # Include other features...
             })
     
@@ -876,8 +909,8 @@ def process_movie_data_with_sequel_indicator(titles, api_key):
 # Example usage
 def main():
     api_key = '121c5367'
-    movie_titles = ["The Dark Knight", "Frozen 2", "Inception", "The Matrix Revolutions"]
-    result_df = process_movie_data_with_sequel_indicator(movie_titles, api_key)
+    movie_titles = ["Inception", "Frozen", "The Godfather", "Avengers: Endgame"]
+    result_df = process_movie_data_with_budget_impact(movie_titles, api_key)
     print(result_df)
 
 if __name__ == "__main__":
