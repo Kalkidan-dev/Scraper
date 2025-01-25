@@ -780,21 +780,37 @@ def determine_season(release_date):
         return "Fall"
     return "Unknown"
 
-# Integrate seasonal release indicator into the process_movie_data function
-def process_movie_data_with_seasonal_release(titles, api_key):
+# Function to calculate critic vs. audience score gap
+def calculate_score_gap(critic_score, audience_score):
+    if not critic_score or not audience_score:
+        return "Unknown"
+    
+    try:
+        critic_score = int(critic_score.strip('%')) if "%" in critic_score else int(critic_score)
+        audience_score = float(audience_score) * 10 if 0 <= float(audience_score) <= 10 else int(audience_score)
+    except ValueError:
+        return "Unknown"
+
+    # Calculate the absolute difference
+    return abs(critic_score - audience_score)
+
+# Integrate score gap calculation into the process_movie_data function
+def process_movie_data_with_score_gap(titles, api_key):
     data = []
     for title in titles:
         movie_data = fetch_movie_data(title, api_key)
         if movie_data and movie_data.get("Response") == "True":
-            release_date = movie_data.get("Released", "")
+            critic_score = movie_data.get("Metascore", "0")  # Use Metascore as critic score
+            audience_score = movie_data.get("imdbRating", "0")  # Use IMDb rating as audience score
 
-            # Determine the release season
-            release_season = determine_season(release_date)
+            # Calculate the score gap
+            score_gap = calculate_score_gap(critic_score, audience_score)
 
             data.append({
                 "Title": movie_data.get("Title"),
-                "Release Date": release_date,
-                "Release Season": release_season,
+                "Critic Score": critic_score,
+                "Audience Score": audience_score,
+                "Critic vs. Audience Score Gap": score_gap,
                 # Include other features...
             })
     
@@ -803,8 +819,8 @@ def process_movie_data_with_seasonal_release(titles, api_key):
 # Example usage
 def main():
     api_key = '121c5367'
-    movie_titles = ["Avatar", "Frozen", "The Dark Knight", "Avengers: Endgame"]
-    result_df = process_movie_data_with_seasonal_release(movie_titles, api_key)
+    movie_titles = ["Joker", "The Shawshank Redemption", "Avatar", "Transformers"]
+    result_df = process_movie_data_with_score_gap(movie_titles, api_key)
     print(result_df)
 
 if __name__ == "__main__":
