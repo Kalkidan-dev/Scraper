@@ -1003,23 +1003,40 @@ def analyze_runtime_suitability(runtime, genres):
     else:
         return "Less Suitable"
 
+# Function to evaluate language popularity
+def evaluate_language_popularity(language):
+    # Popularity score based on global audience preferences (1-10 scale)
+    language_popularity = {
+        "English": 10,
+        "Spanish": 8,
+        "French": 7,
+        "Mandarin": 9,
+        "Hindi": 8,
+        "Japanese": 7,
+        "German": 6,
+        "Korean": 8,
+        "Italian": 6,
+        "Russian": 5,
+        # Add more languages as needed
+    }
+
+    return language_popularity.get(language, 4)  # Default score for unknown languages
+
 # Integrate the feature into the process_movie_data function
-def process_movie_data_with_runtime_suitability(titles, api_key):
+def process_movie_data_with_language_popularity(titles, api_key):
     data = []
     for title in titles:
         movie_data = fetch_movie_data(title, api_key)
         if movie_data and movie_data.get("Response") == "True":
-            runtime = movie_data.get("Runtime", "")
-            genres = movie_data.get("Genre", "")
+            language = movie_data.get("Language", "").split(",")[0].strip()  # Use the primary language
 
-            # Use the new feature to analyze runtime suitability
-            runtime_suitability = analyze_runtime_suitability(runtime, genres)
+            # Use the new feature to evaluate language popularity
+            language_popularity_score = evaluate_language_popularity(language)
 
             data.append({
                 "Title": movie_data.get("Title"),
-                "Runtime": runtime,
-                "Genres": genres,
-                "Runtime Suitability": runtime_suitability,
+                "Language": language,
+                "Language Popularity Score": language_popularity_score,
                 # Include other features...
             })
     return pd.DataFrame(data)
@@ -1027,8 +1044,8 @@ def process_movie_data_with_runtime_suitability(titles, api_key):
 # Example usage
 def main():
     api_key = '121c5367'
-    movie_titles = ["The Dark Knight", "Toy Story", "The Conjuring"]
-    result_df = process_movie_data_with_runtime_suitability(movie_titles, api_key)
+    movie_titles = ["Parasite", "La La Land", "The Godfather"]
+    result_df = process_movie_data_with_language_popularity(movie_titles, api_key)
     print(result_df)
 
 if __name__ == "__main__":
