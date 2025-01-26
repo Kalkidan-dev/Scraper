@@ -1057,22 +1057,56 @@ def evaluate_runtime_suitability(runtime, genres):
 
     return ", ".join(suitability) if suitability else "Unknown"
 
+# Function to analyze franchise continuity
+def analyze_franchise_continuity(title, release_year, franchise_data):
+    if not franchise_data:
+        return "Unknown"
+
+    franchise_info = franchise_data.get(title.lower(), {})
+    if not franchise_info:
+        return "Not Part of Franchise"
+
+    # Check continuity by comparing release years with previous titles
+    previous_titles = franchise_info.get("previous_titles", [])
+    previous_years = franchise_info.get("release_years", [])
+
+    if previous_titles and previous_years:
+        latest_previous_year = max(previous_years)
+        if int(release_year) - latest_previous_year <= 3:
+            return "Strong Continuity"
+        else:
+            return "Weak Continuity"
+    return "Part of Franchise, No Continuity Data"
+
+# Sample franchise data for demonstration
+franchise_data = {
+    "avengers: endgame": {
+        "previous_titles": ["Avengers: Infinity War", "Avengers: Age of Ultron"],
+        "release_years": [2018, 2015],
+    },
+    "toy story 4": {
+        "previous_titles": ["Toy Story 3", "Toy Story 2"],
+        "release_years": [2010, 1999],
+    },
+}
+
 # Integrate the feature into the process_movie_data function
-def process_movie_data_with_runtime_analysis(titles, api_key):
+def process_movie_data_with_franchise_analysis(titles, api_key):
     data = []
     for title in titles:
         movie_data = fetch_movie_data(title, api_key)
         if movie_data and movie_data.get("Response") == "True":
-            runtime = movie_data.get("Runtime", "")
-            genres = movie_data.get("Genre", "")
-
-            # Use the new feature to evaluate runtime suitability
-            runtime_suitability = evaluate_runtime_suitability(runtime, genres)
+            release_year = movie_data.get("Year", "0").split("–")[0]
+            
+            # Use the new feature to analyze franchise continuity
+            franchise_continuity = analyze_franchise_continuity(
+                title, release_year, franchise_data
+            )
 
             data.append({
                 "Title": movie_data.get("Title"),
-                "Runtime": runtime,
-                "Runtime Suitability": runtime_suitability,
+                "Year": release_year,
+                "Franchise Continuity": franchise_continuity,
                 # Include other features...
             })
     return pd.DataFrame(data)
@@ -1080,8 +1114,8 @@ def process_movie_data_with_runtime_analysis(titles, api_key):
 # Example usage
 def main():
     api_key = '121c5367'
-    movie_titles = ["Titanic", "The Avengers", "Get Out"]
-    result_df = process_movie_data_with_runtime_analysis(movie_titles, api_key)
+    movie_titles = ["Avengers: Endgame", "Toy Story 4", "Inception"]
+    result_df = process_movie_data_with_franchise_analysis(movie_titles, api_key)
     print(result_df)
 
 if __name__ == "__main__":
