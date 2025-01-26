@@ -1089,24 +1089,37 @@ franchise_data = {
         "release_years": [2010, 1999],
     },
 }
+# Function to analyze language accessibility
+def analyze_language_accessibility(languages):
+    if not languages:
+        return "Unknown"
+
+    available_languages = [lang.strip().lower() for lang in languages.split(",")]
+    global_languages = {"english", "spanish", "mandarin", "hindi", "french", "arabic"}
+    accessibility_score = len(set(available_languages) & global_languages)
+
+    if accessibility_score >= 4:
+        return "Highly Accessible"
+    elif accessibility_score >= 2:
+        return "Moderately Accessible"
+    else:
+        return "Low Accessibility"
 
 # Integrate the feature into the process_movie_data function
-def process_movie_data_with_franchise_analysis(titles, api_key):
+def process_movie_data_with_language_analysis(titles, api_key):
     data = []
     for title in titles:
         movie_data = fetch_movie_data(title, api_key)
         if movie_data and movie_data.get("Response") == "True":
-            release_year = movie_data.get("Year", "0").split("–")[0]
+            languages = movie_data.get("Language", "")
             
-            # Use the new feature to analyze franchise continuity
-            franchise_continuity = analyze_franchise_continuity(
-                title, release_year, franchise_data
-            )
+            # Use the new feature to analyze language accessibility
+            language_accessibility = analyze_language_accessibility(languages)
 
             data.append({
                 "Title": movie_data.get("Title"),
-                "Year": release_year,
-                "Franchise Continuity": franchise_continuity,
+                "Languages": languages,
+                "Language Accessibility": language_accessibility,
                 # Include other features...
             })
     return pd.DataFrame(data)
@@ -1114,8 +1127,8 @@ def process_movie_data_with_franchise_analysis(titles, api_key):
 # Example usage
 def main():
     api_key = '121c5367'
-    movie_titles = ["Avengers: Endgame", "Toy Story 4", "Inception"]
-    result_df = process_movie_data_with_franchise_analysis(movie_titles, api_key)
+    movie_titles = ["Inception", "Parasite", "Coco"]
+    result_df = process_movie_data_with_language_analysis(movie_titles, api_key)
     print(result_df)
 
 if __name__ == "__main__":
