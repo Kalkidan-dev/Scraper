@@ -926,30 +926,68 @@ def analyze_review_sentiment(reviews):
     
     return {"Sentiment": sentiment, "Score": round(average_score, 2)}
 
-# Integrate critic reviews sentiment into the process_movie_data function
-def process_movie_data_with_critic_sentiment(titles, api_key):
+# Function to analyze language popularity
+def analyze_language_popularity(languages):
+    if not languages:
+        return "Unknown"
+
+    # Example dataset for language popularity (audience size approximation)
+    language_popularity = {
+        "English": 1000,  # High audience size
+        "Spanish": 500,   # Moderate audience size
+        "Mandarin": 800,
+        "Hindi": 700,
+        "French": 400,
+        "German": 350,
+        "Japanese": 300,
+        "Korean": 200,
+        # Add more languages as necessary
+    }
+
+    total_popularity_score = 0
+    languages_found = 0
+
+    for lang in languages.split(","):
+        lang = lang.strip()
+        if lang in language_popularity:
+            total_popularity_score += language_popularity[lang]
+            languages_found += 1
+
+    if languages_found == 0:
+        return "Low Popularity (Rare Language)"
+    avg_score = total_popularity_score / languages_found
+
+    if avg_score > 750:
+        return "High Popularity"
+    elif avg_score > 400:
+        return "Moderate Popularity"
+    else:
+        return "Low Popularity"
+
+# Integrate the feature into the process_movie_data function
+def process_movie_data_with_language_popularity(titles, api_key):
     data = []
     for title in titles:
         movie_data = fetch_movie_data(title, api_key)
         if movie_data and movie_data.get("Response") == "True":
-            # Get critic reviews and analyze their sentiment
-            reviews = critic_reviews_data.get(movie_data.get("Title"), [])
-            sentiment_analysis = analyze_review_sentiment(reviews)
-            
+            languages = movie_data.get("Language", "")
+
+            # Use the new feature to analyze language popularity
+            language_popularity = analyze_language_popularity(languages)
+
             data.append({
                 "Title": movie_data.get("Title"),
-                "Critic Sentiment": sentiment_analysis["Sentiment"],
-                "Sentiment Score": sentiment_analysis["Score"],
+                "Languages": languages,
+                "Language Popularity": language_popularity,
                 # Include other features...
             })
-    
     return pd.DataFrame(data)
 
 # Example usage
 def main():
     api_key = '121c5367'
-    movie_titles = ["Inception", "Frozen", "Avengers: Endgame"]
-    result_df = process_movie_data_with_critic_sentiment(movie_titles, api_key)
+    movie_titles = ["Parasite", "Coco", "The Avengers"]
+    result_df = process_movie_data_with_language_popularity(movie_titles, api_key)
     print(result_df)
 
 if __name__ == "__main__":
