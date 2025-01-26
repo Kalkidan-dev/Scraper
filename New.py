@@ -1022,21 +1022,57 @@ def evaluate_language_popularity(language):
 
     return language_popularity.get(language, 4)  # Default score for unknown languages
 
+# Function to evaluate runtime suitability
+def evaluate_runtime_suitability(runtime, genres):
+    if not runtime or not genres:
+        return "Unknown"
+
+    try:
+        runtime_minutes = int(runtime.split()[0])  # Extract runtime in minutes
+    except ValueError:
+        return "Unknown"
+
+    # Define ideal runtime ranges for various genres (in minutes)
+    genre_runtime_ranges = {
+        "Action": (90, 150),
+        "Comedy": (75, 120),
+        "Drama": (90, 180),
+        "Horror": (70, 110),
+        "Animation": (80, 120),
+        "Documentary": (60, 120),
+        "Romance": (75, 130),
+        # Add more genres and their ranges as needed
+    }
+
+    # Check runtime suitability for all genres in the movie
+    suitability = []
+    for genre in genres.split(","):
+        genre = genre.strip()
+        if genre in genre_runtime_ranges:
+            min_runtime, max_runtime = genre_runtime_ranges[genre]
+            if min_runtime <= runtime_minutes <= max_runtime:
+                suitability.append(f"Suitable for {genre}")
+            else:
+                suitability.append(f"Long/Short for {genre}")
+
+    return ", ".join(suitability) if suitability else "Unknown"
+
 # Integrate the feature into the process_movie_data function
-def process_movie_data_with_language_popularity(titles, api_key):
+def process_movie_data_with_runtime_analysis(titles, api_key):
     data = []
     for title in titles:
         movie_data = fetch_movie_data(title, api_key)
         if movie_data and movie_data.get("Response") == "True":
-            language = movie_data.get("Language", "").split(",")[0].strip()  # Use the primary language
+            runtime = movie_data.get("Runtime", "")
+            genres = movie_data.get("Genre", "")
 
-            # Use the new feature to evaluate language popularity
-            language_popularity_score = evaluate_language_popularity(language)
+            # Use the new feature to evaluate runtime suitability
+            runtime_suitability = evaluate_runtime_suitability(runtime, genres)
 
             data.append({
                 "Title": movie_data.get("Title"),
-                "Language": language,
-                "Language Popularity Score": language_popularity_score,
+                "Runtime": runtime,
+                "Runtime Suitability": runtime_suitability,
                 # Include other features...
             })
     return pd.DataFrame(data)
@@ -1044,8 +1080,8 @@ def process_movie_data_with_language_popularity(titles, api_key):
 # Example usage
 def main():
     api_key = '121c5367'
-    movie_titles = ["Parasite", "La La Land", "The Godfather"]
-    result_df = process_movie_data_with_language_popularity(movie_titles, api_key)
+    movie_titles = ["Titanic", "The Avengers", "Get Out"]
+    result_df = process_movie_data_with_runtime_analysis(movie_titles, api_key)
     print(result_df)
 
 if __name__ == "__main__":
