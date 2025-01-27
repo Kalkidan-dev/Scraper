@@ -1220,20 +1220,44 @@ def get_genre_popularity(genre):
     # Average score based on number of genres
     return round(popularity_score / len(genres), 2)
 
-# Integrate genre popularity into the process_movie_data function
-def process_movie_data_with_genre_popularity(titles, api_key):
+# Simulated dataset for budget and box office values (can be expanded with real data)
+budget_box_office_data = {
+    "Avengers: Endgame": {"budget": 356000000, "box_office": 2797800564},
+    "Frozen": {"budget": 150000000, "box_office": 1264800000},
+    "The Dark Knight": {"budget": 185000000, "box_office": 1004558444},
+    "The Godfather": {"budget": 6000000, "box_office": 250000000},
+    "Inception": {"budget": 160000000, "box_office": 829895144},
+    "Jurassic Park": {"budget": 63000000, "box_office": 1070000000},
+    # Add more movies as needed
+}
+
+# Function to calculate the budget to box office ratio
+def calculate_budget_to_box_office_ratio(movie_title):
+    if movie_title not in budget_box_office_data:
+        return None  # No data available for this movie
+    
+    movie_data = budget_box_office_data[movie_title]
+    budget = movie_data["budget"]
+    box_office = movie_data["box_office"]
+    
+    # Calculate the ratio (box_office / budget)
+    if budget > 0:
+        return round(box_office / budget, 2)
+    else:
+        return None  # Invalid budget
+
+# Integrate budget to box office ratio into the process_movie_data function
+def process_movie_data_with_budget_ratio(titles, api_key):
     data = []
     for title in titles:
         movie_data = fetch_movie_data(title, api_key)
         if movie_data and movie_data.get("Response") == "True":
-            # Get the genre and its popularity
-            genre = movie_data.get("Genre", "")
-            genre_popularity = get_genre_popularity(genre)
+            # Get the budget to box office ratio
+            ratio = calculate_budget_to_box_office_ratio(movie_data.get("Title"))
             
             data.append({
                 "Title": movie_data.get("Title"),
-                "Genre": genre,
-                "Genre Popularity": genre_popularity,
+                "Budget to Box Office Ratio": ratio if ratio is not None else "Data not available",
                 # Include other features...
             })
     
@@ -1242,8 +1266,8 @@ def process_movie_data_with_genre_popularity(titles, api_key):
 # Example usage
 def main():
     api_key = '121c5367'
-    movie_titles = ["Avengers: Endgame", "Frozen", "The Dark Knight", "The Godfather"]
-    result_df = process_movie_data_with_genre_popularity(movie_titles, api_key)
+    movie_titles = ["Avengers: Endgame", "Frozen", "The Dark Knight", "Jurassic Park"]
+    result_df = process_movie_data_with_budget_ratio(movie_titles, api_key)
     print(result_df)
 
 if __name__ == "__main__":
