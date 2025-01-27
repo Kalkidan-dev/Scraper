@@ -1184,19 +1184,56 @@ def get_franchise_impact(movie_title):
     # Check if the movie belongs to a franchise
     return franchise_data.get(movie_title, "Standalone")  # Default to Standalone if not found
 
-# Integrate franchise impact into the process_movie_data function
-def process_movie_data_with_franchise_impact(titles, api_key):
+# Simulated genre popularity data (can be adjusted based on real data or trends)
+genre_popularity_data = {
+    "Action": 0.85,
+    "Adventure": 0.80,
+    "Animation": 0.75,
+    "Comedy": 0.70,
+    "Drama": 0.65,
+    "Horror": 0.60,
+    "Fantasy": 0.75,
+    "Thriller": 0.70,
+    "Romance": 0.60,
+    "Sci-Fi": 0.80,
+    "Documentary": 0.50,
+    "Crime": 0.65,
+    "Mystery": 0.60,
+    "Biography": 0.55,
+    "Historical": 0.50,
+    "Family": 0.70,
+    # Add more genres as needed
+}
+
+# Function to get genre popularity
+def get_genre_popularity(genre):
+    if not genre:
+        return 0.0
+    
+    # Split multiple genres if present
+    genres = genre.split(", ")
+    popularity_score = 0.0
+    
+    for g in genres:
+        popularity_score += genre_popularity_data.get(g, 0.5)  # Default score for unknown genres
+    
+    # Average score based on number of genres
+    return round(popularity_score / len(genres), 2)
+
+# Integrate genre popularity into the process_movie_data function
+def process_movie_data_with_genre_popularity(titles, api_key):
     data = []
     for title in titles:
         movie_data = fetch_movie_data(title, api_key)
         if movie_data and movie_data.get("Response") == "True":
-            # Get the franchise and its impact
-            franchise = get_franchise_impact(movie_data.get("Title"))
+            # Get the genre and its popularity
+            genre = movie_data.get("Genre", "")
+            genre_popularity = get_genre_popularity(genre)
             
             data.append({
                 "Title": movie_data.get("Title"),
-                "Franchise": franchise,
-                "Franchise Impact": "High" if franchise != "Standalone" else "Low",
+                "Genre": genre,
+                "Genre Popularity": genre_popularity,
                 # Include other features...
             })
     
@@ -1205,8 +1242,8 @@ def process_movie_data_with_franchise_impact(titles, api_key):
 # Example usage
 def main():
     api_key = '121c5367'
-    movie_titles = ["Avengers: Endgame", "Frozen II", "The Dark Knight", "Jurassic Park"]
-    result_df = process_movie_data_with_franchise_impact(movie_titles, api_key)
+    movie_titles = ["Avengers: Endgame", "Frozen", "The Dark Knight", "The Godfather"]
+    result_df = process_movie_data_with_genre_popularity(movie_titles, api_key)
     print(result_df)
 
 if __name__ == "__main__":
