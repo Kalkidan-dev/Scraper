@@ -1,8 +1,10 @@
 import requests
 import pandas as pd
 from datetime import datetime
-from textblob import TextBlob
+from textblob import TextBlob 
 import re
+from datetime import datetime
+
 
 # Function to fetch movie data from OMDb API
 def fetch_movie_data(title, api_key="your_api_key_here"):
@@ -13,7 +15,7 @@ def fetch_movie_data(title, api_key="your_api_key_here"):
     else:
         return None
 
-# Existing Features
+
 # Function to analyze genre sentiment
 def analyze_genre_sentiment(genres):
     sentiment_scores = []
@@ -885,7 +887,7 @@ def estimate_budget_impact(budget):
     else:
         return "Blockbuster Budget"
 
-from textblob import TextBlob  # Ensure you have TextBlob installed: pip install textblob
+ # Ensure you have TextBlob installed: pip install textblob
 
 # Simulated dataset of critic reviews
 critic_reviews_data = {
@@ -1105,30 +1107,63 @@ def analyze_language_accessibility(languages):
     else:
         return "Low Accessibility"
 
-# Integrate the feature into the process_movie_data function
-def process_movie_data_with_language_analysis(titles, api_key):
+from datetime import datetime
+
+# Simulated release dates (can be fetched via APIs like OMDb or TMDb)
+movie_release_data = {
+    "Inception": "2010-07-16",
+    "Frozen": "2013-11-27",
+    "Avengers: Endgame": "2019-04-26",
+    "The Dark Knight": "2008-07-18",
+    "The Godfather": "1972-03-24",
+    # Add more movies as needed
+}
+
+# Function to determine the release season based on the release date
+def get_release_season(release_date):
+    if not release_date:
+        return "Unknown"
+    
+    # Parse the release date string to a datetime object
+    try:
+        release_datetime = datetime.strptime(release_date, "%Y-%m-%d")
+    except ValueError:
+        return "Invalid Date Format"
+    
+    month = release_datetime.month
+
+    if 3 <= month <= 5:
+        return "Spring"
+    elif 6 <= month <= 8:
+        return "Summer"
+    elif 9 <= month <= 11:
+        return "Fall"
+    else:
+        return "Winter"
+
+# Integrate release seasonality into the process_movie_data function
+def process_movie_data_with_release_seasonality(titles, api_key):
     data = []
     for title in titles:
         movie_data = fetch_movie_data(title, api_key)
         if movie_data and movie_data.get("Response") == "True":
-            languages = movie_data.get("Language", "")
+            # Get the release date and determine the season
+            release_date = movie_release_data.get(movie_data.get("Title"))
+            release_season = get_release_season(release_date)
             
-            # Use the new feature to analyze language accessibility
-            language_accessibility = analyze_language_accessibility(languages)
-
             data.append({
                 "Title": movie_data.get("Title"),
-                "Languages": languages,
-                "Language Accessibility": language_accessibility,
+                "Release Season": release_season,
                 # Include other features...
             })
+    
     return pd.DataFrame(data)
 
 # Example usage
 def main():
     api_key = '121c5367'
-    movie_titles = ["Inception", "Parasite", "Coco"]
-    result_df = process_movie_data_with_language_analysis(movie_titles, api_key)
+    movie_titles = ["Inception", "Frozen", "Avengers: Endgame", "The Godfather"]
+    result_df = process_movie_data_with_release_seasonality(movie_titles, api_key)
     print(result_df)
 
 if __name__ == "__main__":
