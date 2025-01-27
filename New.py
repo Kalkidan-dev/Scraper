@@ -1141,19 +1141,43 @@ def get_release_season(release_date):
     else:
         return "Winter"
 
-# Integrate release seasonality into the process_movie_data function
-def process_movie_data_with_release_seasonality(titles, api_key):
+# Simulated dataset for director influence (this could be expanded with real data)
+director_influence_data = {
+    "Christopher Nolan": "High Influence",  # Inception, Interstellar, The Dark Knight
+    "Walt Disney": "High Influence",        # Frozen, Snow White, etc.
+    "James Cameron": "High Influence",      # Avatar, Titanic
+    "Martin Scorsese": "High Influence",    # The Irishman, Goodfellas, etc.
+    "Quentin Tarantino": "High Influence",  # Pulp Fiction, Kill Bill
+    "Francis Ford Coppola": "High Influence",  # The Godfather
+    "Joss Whedon": "Moderate Influence",    # The Avengers, Buffy the Vampire Slayer
+    "John Hughes": "Moderate Influence",    # The Breakfast Club, Ferris Bueller
+    "M. Night Shyamalan": "Moderate Influence",  # The Sixth Sense, Unbreakable
+    "Michael Bay": "Moderate Influence",    # Transformers, Armageddon
+    "Uwe Boll": "Low Influence",            # Known for box office failures
+    # Add more directors and their influence data as needed
+}
+
+# Function to get the director influence
+def get_director_influence(director):
+    if not director:
+        return "Unknown"
+    
+    return director_influence_data.get(director, "Low Influence")  # Default to Low Influence if not found
+
+# Integrate director influence into the process_movie_data function
+def process_movie_data_with_director_influence(titles, api_key):
     data = []
     for title in titles:
         movie_data = fetch_movie_data(title, api_key)
         if movie_data and movie_data.get("Response") == "True":
-            # Get the release date and determine the season
-            release_date = movie_release_data.get(movie_data.get("Title"))
-            release_season = get_release_season(release_date)
+            # Get the director and their influence level
+            director = movie_data.get("Director", "")
+            director_influence = get_director_influence(director)
             
             data.append({
                 "Title": movie_data.get("Title"),
-                "Release Season": release_season,
+                "Director": director,
+                "Director Influence": director_influence,
                 # Include other features...
             })
     
@@ -1163,7 +1187,7 @@ def process_movie_data_with_release_seasonality(titles, api_key):
 def main():
     api_key = '121c5367'
     movie_titles = ["Inception", "Frozen", "Avengers: Endgame", "The Godfather"]
-    result_df = process_movie_data_with_release_seasonality(movie_titles, api_key)
+    result_df = process_movie_data_with_director_influence(movie_titles, api_key)
     print(result_df)
 
 if __name__ == "__main__":
