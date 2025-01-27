@@ -1164,20 +1164,39 @@ def get_director_influence(director):
     
     return director_influence_data.get(director, "Low Influence")  # Default to Low Influence if not found
 
-# Integrate director influence into the process_movie_data function
-def process_movie_data_with_director_influence(titles, api_key):
+# Simulated dataset for franchise impact (this can be expanded with real data)
+franchise_data = {
+    "Avengers: Endgame": "Marvel Cinematic Universe",
+    "Iron Man": "Marvel Cinematic Universe",
+    "Frozen II": "Frozen Franchise",
+    "The Godfather Part II": "The Godfather Franchise",
+    "Star Wars: A New Hope": "Star Wars Franchise",
+    "The Dark Knight": "Batman Franchise",
+    "Jurassic Park": "Jurassic Park Franchise",
+    # Add more movies and their franchises as needed
+}
+
+# Function to get the franchise impact
+def get_franchise_impact(movie_title):
+    if not movie_title:
+        return "Standalone"
+
+    # Check if the movie belongs to a franchise
+    return franchise_data.get(movie_title, "Standalone")  # Default to Standalone if not found
+
+# Integrate franchise impact into the process_movie_data function
+def process_movie_data_with_franchise_impact(titles, api_key):
     data = []
     for title in titles:
         movie_data = fetch_movie_data(title, api_key)
         if movie_data and movie_data.get("Response") == "True":
-            # Get the director and their influence level
-            director = movie_data.get("Director", "")
-            director_influence = get_director_influence(director)
+            # Get the franchise and its impact
+            franchise = get_franchise_impact(movie_data.get("Title"))
             
             data.append({
                 "Title": movie_data.get("Title"),
-                "Director": director,
-                "Director Influence": director_influence,
+                "Franchise": franchise,
+                "Franchise Impact": "High" if franchise != "Standalone" else "Low",
                 # Include other features...
             })
     
@@ -1186,8 +1205,8 @@ def process_movie_data_with_director_influence(titles, api_key):
 # Example usage
 def main():
     api_key = '121c5367'
-    movie_titles = ["Inception", "Frozen", "Avengers: Endgame", "The Godfather"]
-    result_df = process_movie_data_with_director_influence(movie_titles, api_key)
+    movie_titles = ["Avengers: Endgame", "Frozen II", "The Dark Knight", "Jurassic Park"]
+    result_df = process_movie_data_with_franchise_impact(movie_titles, api_key)
     print(result_df)
 
 if __name__ == "__main__":
