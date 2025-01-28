@@ -1,22 +1,22 @@
-# Add a new feature for sequels (e.g., 0 for standalone movies, >0 for sequels)
-sequel_data = {
-    'The Shawshank Redemption': 0,
-    'The Godfather': 1,  # First movie in the franchise
-    'The Dark Knight': 2,  # Sequel
-    '12 Angry Men': 0,
-    'Schindler\'s List': 0,
-    'Pulp Fiction': 0,
-    'The Lord of the Rings: The Return of the King': 3,  # Third movie in the trilogy
-    'The Good, the Bad and the Ugly': 3,  # Third in the "Dollars Trilogy"
-    'Fight Club': 0,
-    'Forrest Gump': 0
+# Add a new feature for Language Popularity Score
+language_popularity = {
+    'English': 10,
+    'Spanish': 8,
+    'French': 7,
+    'German': 6,
+    'Mandarin': 9,
+    'Hindi': 8,
+    'Japanese': 7,
+    'Korean': 7,
+    'Italian': 6,
+    'Other': 5
 }
 
-# Map the sequel values to the DataFrame
-df['Number_of_Sequels'] = df['Title'].map(sequel_data).fillna(0)  # Default to standalone movie (0)
+# Assuming there's a 'Language' column in the DataFrame
+df['Language_Popularity_Score'] = df['Language'].map(language_popularity).fillna(5)  # Default score for 'Other'
 
-# Update the features list to include 'Number_of_Sequels'
-features.append('Number_of_Sequels')
+# Update the features list to include 'Language_Popularity_Score'
+features.append('Language_Popularity_Score')
 
 # Re-train the Linear Regression model with the updated features
 X = df[features]
