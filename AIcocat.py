@@ -1,220 +1,32 @@
-import requests
-import time
-import pandas as pd
-import matplotlib.pyplot as plt
-from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LinearRegression
-from sklearn.metrics import mean_squared_error, r2_score
-import numpy as np
-import os
-from datetime import datetime
+# Add a new feature for the decade in which the movie was released
+def determine_decade(year):
+    """Classify the movie into a decade based on its release year."""
+    return (year // 10) * 10  # E.g., 1994 -> 1990, 2003 -> 2000
 
-# Load OMDb API key from environment variable
-api_key = os.getenv("OMDB_API_KEY")
+# Apply the function to create a new column for the decade
+df['Decade'] = df['Year'].apply(determine_decade)
 
-if not api_key:
-    print("Ooops: API key not found. Please set the OMDB_API_KEY environment variable.")
-    exit(1)
+# One-hot encode the 'Decade' feature to treat it as categorical data
+df = pd.get_dummies(df, columns=['Decade'], drop_first=True)
 
-# Initialize sentiment analyzer
-analyzer = SentimentIntensityAnalyzer()
+# Update the features list to include the new 'Decade' columns
+features += [col for col in df.columns if col.startswith('Decade_')]
 
-# Function to get movie data from OMDb with retry logic
-def get_movie_data(title, retries=3, delay=5):
-    """Fetch movie data with retries in case of connection errors."""
-    params = {'t': title, 'apikey': api_key}
-    
-    for attempt in range(retries):
-        try:
-            response = requests.get('http://www.omdbapi.com/', params=params)
-            response.raise_for_status()
-            
-            data = response.json()
-            if data.get('Response') == 'True':
-                # Convert runtime to minutes if available
-                runtime_str = data.get('Runtime', '0 min')
-                try:
-                    runtime = int(runtime_str.split()[0])  # Extract number of minutes
-                except ValueError:
-                    runtime = 0  # Default to 0 if conversion fails
-                data['Runtime_Minutes'] = runtime
-                return data
-            else:
-                print(f"Error: No data found for title '{title}' - {data.get('Error')}")
-                return None
-        except requests.exceptions.RequestException as e:
-            print(f"Attempt {attempt + 1}: Request error for title '{title}': {e}")
-            if attempt < retries - 1:
-                print("Retrying...")
-                time.sleep(delay)
-            else:
-                print("Failed to fetch data after multiple attempts.")
-                return None
-
-# Function to analyze the sentiment of the movie genre
-def analyze_genre_sentiment(genre):
-    sentiment_score = analyzer.polarity_scores(genre)
-    return sentiment_score['compound']
-
-# Function to create a holiday release indicator
-def is_holiday_release(date):
-    holiday_dates = ['12-25', '11-26']  # List of specific holiday dates (Christmas, example Thanksgiving)
-    return int(date.strftime('%m-%d') in holiday_dates)
-
-# List of top-rated movie titles to fetch as an example
-movie_titles = [
-    'The Shawshank Redemption', 'The Godfather', 'The Dark Knight',
-    '12 Angry Men', 'Schindler\'s List', 'Pulp Fiction',
-    'The Lord of the Rings: The Return of the King', 'The Good, the Bad and the Ugly',
-    'Fight Club', 'Forrest Gump'
-]
-
-# Fetch data for each movie
-movie_data = []
-for title in movie_titles:
-    data = get_movie_data(title)
-    if data:
-        movie_data.append(data)
-
-# Create DataFrame
-df = pd.DataFrame(movie_data)
-
-# Select relevant columns and rename for clarity
-df = df[['Title', 'Year', 'imdbRating', 'Genre', 'Director', 'Released', 'Runtime_Minutes']]
-df['Rating'] = df['imdbRating'].astype(float)
-
-# Convert 'Released' column to datetime
-df['Release_Date'] = pd.to_datetime(df['Released'], errors='coerce')
-
-# Create Day of the Week feature
-df['Day_of_Week'] = df['Release_Date'].dt.day_name()
-
-# Create binary feature for weekend vs. weekday
-df['Is_Weekend'] = df['Day_of_Week'].isin(['Saturday', 'Sunday']).astype(int)
-
-# One-hot encode the day of the week
-df = pd.get_dummies(df, columns=['Day_of_Week'], drop_first=True)
-
-# Analyze the sentiment of the movie genres
-df['Genre_Sentiment'] = df['Genre'].apply(analyze_genre_sentiment)
-
-# Apply the holiday release indicator
-df['Is_Holiday_Release'] = df['Release_Date'].apply(is_holiday_release)
-
-# Add a Director Popularity Score (example scores)
-director_popularity = {
-    'Frank Darabont': 9,
-    'Francis Ford Coppola': 10,
-    'Christopher Nolan': 10,
-    'Sidney Lumet': 8,
-    'Steven Spielberg': 10,
-    'Quentin Tarantino': 9,
-    'Peter Jackson': 10,
-    'Sergio Leone': 9,
-    'David Fincher': 8,
-    'Robert Zemeckis': 8
-}
-
-# Map the popularity scores to the DataFrame
-df['Director_Popularity'] = df['Director'].map(director_popularity).fillna(5)  # Fill missing with average score
-
-# Add the new "Budget" feature (in millions of dollars)
-budget_data = {
-    'The Shawshank Redemption': 25,
-    'The Godfather': 6,
-    'The Dark Knight': 185,
-    '12 Angry Men': 0.35,
-    'Schindler\'s List': 22,
-    'Pulp Fiction': 8,
-    'The Lord of the Rings: The Return of the King': 94,
-    'The Good, the Bad and the Ugly': 1.2,
-    'Fight Club': 63,
-    'Forrest Gump': 55
-}
-
-# Map the budget values to the DataFrame
-df['Budget'] = df['Title'].map(budget_data).fillna(10)  # Fill missing with average budget
-
-# Create a new feature for the release month
-df['Release_Month'] = df['Release_Date'].dt.month
-
-# Optionally, create categories for months such as "Summer", "Holiday", etc.
-def categorize_month(month):
-    if month in [6, 7, 8]:  # Summer months
-        return 'Summer'
-    elif month in [11, 12]:  # Holiday months
-        return 'Holiday'
-    else:
-        return 'Other'
-
-df['Release_Season'] = df['Release_Month'].apply(categorize_month)
-
-# One-hot encode the 'Release_Season' feature (to treat it as categorical data)
-df = pd.get_dummies(df, columns=['Release_Season'], drop_first=True)
-
-# Prepare the data for prediction
-df['Year'] = df['Year'].astype(int)
-df['Genre_Sentiment'] = df['Genre_Sentiment'].astype(float)
-
-# Features for the model, including Runtime, Director Popularity, Budget, and Release Month
-features = ['Year', 'Genre_Sentiment', 'Is_Holiday_Release', 'Is_Weekend', 'Runtime_Minutes', 'Director_Popularity', 'Budget', 'Release_Month', 'Release_Season_Summer', 'Release_Season_Holiday']
+# Re-train the Linear Regression model with the updated features
 X = df[features]
-y = df['Rating'].astype(float)
-
-# Split the data into training and testing sets
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Train the Linear Regression model
 model = LinearRegression()
 model.fit(X_train, y_train)
 
-# Make predictions on the test data
+# Recalculate predictions and metrics
 y_pred = model.predict(X_test)
-
-# Evaluate the model
 mse = mean_squared_error(y_test, y_pred)
 r2 = r2_score(y_test, y_pred)
 
-print(f'Mean Squared Error: {mse}')
-print(f'R-squared: {r2}')
+print(f'Updated Mean Squared Error: {mse}')
+print(f'Updated R-squared: {r2}')
 
-# Display the actual vs predicted ratings
-comparison = pd.DataFrame({'Actual Rating': y_test, 'Predicted Rating': y_pred})
-print(comparison.head())
-
-# Example of predicting the rating for a new movie
-def predict_rating(year, genre_sentiment, holiday_release, is_weekend, runtime, director_popularity, budget):
-    return model.predict(np.array([[year, genre_sentiment, holiday_release, is_weekend, runtime, director_popularity, budget]]))[0]
-
-# Example
+# Example of how the new feature affects prediction
 predicted_rating = predict_rating(2024, 0.5, 1, 1, 120, 9, 100)
 print(f'Predicted Rating for a movie in 2024: {predicted_rating:.2f}')
-
-# Merge with Rotten Tomatoes data for analysis
-rt_data = {
-    'Title': movie_titles,
-    'RT_Rating': [91, 98, 94, 100, 97, 92, 95, 97, 79, 71]
-}
-rt_df = pd.DataFrame(rt_data)
-combined_df = pd.merge(df, rt_df, on='Title', how='inner')
-
-# Correlation matrix
-correlation_matrix = combined_df[['Rating', 'RT_Rating', 'Genre_Sentiment', 'Is_Holiday_Release', 'Is_Weekend', 'Director_Popularity', 'Budget']].astype(float).corr()
-print(correlation_matrix)
-
-# Scatter plots for analysis
-plt.figure(figsize=(10, 6))
-plt.scatter(combined_df['Rating'], combined_df['RT_Rating'], alpha=0.5)
-plt.xlabel('IMDb Rating')
-plt.ylabel('Rotten Tomatoes Rating')
-plt.title('Comparison of IMDb and Rotten Tomatoes Ratings')
-plt.show()
-
-plt.figure(figsize=(10, 6))
-plt.scatter(combined_df['Rating'], combined_df['Genre_Sentiment'], alpha=0.5, color='green')
-plt.xlabel('IMDb Rating')
-plt.ylabel('Genre Sentiment')
-plt.title('IMDb Rating vs. Genre Sentiment')
-plt.show()
-
