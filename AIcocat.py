@@ -1,22 +1,21 @@
-# Add a new feature for Language Popularity Score
-language_popularity = {
-    'English': 10,
-    'Spanish': 8,
-    'French': 7,
-    'German': 6,
-    'Mandarin': 9,
-    'Hindi': 8,
-    'Japanese': 7,
-    'Korean': 7,
-    'Italian': 6,
-    'Other': 5
-}
+# Add a new feature for Production Budget Scale
+def classify_budget(budget):
+    """Classify movies into budget categories based on production cost."""
+    if budget < 10:
+        return 'Low'
+    elif 10 <= budget < 50:
+        return 'Medium'
+    else:
+        return 'High'
 
-# Assuming there's a 'Language' column in the DataFrame
-df['Language_Popularity_Score'] = df['Language'].map(language_popularity).fillna(5)  # Default score for 'Other'
+# Apply the function to create a new column for budget scale
+df['Budget_Scale'] = df['Production_Budget_Millions'].apply(classify_budget)
 
-# Update the features list to include 'Language_Popularity_Score'
-features.append('Language_Popularity_Score')
+# One-hot encode the 'Budget_Scale' feature to treat it as categorical data
+df = pd.get_dummies(df, columns=['Budget_Scale'], drop_first=True)
+
+# Update the features list to include the new 'Budget_Scale' columns
+features += [col for col in df.columns if col.startswith('Budget_Scale_')]
 
 # Re-train the Linear Regression model with the updated features
 X = df[features]
