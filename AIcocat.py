@@ -1,16 +1,22 @@
-# Add a new feature for the decade in which the movie was released
-def determine_decade(year):
-    """Classify the movie into a decade based on its release year."""
-    return (year // 10) * 10  # E.g., 1994 -> 1990, 2003 -> 2000
+# Add a new feature for sequels (e.g., 0 for standalone movies, >0 for sequels)
+sequel_data = {
+    'The Shawshank Redemption': 0,
+    'The Godfather': 1,  # First movie in the franchise
+    'The Dark Knight': 2,  # Sequel
+    '12 Angry Men': 0,
+    'Schindler\'s List': 0,
+    'Pulp Fiction': 0,
+    'The Lord of the Rings: The Return of the King': 3,  # Third movie in the trilogy
+    'The Good, the Bad and the Ugly': 3,  # Third in the "Dollars Trilogy"
+    'Fight Club': 0,
+    'Forrest Gump': 0
+}
 
-# Apply the function to create a new column for the decade
-df['Decade'] = df['Year'].apply(determine_decade)
+# Map the sequel values to the DataFrame
+df['Number_of_Sequels'] = df['Title'].map(sequel_data).fillna(0)  # Default to standalone movie (0)
 
-# One-hot encode the 'Decade' feature to treat it as categorical data
-df = pd.get_dummies(df, columns=['Decade'], drop_first=True)
-
-# Update the features list to include the new 'Decade' columns
-features += [col for col in df.columns if col.startswith('Decade_')]
+# Update the features list to include 'Number_of_Sequels'
+features.append('Number_of_Sequels')
 
 # Re-train the Linear Regression model with the updated features
 X = df[features]
@@ -27,6 +33,6 @@ r2 = r2_score(y_test, y_pred)
 print(f'Updated Mean Squared Error: {mse}')
 print(f'Updated R-squared: {r2}')
 
-# Example of how the new feature affects prediction
+# Example prediction with the new feature
 predicted_rating = predict_rating(2024, 0.5, 1, 1, 120, 9, 100)
 print(f'Predicted Rating for a movie in 2024: {predicted_rating:.2f}')
