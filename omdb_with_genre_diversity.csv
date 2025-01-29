@@ -1,0 +1,11 @@
+Title,Year,imdbRating,Genre,Director,Runtime,imdbVotes,BoxOffice,Awards,Rating,Genre_Sentiment,Director_Popularity,Budget,Movie_Popularity,Num_Genres,Rating_per_Genre,Movie_Age,BoxOffice_per_Genre,Awards_Count,Genre_Diversity
+The Shawshank Redemption,1994,9.3,Drama,Frank Darabont,142,"2,957,050",28767189,Nominated for 7 Oscars. 21 wins & 42 nominations total,9.3,0.0,1,25.0,2957050,1,9.3,30,28767189.0,70,1.0
+The Godfather,1972,9.2,"Crime, Drama",Francis Ford Coppola,175,"2,057,473",136381073,Won 3 Oscars. 31 wins & 31 nominations total,9.2,-0.5423,1,6.0,2057473,2,4.6,52,68190536.5,65,1.0
+The Dark Knight,2008,9.0,"Action, Crime, Drama",Christopher Nolan,152,"2,947,373",534987076,Won 2 Oscars. 164 wins & 164 nominations total,9.0,-0.5423,1,185.0,2947373,3,3.0,16,178329025.33333334,330,1.0
+12 Angry Men,1957,9.0,"Crime, Drama",Sidney Lumet,96,"891,794",0,Nominated for 3 Oscars. 16 wins & 12 nominations total,9.0,-0.5423,1,0.35,891794,2,4.5,67,0.0,31,1.0
+Schindler's List,1993,9.0,"Biography, Drama, History",Steven Spielberg,195,"1,487,349",96898818,Won 7 Oscars. 91 wins & 49 nominations total,9.0,0.0,1,22.0,1487349,3,3.0,31,32299606.0,147,1.0
+Pulp Fiction,1994,8.9,"Crime, Drama",Quentin Tarantino,154,"2,266,472",107928762,Won 1 Oscar. 69 wins & 72 nominations total,8.9,-0.5423,1,8.0,2266472,2,4.45,30,53964381.0,142,1.0
+The Lord of the Rings: The Return of the King,2003,9.0,"Action, Adventure, Drama",Peter Jackson,201,"2,024,305",381878219,Won 11 Oscars. 215 wins & 124 nominations total,9.0,0.3182,1,94.0,2024305,3,3.0,21,127292739.66666667,350,1.0
+"The Good, the Bad and the Ugly",1966,8.8,"Adventure, Drama, Western",Sergio Leone,178,"828,737",25100000,2 wins & 5 nominations,8.8,0.3182,1,1.2,828737,3,2.9333333333333336,58,8366666.666666667,7,1.0
+Fight Club,1999,8.8,Drama,David Fincher,139,"2,397,013",37030102,Nominated for 1 Oscar. 12 wins & 38 nominations total,8.8,0.0,1,63.0,2397013,1,8.8,25,37030102.0,51,1.0
+Forrest Gump,1994,8.8,"Drama, Romance",Robert Zemeckis,142,"2,314,429",330455270,Won 6 Oscars. 51 wins & 74 nominations total,8.8,0.5574,1,55.0,2314429,2,4.4,30,165227635.0,131,1.0

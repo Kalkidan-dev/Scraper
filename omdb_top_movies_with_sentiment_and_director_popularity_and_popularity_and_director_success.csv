@@ -1,0 +1,11 @@
+Title,Year,imdbRating,Genre,Director,Runtime,imdbVotes,Rating,Genre_Sentiment,Director_Popularity,Budget,Directors_Avg_Rating,Movie_Popularity
+The Shawshank Redemption,1994,9.3,Drama,Frank Darabont,142,"2,957,050",9.3,0.0,1,25.0,9.3,2957050
+The Godfather,1972,9.2,"Crime, Drama",Francis Ford Coppola,175,"2,057,473",9.2,-0.5423,1,6.0,9.2,2057473
+The Dark Knight,2008,9.0,"Action, Crime, Drama",Christopher Nolan,152,"2,932,729",9.0,-0.5423,1,185.0,9.0,2932729
+12 Angry Men,1957,9.0,"Crime, Drama",Sidney Lumet,96,"891,794",9.0,-0.5423,1,0.35,9.0,891794
+Schindler's List,1993,9.0,"Biography, Drama, History",Steven Spielberg,195,"1,480,596",9.0,0.0,1,22.0,9.0,1480596
+Pulp Fiction,1994,8.9,"Crime, Drama",Quentin Tarantino,154,"2,266,472",8.9,-0.5423,1,8.0,8.9,2266472
+The Lord of the Rings: The Return of the King,2003,9.0,"Action, Adventure, Drama",Peter Jackson,201,"2,024,305",9.0,0.3182,1,94.0,9.0,2024305
+"The Good, the Bad and the Ugly",1966,8.8,"Adventure, Drama, Western",Sergio Leone,178,"828,737",8.8,0.3182,1,1.2,8.8,828737
+Fight Club,1999,8.8,Drama,David Fincher,139,"2,383,262",8.8,0.0,1,63.0,8.8,2383262
+Forrest Gump,1994,8.8,"Drama, Romance",Robert Zemeckis,142,"2,314,429",8.8,0.5574,1,55.0,8.8,2314429
