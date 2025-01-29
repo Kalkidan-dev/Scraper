@@ -58,33 +58,32 @@ franchise_popularity = {
     "The Avengers": 10,
 }
 
-# Function to assign production studio influence score
-def get_studio_influence(studio):
-    return studio_influence.get(studio, 5)  # Default to 5 for unknown studios
-
-def extract_awards_count(awards):
+# New feature: Extract Oscar nominations
+def extract_oscar_nominations(awards):
     try:
         if isinstance(awards, str):
-            numbers = [int(num) for num in re.findall(r'\d+', awards)]
-            return sum(numbers)
+            match = re.search(r"(\d+)\s+nomination", awards, re.IGNORECASE)
+            return int(match.group(1)) if match else 0
         return 0
     except Exception as e:
-        print(f"Error extracting awards count: {e}")
+        print(f"Error extracting Oscar nominations: {e}")
         return 0
 
-# Function to determine franchise impact
-def get_franchise_impact(title):
+# Function to assign production studio influence score
+def get_studio_influence(studio):
+    """Assign an influence score to the production studio."""
     try:
-        for franchise, score in franchise_popularity.items():
-            if franchise.lower() in title.lower():
-                return score
-        return 5  # Default score for non-franchise movies
+        return studio_influence.get(studio, 5)  # Default to 5 for unknown studios
     except Exception as e:
-        print(f"Error in get_franchise_impact: {e}")
+        print(f"Error in get_studio_influence: {e}")
         return 5
+    return studio_influence.get(studio, 5)  # Default to 5 for unknown studios
 
-# New feature: Categorize movies by runtime
+# Function to categorize movies by runtime
 def categorize_movie_length(runtime):
+    """
+    Categorize movies into 'Short', 'Average', and 'Long' based on runtime.
+    """
     if pd.notnull(runtime):
         if runtime < 90:
             return "Short"
@@ -92,29 +91,47 @@ def categorize_movie_length(runtime):
             return "Average"
         else:
             return "Long"
-    return "Unknown"
+    return "Unknown"  # Handle missing or unknown runtime
 
 # Fetch data for each movie
-movie_titles = ["Inception", "The Dark Knight", "Titanic"]  # Example movie list
-
-def get_movie_data(title):
-    url = f"http://www.omdbapi.com/?t={title}&apikey={api_key}"
-    response = requests.get(url)
-    return response.json() if response.status_code == 200 else None
-
-movie_data = [get_movie_data(title) for title in movie_titles if get_movie_data(title)]
+movie_data = []
+for title in movie_titles:
+    try:
+        data = get_movie_data(title)
+        if data:
+            movie_data.append(data)
+    except Exception as e:
+        print(f"Error fetching data for {title}: {e}")
 
 # Create DataFrame
 df = pd.DataFrame(movie_data)
 
+# Apply new feature
+df['Oscar_Nominations'] = df['Awards'].apply(extract_oscar_nominations)
+features.append('Oscar_Nominations')
+
 # Error handling: Fill missing data or replace with defaults
-df['Year'] = pd.to_numeric(df['Year'], errors='coerce').fillna(datetime.now().year)
-df['Rating'] = pd.to_numeric(df['imdbRating'], errors='coerce').fillna(df['imdbRating'].median())
-df['Release_Date'] = pd.to_datetime(df['Released'], errors='coerce')
-df['Movie_Age'] = df['Year'].apply(lambda x: datetime.now().year - x if pd.notnull(x) else 0)
+try:
+    df['Year'] = pd.to_numeric(df['Year'], errors='coerce').fillna(datetime.now().year)  # Replace missing years with the current year
+    df['Rating'] = pd.to_numeric(df['imdbRating'], errors='coerce').fillna(df['imdbRating'].median())  # Fill missing ratings with median
+    df['Release_Date'] = pd.to_datetime(df['Released'], errors='coerce')  # Convert to datetime
+    df['Movie_Age'] = df['Year'].apply(lambda x: datetime.now().year - x if pd.notnull(x) else 0)  # Handle missing years
+except Exception as e:
+    print(f"Error in data transformation: {e}")
 
 def add_release_season(df, features):
+    """
+    Add a new feature for the release season of the movie.
+
+    Args:
+        df (pd.DataFrame): The input DataFrame.
+        features (list): The list of feature column names.
+
+    Returns:
+        pd.DataFrame, list: Updated DataFrame and features list.
+    """
     def classify_season(month):
+        """Classify the movie's release month into a season."""
         if month in [12, 1, 2]:
             return 'Winter'
         elif month in [3, 4, 5]:
@@ -124,27 +141,29 @@ def add_release_season(df, features):
         else:
             return 'Fall'
 
-    df['Release_Month'] = df['Release_Date'].dt.month
     df['Release_Season'] = df['Release_Month'].apply(classify_season)
     df = pd.get_dummies(df, columns=['Release_Season'], drop_first=True)
     features += [col for col in df.columns if col.startswith('Release_Season_')]
     return df, features
 
-features = []
+# Call the new function
 df, features = add_release_season(df, features)
 
-# Train the model
+# Re-train the model with the updated features
 X = df[features]
-y = df['Rating']
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
 model = LinearRegression()
 model.fit(X_train, y_train)
 
-# Predictions
+# Recalculate predictions and metrics
 y_pred = model.predict(X_test)
 mse = mean_squared_error(y_test, y_pred)
 r2 = r2_score(y_test, y_pred)
 
 print(f'Updated Mean Squared Error: {mse}')
 print(f'Updated R-squared: {r2}')
+
+# Example prediction with the new feature
+predicted_rating = predict_rating(2024, 0.5, 1, 1, 120, 9, 100)
+print(f'Predicted Rating for a movie in 2024: {predicted_rating:.2f}')
