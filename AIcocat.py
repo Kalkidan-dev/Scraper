@@ -274,44 +274,58 @@ df['Rating'] = pd.to_numeric(df['imdbRating'], errors='coerce').fillna(df['imdbR
 df['Release_Date'] = pd.to_datetime(df['Released'], errors='coerce')  # Convert to datetime
 df['Movie_Age'] = df['Year'].apply(lambda x: datetime.now().year - x if pd.notnull(x) else 0)  # Handle missing years
 
-# Handle missing Genres by assigning neutral sentiment
-df['Genre'] = df['Genre'].fillna('Unknown')
-@@ -219,11 +217,43 @@
-# Add Movie Length Category feature
-df['Movie_Length_Category'] = df['Runtime_Minutes'].apply(categorize_movie_length)
+   def add_release_season(df, features):
+       """
+       Add a new feature for the release season of the movie.
 
-# Add Director's Historical Success Rate feature
-df['Director_Historical_Success'] = df['Director'].apply(lambda x: get_director_success_rate(x, df))
-# Drop rows where 'Rating' or critical features are missing
-df = df.dropna(subset=['Rating', 'Year', 'Runtime_Minutes', 'Director', 'Actors'])
+       Args:
+           df (pd.DataFrame): The input DataFrame.
+           features (list): The list of feature column names.
 
-# Display the final cleaned DataFrame
-print("DataFrame after cleaning and handling missing data:")
-print(df.head())
+       Returns:
+           pd.DataFrame, list: Updated DataFrame and features list.
+       """
+       def classify_season(month):
+           """Classify the movie's release month into a season."""
+           if month in [12, 1, 2]:
+               return 'Winter'
+           elif month in [3, 4, 5]:
+               return 'Spring'
+           elif month in [6, 7, 8]:
+               return 'Summer'
+           else:
+               return 'Fall'
 
-# Features for modeling (including the new feature)
-features = ['Year', 'Genre_Sentiment', 'Is_Holiday_Release', 'Runtime_Minutes', 
-            'RT_Sentiment', 'Awards_Won', 'Top_Actors_Count', 'Movie_Age', 
-            'Director_Popularity', 'Studio_Influence', 'Budget_to_BoxOffice_Ratio', 
-            'Audience_Sentiment', 'Co_Actor_Network_Strength', 'Franchise_Impact', 
-            'Social_Media_Buzz', 'Critical_Reception_Sentiment', 'Movie_Length_Category', 
-            'Director_Historical_Success']
-X = pd.get_dummies(df[features], drop_first=True)  # Handle categorical variables
-y = df['Rating'].astype(float)
-# Train-test split and modeling
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-model = LinearRegression()
-model.fit(X_train, y_train)
-# Evaluate
-y_pred = model.predict(X_test)
-mse = mean_squared_error(y_test, y_pred)
-r2 = r2_score(y_test, y_pred)
-print(f"Mean Squared Error: {mse}")
-print(f"R-squared: {r2}")
-# Plot predictions
-plt.scatter(y_test, y_pred, alpha=0.7, edgecolor='k')
-plt.xlabel('Actual Ratings')
-plt.ylabel('Predicted Ratings')
-plt.title('Actual vs Predicted Movie Ratings')
-plt.grid(True)
-plt.show()
+       # Assuming the DataFrame has a 'Release_Month' column
+       df['Release_Season'] = df['Release_Month'].apply(classify_season)
+
+       # One-hot encode the 'Release_Season' feature
+       df = pd.get_dummies(df, columns=['Release_Season'], drop_first=True)
+
+       # Update the features list to include the new 'Release_Season' columns
+       features += [col for col in df.columns if col.startswith('Release_Season_')]
+
+       return df, features
+
+   # Call the new function without modifying the existing code
+   df, features = add_release_season(df, features)
+
+   # Re-train the model with the updated features
+   X = df[features]
+   X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+   model = LinearRegression()
+   model.fit(X_train, y_train)
+
+   # Recalculate predictions and metrics
+   y_pred = model.predict(X_test)
+   mse = mean_squared_error(y_test, y_pred)
+   r2 = r2_score(y_test, y_pred)
+
+   print(f'Updated Mean Squared Error: {mse}')
+   print(f'Updated R-squared: {r2}')
+
+   # Example prediction with the new feature
+   predicted_rating = predict_rating(2024, 0.5, 1, 1, 120, 9, 100)
+   print(f'Predicted Rating for a movie in 2024: {predicted_rating:.2f}')
+   
