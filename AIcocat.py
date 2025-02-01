@@ -118,7 +118,35 @@ try:
     df['Movie_Age'] = df['Year'].apply(lambda x: datetime.now().year - x if pd.notnull(x) else 0)  # Handle missing years
 except Exception as e:
     print(f"Error in data transformation: {e}")
-
+def seasonal_popularity_score(release_date):
+    """
+    Assign a seasonal popularity score based on the release date.
+    """
+    if isinstance(release_date, str) and release_date:
+        try:
+            # Parse the release date to extract the month
+            release_month = datetime.strptime(release_date, '%d %b %Y').month
+            
+            # Seasonal popularity scores (values can be adjusted based on real data)
+            season_scores = {
+                'Winter': 0.8,  # December, January, February
+                'Spring': 0.7,  # March, April, May
+                'Summer': 1.0,  # June, July, August
+                'Fall': 0.6     # September, October, November
+            }
+            
+            # Assign seasons based on the month
+            if release_month in [12, 1, 2]:
+                return season_scores['Winter']
+            elif release_month in [3, 4, 5]:
+                return season_scores['Spring']
+            elif release_month in [6, 7, 8]:
+                return season_scores['Summer']
+            elif release_month in [9, 10, 11]:
+                return season_scores['Fall']
+        except ValueError:
+            return 0.0
+        return 0.0
 def add_release_season(df, features):
     """
     Add a new feature for the release season of the movie.
