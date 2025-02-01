@@ -118,6 +118,26 @@ try:
     df['Movie_Age'] = df['Year'].apply(lambda x: datetime.now().year - x if pd.notnull(x) else 0)  # Handle missing years
 except Exception as e:
     print(f"Error in data transformation: {e}")
+
+def director_collaboration_frequency(director, actors, df):
+    """
+    Calculate how often a director collaborates with the same actors.
+    """
+    if isinstance(director, str) and isinstance(actors, str):
+        # Split the actors into a list
+        actor_list = actors.split(', ')
+        
+        # Filter the dataset for movies by the same director
+        director_movies = df[df['Director'] == director]
+        
+        # Count collaborations with the same actors
+        collaboration_count = 0
+        for actor in actor_list:
+            collaboration_count += director_movies['Actors'].apply(lambda x: actor in x if isinstance(x, str) else False).sum()
+        
+        return collaboration_count / len(actor_list) if len(actor_list) > 0 else 0
+    return 0
+
 def seasonal_popularity_score(release_date):
     """
     Assign a seasonal popularity score based on the release date.
