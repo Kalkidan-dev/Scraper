@@ -119,6 +119,21 @@ try:
 except Exception as e:
     print(f"Error in data transformation: {e}")
 
+def genre_familiarity_index(director, genre, df):
+    """
+    Calculate how familiar a director is with the genres of the current movie.
+    """
+    if isinstance(director, str) and isinstance(genre, str):
+        # Split the genres into a list
+        genres = genre.split(', ')
+        # Filter the dataset for movies by this director
+        director_movies = df[df['Director'] == director]
+        # Count the occurrence of each genre in the director's previous movies
+        genre_count = sum(director_movies['Genre'].str.contains(g, case=False, na=False).sum() for g in genres)
+        # Normalize by the number of genres in the current movie
+        return genre_count / len(genres) if len(genres) > 0 else 0
+    return 0
+
 def director_collaboration_frequency(director, actors, df):
     """
     Calculate how often a director collaborates with the same actors.
