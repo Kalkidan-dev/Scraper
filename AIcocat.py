@@ -134,6 +134,19 @@ def genre_familiarity_index(director, genre, df):
         return genre_count / len(genres) if len(genres) > 0 else 0
     return 0
 
+def franchise_indicator(title):
+    """
+    Check if a movie title contains keywords commonly associated with franchises.
+    """
+    franchise_keywords = ['Marvel', 'Avengers', 'Star Wars', 'Harry Potter', 
+                          'Fast & Furious', 'Mission Impossible', 'Transformers', 
+                          'Spider-Man', 'Batman', 'Superman', 'Jurassic']
+    for keyword in franchise_keywords:
+        if keyword.lower() in title.lower():
+            return 1
+    return 0
+
+
 def director_collaboration_frequency(director, actors, df):
     """
     Calculate how often a director collaborates with the same actors.
