@@ -134,6 +134,15 @@ def genre_familiarity_index(director, genre, df):
         return genre_count / len(genres) if len(genres) > 0 else 0
     return 0
 
+# New Feature: Budget-to-BoxOffice Ratio
+def budget_to_boxoffice_ratio(budget, box_office):
+    """
+    Calculate the ratio of budget to box office earnings.
+    """
+    if budget > 0 and box_office > 0:
+        return budget / box_office
+    return 0.0
+
 def franchise_indicator(title):
     """
     Check if a movie title contains keywords commonly associated with franchises.
