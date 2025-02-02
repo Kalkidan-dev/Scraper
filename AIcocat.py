@@ -134,6 +134,14 @@ def genre_familiarity_index(director, genre, df):
         return genre_count / len(genres) if len(genres) > 0 else 0
     return 0
 
+def critics_vs_audience_disparity(critics_rating, audience_rating):
+    """
+    Calculate the absolute difference between critics' and audience ratings.
+    """
+    if critics_rating is not None and audience_rating is not None:
+        return abs(critics_rating - audience_rating)
+    return 0.0
+
 # New Feature: Budget-to-BoxOffice Ratio
 def budget_to_boxoffice_ratio(budget, box_office):
     """
