@@ -134,6 +134,17 @@ def genre_familiarity_index(director, genre, df):
         return genre_count / len(genres) if len(genres) > 0 else 0
     return 0
 
+# New Feature: International Release Indicator
+def international_release_indicator(country):
+    """
+    Check if a movie was released in multiple countries.
+    """
+    if isinstance(country, str):
+        countries = country.split(', ')
+        return 1 if len(countries) > 1 else 0
+    return 0
+
+# New Feature: Critics vs Audience Rating Disparity
 def critics_vs_audience_disparity(critics_rating, audience_rating):
     """
     Calculate the absolute difference between critics' and audience ratings.
