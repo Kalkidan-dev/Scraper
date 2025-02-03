@@ -152,6 +152,21 @@ def box_office_success(budget, box_office):
         return 1 if box_office > budget else 0
     return 0  # If budget or box office is missing, assume failure (0)
 
+def genre_popularity(genre, df):
+    """
+    Calculate how popular the genre of the movie is based on the number of recent releases in that genre.
+    The more recent releases in the genre, the higher the popularity.
+    """
+    if isinstance(genre, str):
+        # Get the current year
+        current_year = datetime.now().year
+        # Filter the dataset for movies in the same genre
+        genre_movies = df[df['Genre'].str.contains(genre, case=False, na=False)]
+        # Count the number of movies in the genre released in the last 5 years
+        recent_genre_movies = genre_movies[genre_movies['Year'] >= current_year - 5]
+        return len(recent_genre_movies)
+    return 0
+
 
 # New Feature: Critics vs Audience Rating Disparity
 def critics_vs_audience_disparity(critics_rating, audience_rating):
@@ -263,6 +278,8 @@ def add_release_season(df, features):
 df, features = add_release_season(df, features)
 df['Box_Office_Success'] = df.apply(lambda row: box_office_success(row['Budget'], row['BoxOffice']), axis=1)
 features.append('Box_Office_Success')  # Add it to the features list
+df['Genre_Popularity'] = df['Genre'].apply(lambda genre: genre_popularity(genre, df))
+features.append('Genre_Popularity')  # Add it to the features list
 
 
 # Re-train the model with the updated features
@@ -279,10 +296,3 @@ r2 = r2_score(y_test, y_pred)
 
 print(f'Updated Mean Squared Error: {mse}')
 print(f'Updated R-squared: {r2}')
-
-# Example prediction with the new feature
-predicted_rating = predict_rating(2024, 0.5, 1, 1, 120, 9, 100)
-print(f'Predicted Rating for a movie in 2024: {predicted_rating:.2f}')
-
-# Print the DataFrame to verify
-print(df[['Title', 'Awards', 'Oscar_Nominations']])
