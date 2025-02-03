@@ -143,6 +143,16 @@ def international_release_indicator(country):
         return 1 if len(countries) > 1 else 0
     return 0
 
+def box_office_success(budget, box_office):
+    """
+    Determine if a movie was a box office success based on its budget and earnings.
+    Returns 1 if box office earnings are greater than the budget, else 0.
+    """
+    if budget > 0 and box_office > 0:
+        return 1 if box_office > budget else 0
+    return 0  # If budget or box office is missing, assume failure (0)
+
+
 # New Feature: Critics vs Audience Rating Disparity
 def critics_vs_audience_disparity(critics_rating, audience_rating):
     """
@@ -251,6 +261,9 @@ def add_release_season(df, features):
 
 # Call the new function
 df, features = add_release_season(df, features)
+df['Box_Office_Success'] = df.apply(lambda row: box_office_success(row['Budget'], row['BoxOffice']), axis=1)
+features.append('Box_Office_Success')  # Add it to the features list
+
 
 # Re-train the model with the updated features
 X = df[features]
