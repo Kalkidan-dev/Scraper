@@ -260,6 +260,35 @@ def director_success(director, df):
         return avg_rating if pd.notnull(avg_rating) else 0
     return 0
 
+import requests
+
+def fetch_social_media_mentions(title):
+    """
+    Fetch the number of social media mentions or hashtags for a movie.
+    This can be integrated with APIs from platforms like Twitter, Instagram, or others.
+    """
+    # Replace with real API or method to fetch social media mentions
+    api_url = f"https://api.socialmedia.com/search?query={title}"
+    response = requests.get(api_url)
+    if response.status_code == 200:
+        return response.json().get('mention_count', 0)
+    return 0
+
+def audience_engagement_score(title):
+    """
+    Calculate the audience engagement score based on social media mentions.
+    The higher the mentions, the higher the score.
+    """
+    mentions = fetch_social_media_mentions(title)
+    # Normalize the mention count to a scale of 0-10
+    return min(mentions / 100, 10)
+
+# Apply the new feature to your DataFrame
+df['Audience_Engagement_Score'] = df['Title'].apply(audience_engagement_score)
+
+# Add it to the list of features for model training
+features.append('Audience_Engagement_Score')
+
 
 def add_release_season(df, features):
     """
