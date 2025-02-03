@@ -77,7 +77,6 @@ def get_studio_influence(studio):
     except Exception as e:
         print(f"Error in get_studio_influence: {e}")
         return 5
-    return studio_influence.get(studio, 5)  # Default to 5 for unknown studios
 
 # Function to categorize movies by runtime
 def categorize_movie_length(runtime):
@@ -94,10 +93,11 @@ def categorize_movie_length(runtime):
     return "Unknown"  # Handle missing or unknown runtime
 
 # Fetch data for each movie
+movie_titles = ["Inception", "The Dark Knight", "Titanic"]  # Replace with actual movie titles to fetch
 movie_data = []
 for title in movie_titles:
     try:
-        data = get_movie_data(title)
+        data = get_movie_data(title)  # Replace with actual data fetching function
         if data:
             movie_data.append(data)
     except Exception as e:
@@ -108,7 +108,6 @@ df = pd.DataFrame(movie_data)
 
 # Apply new feature
 df['Oscar_Nominations'] = df['Awards'].apply(extract_oscar_nominations)
-features.append('Oscar_Nominations')
 
 # Error handling: Fill missing data or replace with defaults
 try:
@@ -174,7 +173,6 @@ def franchise_indicator(title):
             return 1
     return 0
 
-
 def director_collaboration_frequency(director, actors, df):
     """
     Calculate how often a director collaborates with the same actors.
@@ -223,6 +221,7 @@ def seasonal_popularity_score(release_date):
         except ValueError:
             return 0.0
         return 0.0
+
 def add_release_season(df, features):
     """
     Add a new feature for the release season of the movie.
@@ -271,3 +270,6 @@ print(f'Updated R-squared: {r2}')
 # Example prediction with the new feature
 predicted_rating = predict_rating(2024, 0.5, 1, 1, 120, 9, 100)
 print(f'Predicted Rating for a movie in 2024: {predicted_rating:.2f}')
+
+# Print the DataFrame to verify
+print(df[['Title', 'Awards', 'Oscar_Nominations']])
