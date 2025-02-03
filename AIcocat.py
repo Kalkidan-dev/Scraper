@@ -247,6 +247,20 @@ def seasonal_popularity_score(release_date):
             return 0.0
         return 0.0
 
+def director_success(director, df):
+    """
+    Calculate the average rating of movies directed by the same director.
+    This represents the director's past success in terms of movie ratings.
+    """
+    if isinstance(director, str):
+        # Filter the dataset for movies by this director
+        director_movies = df[df['Director'] == director]
+        # Calculate the average rating of these movies
+        avg_rating = director_movies['Rating'].mean()
+        return avg_rating if pd.notnull(avg_rating) else 0
+    return 0
+
+
 def add_release_season(df, features):
     """
     Add a new feature for the release season of the movie.
@@ -280,6 +294,8 @@ df['Box_Office_Success'] = df.apply(lambda row: box_office_success(row['Budget']
 features.append('Box_Office_Success')  # Add it to the features list
 df['Genre_Popularity'] = df['Genre'].apply(lambda genre: genre_popularity(genre, df))
 features.append('Genre_Popularity')  # Add it to the features list
+df['Director_Success'] = df['Director'].apply(lambda director: director_success(director, df))
+features.append('Director_Success')  # Add it to the features list
 
 
 # Re-train the model with the updated features
