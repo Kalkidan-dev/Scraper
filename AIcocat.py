@@ -336,6 +336,28 @@ def director_avg_rating(director, df):
 df['Director_Avg_Rating'] = df['Director'].apply(lambda x: director_avg_rating(x, df))
 features.append('Director_Avg_Rating')
 
+def award_nomination_ratio(awards):
+    """
+    Calculate the ratio of awards won to total nominations.
+    """
+    try:
+        if isinstance(awards, str):
+            wins_match = re.search(r"(\d+)\s+win", awards, re.IGNORECASE)
+            nominations_match = re.search(r"(\d+)\s+nomination", awards, re.IGNORECASE)
+            
+            wins = int(wins_match.group(1)) if wins_match else 0
+            nominations = int(nominations_match.group(1)) if nominations_match else 1  # Avoid division by zero
+            
+            return wins / nominations
+        return 0.0
+    except Exception as e:
+        print(f"Error calculating award-to-nomination ratio: {e}")
+        return 0.0
+
+# Apply the function
+df['Award_Nomination_Ratio'] = df['Awards'].apply(award_nomination_ratio)
+features.append('Award_Nomination_Ratio')
+
 
 def add_release_season(df, features):
     """
