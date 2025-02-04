@@ -289,6 +289,26 @@ df['Audience_Engagement_Score'] = df['Title'].apply(audience_engagement_score)
 # Add it to the list of features for model training
 features.append('Audience_Engagement_Score')
 
+def director_previous_movie_rating_avg(director, df):
+    """
+    Calculate the average IMDb rating of a director's previous movies.
+    This helps to capture the director's influence and consistency in movie quality.
+    """
+    if isinstance(director, str):
+        # Filter the dataset for movies by this director
+        director_movies = df[df['Director'] == director]
+        
+        # Calculate the average IMDb rating of previous movies
+        avg_rating = director_movies['imdbRating'].mean()
+        return avg_rating if not np.isnan(avg_rating) else 0.0
+    return 0.0
+
+# Apply the new feature to the DataFrame
+df['Director_Previous_Movie_Rating_Avg'] = df['Director'].apply(lambda x: director_previous_movie_rating_avg(x, df))
+
+# Add it to the list of features for model training
+features.append('Director_Previous_Movie_Rating_Avg')
+
 
 def add_release_season(df, features):
     """
