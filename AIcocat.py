@@ -322,6 +322,20 @@ def director_previous_movie_rating_avg(director, df):
 df['Director_Previous_Movie_Rating_Avg'] = df['Director'].apply(lambda x: director_previous_movie_rating_avg(x, df))
 features.append('Director_Previous_Movie_Rating_Avg')
 
+def director_avg_rating(director, df):
+    """
+    Calculate the average IMDb rating of all movies directed by the given director.
+    """
+    if isinstance(director, str):
+        director_movies = df[df['Director'] == director]
+        if not director_movies.empty:
+            return director_movies['imdbRating'].mean()
+    return df['imdbRating'].mean()  # Default to dataset average if no data available
+
+# Apply the function
+df['Director_Avg_Rating'] = df['Director'].apply(lambda x: director_avg_rating(x, df))
+features.append('Director_Avg_Rating')
+
 
 def add_release_season(df, features):
     """
