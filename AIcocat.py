@@ -358,6 +358,23 @@ def award_nomination_ratio(awards):
 df['Award_Nomination_Ratio'] = df['Awards'].apply(award_nomination_ratio)
 features.append('Award_Nomination_Ratio')
 
+def box_office_success_score(budget, box_office):
+    """
+    Calculate a success score based on the ratio of box office earnings to budget.
+    A higher ratio means better financial performance.
+    """
+    try:
+        if budget > 0 and box_office > 0:
+            return box_office / budget
+        return 0.0
+    except Exception as e:
+        print(f"Error calculating box office success score: {e}")
+        return 0.0
+
+# Apply the function
+df['Box_Office_Success_Score'] = df.apply(lambda row: box_office_success_score(row['Budget'], row['BoxOffice']), axis=1)
+features.append('Box_Office_Success_Score')
+
 
 def add_release_season(df, features):
     """
