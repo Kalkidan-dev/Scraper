@@ -375,6 +375,23 @@ def box_office_success_score(budget, box_office):
 df['Box_Office_Success_Score'] = df.apply(lambda row: box_office_success_score(row['Budget'], row['BoxOffice']), axis=1)
 features.append('Box_Office_Success_Score')
 
+def audience_engagement_score(imdb_votes, imdb_rating):
+    """
+    Calculate an audience engagement score based on IMDb votes and rating.
+    A higher score suggests a more engaged audience.
+    """
+    try:
+        if imdb_votes > 0 and imdb_rating > 0:
+            return imdb_votes * imdb_rating / 100000  # Normalize score
+        return 0.0
+    except Exception as e:
+        print(f"Error calculating audience engagement score: {e}")
+        return 0.0
+
+# Apply the function
+df['Audience_Engagement_Score'] = df.apply(lambda row: audience_engagement_score(row['imdbVotes'], row['imdbRating']), axis=1)
+features.append('Audience_Engagement_Score')
+
 
 def add_release_season(df, features):
     """
