@@ -414,6 +414,18 @@ def award_winning_director_score(director):
 df['Director_Award_Score'] = df['Director'].apply(award_winning_director_score)
 features.append('Director_Award_Score')
 
+def audience_engagement_score(imdb_votes, num_reviews):
+    """
+    Calculate audience engagement score based on IMDb votes and number of reviews.
+    """
+    if pd.notnull(imdb_votes) and pd.notnull(num_reviews):
+        return np.log1p(imdb_votes) + np.log1p(num_reviews)  # Apply log transformation to normalize
+    return 0.0  # Default if data is missing
+
+# Apply the function to the DataFrame
+df['Audience_Engagement_Score'] = df.apply(lambda row: audience_engagement_score(row['imdbVotes'], row['num_reviews']), axis=1)
+features.append('Audience_Engagement_Score')
+
 
 def audience_engagement_score(imdb_votes, imdb_rating):
     """
