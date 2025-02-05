@@ -426,6 +426,31 @@ def audience_engagement_score(imdb_votes, num_reviews):
 df['Audience_Engagement_Score'] = df.apply(lambda row: audience_engagement_score(row['imdbVotes'], row['num_reviews']), axis=1)
 features.append('Audience_Engagement_Score')
 
+def award_win_score(awards):
+    """
+    Assigns a weighted score based on the number of awards won.
+    Oscars and Golden Globes have higher weight than other awards.
+    """
+    try:
+        if isinstance(awards, str):
+            oscars = re.search(r"Won (\d+) Oscar", awards, re.IGNORECASE)
+            golden_globes = re.search(r"Won (\d+) Golden Globe", awards, re.IGNORECASE)
+            total_wins = re.search(r"Won (\d+) award", awards, re.IGNORECASE)
+
+            oscar_wins = int(oscars.group(1)) * 5 if oscars else 0
+            golden_globe_wins = int(golden_globes.group(1)) * 3 if golden_globes else 0
+            other_wins = int(total_wins.group(1)) if total_wins else 0
+
+            return oscar_wins + golden_globe_wins + other_wins
+        return 0
+    except Exception as e:
+        print(f"Error calculating award win score: {e}")
+        return 0
+
+# Apply the function to the DataFrame
+df['Award_Win_Score'] = df['Awards'].apply(award_win_score)
+features.append('Award_Win_Score')
+
 
 def audience_engagement_score(imdb_votes, imdb_rating):
     """
