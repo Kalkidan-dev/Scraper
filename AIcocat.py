@@ -375,6 +375,24 @@ def box_office_success_score(budget, box_office):
 df['Box_Office_Success_Score'] = df.apply(lambda row: box_office_success_score(row['Budget'], row['BoxOffice']), axis=1)
 features.append('Box_Office_Success_Score')
 
+def streaming_popularity_score(streaming_platforms):
+    """
+    Assign a popularity score based on the number of streaming platforms a movie is available on.
+    """
+    try:
+        if isinstance(streaming_platforms, str):
+            platforms = streaming_platforms.split(', ')
+            return len(platforms)
+        return 0
+    except Exception as e:
+        print(f"Error calculating streaming popularity score: {e}")
+        return 0
+
+# Example dataset column (Assuming 'Streaming' contains platform names)
+df['Streaming_Popularity_Score'] = df['Streaming'].apply(streaming_popularity_score)
+features.append('Streaming_Popularity_Score')
+
+
 def audience_engagement_score(imdb_votes, imdb_rating):
     """
     Calculate an audience engagement score based on IMDb votes and rating.
