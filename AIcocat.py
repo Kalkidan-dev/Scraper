@@ -392,6 +392,28 @@ def streaming_popularity_score(streaming_platforms):
 df['Streaming_Popularity_Score'] = df['Streaming'].apply(streaming_popularity_score)
 features.append('Streaming_Popularity_Score')
 
+def award_winning_director_score(director):
+    """
+    Assign a score based on the number of major awards won by a director.
+    """
+    award_winning_directors = {
+        "Steven Spielberg": 10,
+        "Martin Scorsese": 9,
+        "Christopher Nolan": 9,
+        "Quentin Tarantino": 8,
+        "James Cameron": 9,
+        "Guillermo del Toro": 8,
+        "Ridley Scott": 7,
+        "Denis Villeneuve": 8,
+        "Bong Joon-ho": 9
+    }
+    
+    return award_winning_directors.get(director, 5)  # Default score for unknown directors
+
+# Apply the function to the DataFrame
+df['Director_Award_Score'] = df['Director'].apply(award_winning_director_score)
+features.append('Director_Award_Score')
+
 
 def audience_engagement_score(imdb_votes, imdb_rating):
     """
