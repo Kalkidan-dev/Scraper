@@ -509,6 +509,18 @@ def add_release_season(df, features):
     features += [col for col in df.columns if col.startswith('Release_Season_')]
     return df, features
 
+def box_office_success(budget, box_office):
+    """
+    Calculate the success of a movie based on its budget and box office revenue.
+    """
+    try:
+        if budget > 0:
+            return box_office / budget
+        return 0.0
+    except Exception as e:
+        print(f"Error calculating box office success: {e}")
+        return 0.0
+
 def add_release_season(df, features):
     """
     Add a new feature for the release season of the movie.
