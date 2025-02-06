@@ -521,6 +521,16 @@ def box_office_success(budget, box_office):
         print(f"Error calculating box office success: {e}")
         return 0.0
 
+def genre_popularity(genre, df):
+    """
+    Calculate the popularity of a genre based on its occurrence in the dataset.
+    """
+    try:
+        return df[df['Genre'] == genre].shape[0] / df.shape[0]
+    except Exception as e:
+        print(f"Error calculating genre popularity: {e}")
+        return 0.0
+
 def add_release_season(df, features):
     """
     Add a new feature for the release season of the movie.
