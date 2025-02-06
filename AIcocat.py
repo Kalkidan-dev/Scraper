@@ -572,15 +572,21 @@ def add_release_season(df, features):
     features += [col for col in df.columns if col.startswith('Release_Season_')]
     return df, features
 
-# Call the new function
-df, features = add_release_season(df, features)
-df['Box_Office_Success'] = df.apply(lambda row: box_office_success(row['Budget'], row['BoxOffice']), axis=1)
-features.append('Box_Office_Success')  # Add it to the features list
-df['Genre_Popularity'] = df['Genre'].apply(lambda genre: genre_popularity(genre, df))
-features.append('Genre_Popularity')  # Add it to the features list
-df['Director_Success'] = df['Director'].apply(lambda director: director_success(director, df))
-features.append('Director_Success')  # Add it to the features list
+# Assuming you have a DataFrame `df` with relevant columns
+# Add new features
+df['Audience_Engagement_Score'] = df.apply(lambda row: audience_engagement_score(row['imdbVotes'], row['imdbRating']), axis=1)
+features.append('Audience_Engagement_Score')
 
+df, features = add_release_season(df, features)
+
+df['Box_Office_Success'] = df.apply(lambda row: box_office_success(row['Budget'], row['BoxOffice']), axis=1)
+features.append('Box_Office_Success')
+
+df['Genre_Popularity'] = df['Genre'].apply(lambda genre: genre_popularity(genre, df))
+features.append('Genre_Popularity')
+
+df['Director_Success'] = df['Director'].apply(lambda director: director_success(director, df))
+features.append('Director_Success')
 
 # Re-train the model with the updated features
 X = df[features]
