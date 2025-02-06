@@ -482,6 +482,32 @@ def audience_engagement_score(imdb_votes, imdb_rating):
         print(f"Error calculating audience engagement score: {e}")
         return 0.0
 
+def add_release_season(df, features):
+    """
+    Add a new feature for the release season of the movie.
+
+    Args:
+        df (pd.DataFrame): The input DataFrame.
+        features (list): The list of feature column names.
+
+    Returns:
+        pd.DataFrame, list: Updated DataFrame and features list.
+    """
+    def classify_season(month):
+        """Classify the movie's release month into a season."""
+        if month in [12, 1, 2]:
+            return 'Winter'
+        elif month in [3, 4, 5]:
+            return 'Spring'
+        elif month in [6, 7, 8]:
+            return 'Summer'
+        else:
+            return 'Fall'
+
+    df['Release_Season'] = df['Release_Month'].apply(classify_season)
+    df = pd.get_dummies(df, columns=['Release_Season'], drop_first=True)
+    features += [col for col in df.columns if col.startswith('Release_Season_')]
+    return df, features
 
 def add_release_season(df, features):
     """
