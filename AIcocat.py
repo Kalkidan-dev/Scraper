@@ -531,6 +531,20 @@ def genre_popularity(genre, df):
         print(f"Error calculating genre popularity: {e}")
         return 0.0
 
+def director_success(director, df):
+    """
+    Calculate the success of a director based on the box office performance of their movies.
+    """
+    try:
+        director_movies = df[df['Director'] == director]
+        if len(director_movies) > 0:
+            return director_movies['BoxOffice'].mean()
+        return 0.0
+    except Exception as e:
+        print(f"Error calculating director success: {e}")
+        return 0.0
+
+
 def add_release_season(df, features):
     """
     Add a new feature for the release season of the movie.
