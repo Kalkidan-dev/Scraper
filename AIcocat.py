@@ -11,6 +11,7 @@ import os
 from datetime import datetime
 import re
 
+
 # Load OMDb API key from environment variable
 api_key = os.getenv("OMDB_API_KEY")
 
@@ -572,21 +573,26 @@ def add_release_season(df, features):
     features += [col for col in df.columns if col.startswith('Release_Season_')]
     return df, features
 
-# Assuming you have a DataFrame `df` with relevant columns
-# Add new features
-df['Audience_Engagement_Score'] = df.apply(lambda row: audience_engagement_score(row['imdbVotes'], row['imdbRating']), axis=1)
-features.append('Audience_Engagement_Score')
+import pandas as pd
 
-df, features = add_release_season(df, features)
+def cast_diversity_score(cast):
+    """
+    Calculate the diversity score based on the number of unique nationalities in the cast.
+    """
+    try:
+        if isinstance(cast, str):
+            # Assuming the cast information includes the names and nationalities of the actors
+            cast_nationalities = cast.split(', ')
+            unique_nationalities = set([name.split('(')[-1].strip(')') for name in cast_nationalities])
+            return len(unique_nationalities)
+        return 0
+    except Exception as e:
+        print(f"Error calculating cast diversity score: {e}")
+        return 0
 
-df['Box_Office_Success'] = df.apply(lambda row: box_office_success(row['Budget'], row['BoxOffice']), axis=1)
-features.append('Box_Office_Success')
-
-df['Genre_Popularity'] = df['Genre'].apply(lambda genre: genre_popularity(genre, df))
-features.append('Genre_Popularity')
-
-df['Director_Success'] = df['Director'].apply(lambda director: director_success(director, df))
-features.append('Director_Success')
+# Example dataset column (Assuming 'Cast' contains actor names and their nationalities in the format "Name (Nationality)")
+df['Cast_Diversity_Score'] = df['Cast'].apply(cast_diversity_score)
+features.append('Cast_Diversity_Score')
 
 # Re-train the model with the updated features
 X = df[features]
