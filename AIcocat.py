@@ -636,9 +636,25 @@ def genre_complexity_score(genres):
         print(f"Error calculating genre complexity score: {e}")
         return 0
 
-# Example dataset column (Assuming 'Genre' contains genres separated by commas)
-df['Genre_Complexity_Score'] = df['Genre'].apply(genre_complexity_score)
-features.append('Genre_Complexity_Score')
+import pandas as pd
+
+def film_festival_participation_score(festivals):
+    """
+    Calculate a score based on the number of film festivals a movie has participated in.
+    A higher score suggests greater industry recognition and prestige.
+    """
+    try:
+        if isinstance(festivals, str):
+            festival_list = festivals.split(', ')
+            return len(festival_list)
+        return 0
+    except Exception as e:
+        print(f"Error calculating film festival participation score: {e}")
+        return 0
+
+# Example dataset column (Assuming 'Film_Festivals' contains names of festivals separated by commas)
+df['Film_Festival_Participation_Score'] = df['Film_Festivals'].apply(film_festival_participation_score)
+features.append('Film_Festival_Participation_Score')
 
 # Re-train the model with the updated features
 X = df[features]
