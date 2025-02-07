@@ -590,9 +590,24 @@ def cast_diversity_score(cast):
         print(f"Error calculating cast diversity score: {e}")
         return 0
 
-# Example dataset column (Assuming 'Cast' contains actor names and their nationalities in the format "Name (Nationality)")
-df['Cast_Diversity_Score'] = df['Cast'].apply(cast_diversity_score)
-features.append('Cast_Diversity_Score')
+import pandas as pd
+
+def social_media_buzz_score(social_media_mentions, social_media_likes):
+    """
+    Calculate a social media buzz score based on mentions and likes.
+    A higher score suggests higher popularity and engagement.
+    """
+    try:
+        if social_media_mentions > 0 and social_media_likes > 0:
+            return (social_media_mentions + social_media_likes) / 1000  # Normalize score
+        return 0.0
+    except Exception as e:
+        print(f"Error calculating social media buzz score: {e}")
+        return 0.0
+
+# Example dataset columns (Assuming 'Social_Media_Mentions' and 'Social_Media_Likes' are available)
+df['Social_Media_Buzz_Score'] = df.apply(lambda row: social_media_buzz_score(row['Social_Media_Mentions'], row['Social_Media_Likes']), axis=1)
+features.append('Social_Media_Buzz_Score')
 
 # Re-train the model with the updated features
 X = df[features]
