@@ -620,9 +620,25 @@ def sentiment_score(review):
         print(f"Error calculating sentiment score: {e}")
         return 0.0
 
-# Example dataset column (Assuming 'Reviews' contains audience reviews)
-df['Audience_Review_Sentiment_Score'] = df['Reviews'].apply(sentiment_score)
-features.append('Audience_Review_Sentiment_Score')
+import pandas as pd
+
+def genre_complexity_score(genres):
+    """
+    Calculate a genre complexity score based on the number of genres a movie belongs to.
+    A higher score suggests a broader appeal across different audience segments.
+    """
+    try:
+        if isinstance(genres, str):
+            genre_list = genres.split(', ')
+            return len(genre_list)
+        return 0
+    except Exception as e:
+        print(f"Error calculating genre complexity score: {e}")
+        return 0
+
+# Example dataset column (Assuming 'Genre' contains genres separated by commas)
+df['Genre_Complexity_Score'] = df['Genre'].apply(genre_complexity_score)
+features.append('Genre_Complexity_Score')
 
 # Re-train the model with the updated features
 X = df[features]
