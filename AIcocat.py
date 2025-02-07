@@ -573,7 +573,7 @@ def add_release_season(df, features):
     features += [col for col in df.columns if col.startswith('Release_Season_')]
     return df, features
 
-import pandas as pd
+
 
 def cast_diversity_score(cast):
     """
@@ -590,7 +590,7 @@ def cast_diversity_score(cast):
         print(f"Error calculating cast diversity score: {e}")
         return 0
 
-import pandas as pd
+
 
 def social_media_buzz_score(social_media_mentions, social_media_likes):
     """
@@ -605,9 +605,24 @@ def social_media_buzz_score(social_media_mentions, social_media_likes):
         print(f"Error calculating social media buzz score: {e}")
         return 0.0
 
-# Example dataset columns (Assuming 'Social_Media_Mentions' and 'Social_Media_Likes' are available)
-df['Social_Media_Buzz_Score'] = df.apply(lambda row: social_media_buzz_score(row['Social_Media_Mentions'], row['Social_Media_Likes']), axis=1)
-features.append('Social_Media_Buzz_Score')
+
+def sentiment_score(review):
+    """
+    Calculate a sentiment score for a given review text.
+    A higher score suggests a more positive sentiment.
+    """
+    try:
+        if isinstance(review, str):
+            analysis = TextBlob(review)
+            return analysis.sentiment.polarity  # Sentiment polarity score (-1 to 1)
+        return 0.0
+    except Exception as e:
+        print(f"Error calculating sentiment score: {e}")
+        return 0.0
+
+# Example dataset column (Assuming 'Reviews' contains audience reviews)
+df['Audience_Review_Sentiment_Score'] = df['Reviews'].apply(sentiment_score)
+features.append('Audience_Review_Sentiment_Score')
 
 # Re-train the model with the updated features
 X = df[features]
