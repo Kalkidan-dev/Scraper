@@ -666,9 +666,22 @@ def award_wins_score(awards):
         print(f"Error calculating award wins score: {e}")
         return 0
 
-# Example dataset column (Assuming 'Awards' contains names of awards separated by commas)
-df['Award_Wins_Score'] = df['Awards'].apply(award_wins_score)
-features.append('Award_Wins_Score')
+def budget_to_box_office_ratio(budget, box_office):
+    """
+    Calculate the ratio of the box office revenue to the production budget of a movie.
+    A higher ratio indicates a more profitable movie.
+    """
+    try:
+        if budget > 0:
+            return box_office / budget
+        return 0.0
+    except Exception as e:
+        print(f"Error calculating budget to box office ratio: {e}")
+        return 0.0
+
+# Example dataset columns (Assuming 'Budget' and 'BoxOffice' columns exist in the dataset)
+df['Budget_To_BoxOffice_Ratio'] = df.apply(lambda row: budget_to_box_office_ratio(row['Budget'], row['BoxOffice']), axis=1)
+features.append('Budget_To_BoxOffice_Ratio')
 
 # Re-train the model with the updated features
 X = df[features]
