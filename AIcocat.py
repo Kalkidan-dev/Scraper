@@ -692,9 +692,22 @@ def critic_review_score(critic_reviews):
         print(f"Error calculating critic review score: {e}")
         return 0.0
 
-# Example dataset column (Assuming 'Critic_Reviews' contains a list of review scores)
-df['Critic_Review_Score'] = df['Critic_Reviews'].apply(critic_review_score)
-features.append('Critic_Review_Score')
+def audience_review_score(audience_reviews):
+    """
+    Calculate the average score from audience reviews.
+    A higher score suggests better audience reception.
+    """
+    try:
+        if isinstance(audience_reviews, list) and len(audience_reviews) > 0:
+            return sum(audience_reviews) / len(audience_reviews)
+        return 0.0
+    except Exception as e:
+        print(f"Error calculating audience review score: {e}")
+        return 0.0
+
+# Example dataset column (Assuming 'Audience_Reviews' contains a list of review scores)
+df['Audience_Review_Score'] = df['Audience_Reviews'].apply(audience_review_score)
+features.append('Audience_Review_Score')
 
 # Re-train the model with the updated features
 X = df[features]
