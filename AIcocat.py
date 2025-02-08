@@ -652,9 +652,23 @@ def film_festival_participation_score(festivals):
         print(f"Error calculating film festival participation score: {e}")
         return 0
 
-# Example dataset column (Assuming 'Film_Festivals' contains names of festivals separated by commas)
-df['Film_Festival_Participation_Score'] = df['Film_Festivals'].apply(film_festival_participation_score)
-features.append('Film_Festival_Participation_Score')
+def award_wins_score(awards):
+    """
+    Calculate a score based on the number of awards a movie has won.
+    A higher score suggests greater recognition and acclaim.
+    """
+    try:
+        if isinstance(awards, str):
+            awards_list = awards.split(', ')
+            return len(awards_list)
+        return 0
+    except Exception as e:
+        print(f"Error calculating award wins score: {e}")
+        return 0
+
+# Example dataset column (Assuming 'Awards' contains names of awards separated by commas)
+df['Award_Wins_Score'] = df['Awards'].apply(award_wins_score)
+features.append('Award_Wins_Score')
 
 # Re-train the model with the updated features
 X = df[features]
