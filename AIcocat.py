@@ -705,9 +705,22 @@ def audience_review_score(audience_reviews):
         print(f"Error calculating audience review score: {e}")
         return 0.0
 
-# Example dataset column (Assuming 'Audience_Reviews' contains a list of review scores)
-df['Audience_Review_Score'] = df['Audience_Reviews'].apply(audience_review_score)
-features.append('Audience_Review_Score')
+def sequel_potential_score(box_office, audience_score, critic_score):
+    """
+    Calculate a score that estimates the potential success of a sequel.
+    Factors considered include box office performance, audience reception, and critical reviews.
+    """
+    try:
+        if box_office > 0 and audience_score > 0 and critic_score > 0:
+            return (box_office / 1000000) * 0.5 + audience_score * 0.3 + critic_score * 0.2
+        return 0.0
+    except Exception as e:
+        print(f"Error calculating sequel potential score: {e}")
+        return 0.0
+
+# Example dataset columns (Assuming 'BoxOffice', 'Audience_Score', and 'Critic_Score' columns exist in the dataset)
+df['Sequel_Potential_Score'] = df.apply(lambda row: sequel_potential_score(row['BoxOffice'], row['Audience_Score'], row['Critic_Score']), axis=1)
+features.append('Sequel_Potential_Score')
 
 # Re-train the model with the updated features
 X = df[features]
