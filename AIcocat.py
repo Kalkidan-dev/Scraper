@@ -679,9 +679,22 @@ def budget_to_box_office_ratio(budget, box_office):
         print(f"Error calculating budget to box office ratio: {e}")
         return 0.0
 
-# Example dataset columns (Assuming 'Budget' and 'BoxOffice' columns exist in the dataset)
-df['Budget_To_BoxOffice_Ratio'] = df.apply(lambda row: budget_to_box_office_ratio(row['Budget'], row['BoxOffice']), axis=1)
-features.append('Budget_To_BoxOffice_Ratio')
+def critic_review_score(critic_reviews):
+    """
+    Calculate the average score from critic reviews.
+    A higher score suggests better critical reception.
+    """
+    try:
+        if isinstance(critic_reviews, list) and len(critic_reviews) > 0:
+            return sum(critic_reviews) / len(critic_reviews)
+        return 0.0
+    except Exception as e:
+        print(f"Error calculating critic review score: {e}")
+        return 0.0
+
+# Example dataset column (Assuming 'Critic_Reviews' contains a list of review scores)
+df['Critic_Review_Score'] = df['Critic_Reviews'].apply(critic_review_score)
+features.append('Critic_Review_Score')
 
 # Re-train the model with the updated features
 X = df[features]
