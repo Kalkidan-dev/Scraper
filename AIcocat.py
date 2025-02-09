@@ -736,11 +736,18 @@ def count_genres(genres):
     """
     return len(set(genres.split(',')))
 
+def calculate_director_success(director_name, movie_data):
+    """
+    Calculate a score representing the director's past success based on previous box office performance.
+    """
+    director_movies = movie_data[movie_data['Director'] == director_name]
+    return director_movies['BoxOffice'].sum() / len(director_movies) if len(director_movies) > 0 else 0
+
 # Add the new feature to the dataset
-df['Genre_Diversity'] = df['Genres'].apply(count_genres)
+df['Director_Success'] = df['Director'].apply(lambda director: calculate_director_success(director, df))
 
 # Add the new feature to the feature list
-features.append('Genre_Diversity')
+features.append('Director_Success')
 
 # Re-train the model with the updated features
 X = df[features]
