@@ -743,11 +743,17 @@ def calculate_director_success(director_name, movie_data):
     director_movies = movie_data[movie_data['Director'] == director_name]
     return director_movies['BoxOffice'].sum() / len(director_movies) if len(director_movies) > 0 else 0
 
+def calculate_rating_growth(initial_rating, latest_rating, num_years):
+    """
+    Calculate the average user rating growth over time.
+    """
+    return (latest_rating - initial_rating) / num_years
+
 # Add the new feature to the dataset
-df['Director_Success'] = df['Director'].apply(lambda director: calculate_director_success(director, df))
+df['Rating_Growth'] = df.apply(lambda row: calculate_rating_growth(row['Initial_Rating'], row['Latest_Rating'], row['Num_Years']), axis=1)
 
 # Add the new feature to the feature list
-features.append('Director_Success')
+features.append('Rating_Growth')
 
 # Re-train the model with the updated features
 X = df[features]
