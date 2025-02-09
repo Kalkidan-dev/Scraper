@@ -719,8 +719,11 @@ def sequel_potential_score(box_office, audience_score, critic_score):
         return 0.0
 
 # Example dataset columns (Assuming 'BoxOffice', 'Audience_Score', and 'Critic_Score' columns exist in the dataset)
-df['Sequel_Potential_Score'] = df.apply(lambda row: sequel_potential_score(row['BoxOffice'], row['Audience_Score'], row['Critic_Score']), axis=1)
-features.append('Sequel_Potential_Score')
+# Assuming 'Social_Media_Buzz' is a new column in the dataset
+df['Social_Media_Buzz'] = some_function_to_calculate_buzz(df['Movie_Name'])  # Replace with actual calculation
+
+# Add the new feature to the feature list
+features.append('Social_Media_Buzz')
 
 # Re-train the model with the updated features
 X = df[features]
@@ -736,3 +739,4 @@ r2 = r2_score(y_test, y_pred)
 
 print(f'Updated Mean Squared Error: {mse}')
 print(f'Updated R-squared: {r2}')
+
