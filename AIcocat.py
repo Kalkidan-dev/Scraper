@@ -718,12 +718,17 @@ def sequel_potential_score(box_office, audience_score, critic_score):
         print(f"Error calculating sequel potential score: {e}")
         return 0.0
 
-# Example dataset columns (Assuming 'BoxOffice', 'Audience_Score', and 'Critic_Score' columns exist in the dataset)
-# Assuming 'Social_Media_Buzz' is a new column in the dataset
-df['Social_Media_Buzz'] = some_function_to_calculate_buzz(df['Movie_Name'])  # Replace with actual calculation
+def calculate_marketing_spend(movie_budget):
+    """
+    Estimate marketing spend based on the movie's budget.
+    """
+    return movie_budget * 0.3  # Assuming 30% of the budget is spent on marketing
+
+# Add the new feature to the dataset
+df['Marketing_Spend'] = df['Movie_Budget'].apply(calculate_marketing_spend)
 
 # Add the new feature to the feature list
-features.append('Social_Media_Buzz')
+features.append('Marketing_Spend')
 
 # Re-train the model with the updated features
 X = df[features]
@@ -739,4 +744,3 @@ r2 = r2_score(y_test, y_pred)
 
 print(f'Updated Mean Squared Error: {mse}')
 print(f'Updated R-squared: {r2}')
-
