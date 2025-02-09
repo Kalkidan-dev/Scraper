@@ -730,11 +730,17 @@ def calculate_average_rating(imdb_rating, rt_rating, metacritic_rating):
     """
     return (imdb_rating + rt_rating + metacritic_rating) / 3
 
+def count_genres(genres):
+    """
+    Count the number of unique genres a movie belongs to.
+    """
+    return len(set(genres.split(',')))
+
 # Add the new feature to the dataset
-df['Average_Rating'] = df.apply(lambda row: calculate_average_rating(row['IMDb_Rating'], row['RT_Rating'], row['Metacritic_Rating']), axis=1)
+df['Genre_Diversity'] = df['Genres'].apply(count_genres)
 
 # Add the new feature to the feature list
-features.append('Average_Rating')
+features.append('Genre_Diversity')
 
 # Re-train the model with the updated features
 X = df[features]
