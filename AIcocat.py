@@ -724,11 +724,17 @@ def calculate_marketing_spend(movie_budget):
     """
     return movie_budget * 0.3  # Assuming 30% of the budget is spent on marketing
 
+def calculate_average_rating(imdb_rating, rt_rating, metacritic_rating):
+    """
+    Calculate the average rating based on ratings from IMDb, Rotten Tomatoes, and Metacritic.
+    """
+    return (imdb_rating + rt_rating + metacritic_rating) / 3
+
 # Add the new feature to the dataset
-df['Marketing_Spend'] = df['Movie_Budget'].apply(calculate_marketing_spend)
+df['Average_Rating'] = df.apply(lambda row: calculate_average_rating(row['IMDb_Rating'], row['RT_Rating'], row['Metacritic_Rating']), axis=1)
 
 # Add the new feature to the feature list
-features.append('Marketing_Spend')
+features.append('Average_Rating')
 
 # Re-train the model with the updated features
 X = df[features]
