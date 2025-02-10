@@ -95,6 +95,9 @@ df['Genre_Avg_Rating'] = df.groupby('Genre')['Rating'].transform('mean')
 # New Feature: Calculate number of movies released per year
 df['Movies_Per_Year'] = df.groupby('Year')['Title'].transform('count')
 
+# New Feature: Calculate the length of each movie title
+df['Title_Length'] = df['Title'].apply(len)
+
 # Step 5: Split the data into training and testing sets
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
@@ -117,14 +120,14 @@ comparison = pd.DataFrame({'Actual Rating': y_test, 'Predicted Rating': y_pred})
 print(comparison.head())
 
 # Bonus: Make a prediction for a new movie
-def predict_rating(year, genre_sentiment, is_weekend, is_holiday_release, is_peak_season, season_features, director_avg_rating, genre_avg_rating, movies_per_year):
-    features = [year, genre_sentiment, is_weekend, is_holiday_release, is_peak_season] + season_features + [director_avg_rating, genre_avg_rating, movies_per_year]
+def predict_rating(year, genre_sentiment, is_weekend, is_holiday_release, is_peak_season, season_features, director_avg_rating, genre_avg_rating, movies_per_year, title_length):
+    features = [year, genre_sentiment, is_weekend, is_holiday_release, is_peak_season] + season_features + [director_avg_rating, genre_avg_rating, movies_per_year, title_length]
     return model.predict(np.array([features]))[0]
 
 # Example usage with new features
 season_features = [0] * len([col for col in df.columns if col.startswith('Season_')])  # Adjust as needed
-predicted_rating = predict_rating(2024, 0.5, 1, 0, 1, season_features, 7.0, 6.5, 50)
-print(f'Predicted Rating for a movie in 2024 with genre sentiment 0.5, director average rating 7.0, genre average rating 6.5, and 50 movies released in the year: {predicted_rating:.2f}')
+predicted_rating = predict_rating(2024, 0.5, 1, 0, 1, season_features, 7.0, 6.5, 50, 10)
+print(f'Predicted Rating for a movie in 2024 with genre sentiment 0.5, director average rating 7.0, genre average rating 6.5, 50 movies released in the year, and title length of 10: {predicted_rating:.2f}')
 
 # Continue with existing plots and CSV saving
 df.to_csv('omdb_top_movies_with_sentiment_and_release_details.csv', index=False)
