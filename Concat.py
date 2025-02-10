@@ -86,6 +86,9 @@ y = df['Rating'].astype(float)
 scaler = MinMaxScaler()
 df['Normalized_Rating'] = scaler.fit_transform(df[['Rating']])
 
+# New Feature: Calculate average rating per director
+df['Director_Avg_Rating'] = df.groupby('Director')['Rating'].transform('mean')
+
 # Step 5: Split the data into training and testing sets
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
@@ -108,14 +111,14 @@ comparison = pd.DataFrame({'Actual Rating': y_test, 'Predicted Rating': y_pred})
 print(comparison.head())
 
 # Bonus: Make a prediction for a new movie
-def predict_rating(year, genre_sentiment, is_weekend, is_holiday_release, is_peak_season, season_features):
-    features = [year, genre_sentiment, is_weekend, is_holiday_release, is_peak_season] + season_features
+def predict_rating(year, genre_sentiment, is_weekend, is_holiday_release, is_peak_season, season_features, director_avg_rating):
+    features = [year, genre_sentiment, is_weekend, is_holiday_release, is_peak_season] + season_features + [director_avg_rating]
     return model.predict(np.array([features]))[0]
 
 # Example usage with new features
 season_features = [0] * len([col for col in df.columns if col.startswith('Season_')])  # Adjust as needed
-predicted_rating = predict_rating(2024, 0.5, 1, 0, 1, season_features)
-print(f'Predicted Rating for a movie in 2024 with genre sentiment 0.5: {predicted_rating:.2f}')
+predicted_rating = predict_rating(2024, 0.5, 1, 0, 1, season_features, 7.0)
+print(f'Predicted Rating for a movie in 2024 with genre sentiment 0.5 and director average rating 7.0: {predicted_rating:.2f}')
 
 # Continue with existing plots and CSV saving
 df.to_csv('omdb_top_movies_with_sentiment_and_release_details.csv', index=False)
