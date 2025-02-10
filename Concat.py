@@ -4,6 +4,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score
 import matplotlib.pyplot as plt
+from sklearn.preprocessing import MinMaxScaler
 
 # Assuming movie_data is a list where each item is a dictionary with movie details
 movie_data = []
@@ -81,10 +82,14 @@ X = df[features]
 # y = target variable (IMDb Rating)
 y = df['Rating'].astype(float)
 
-# Step 4: Split the data into training and testing sets
+# Step 4: Normalize the 'Rating' column
+scaler = MinMaxScaler()
+df['Normalized_Rating'] = scaler.fit_transform(df[['Rating']])
+
+# Step 5: Split the data into training and testing sets
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Step 5: Train the Linear Regression model
+# Step 6: Train the Linear Regression model
 model = LinearRegression()
 model.fit(X_train, y_train)
 
