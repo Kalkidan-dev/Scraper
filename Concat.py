@@ -17,7 +17,7 @@ if data:  # Only append if data was successfully retrieved
 df = pd.DataFrame(movie_data)
 
 # Select relevant columns and rename for clarity
-df = df[['Title', 'Year', 'imdbRating', 'Genre', 'Director', 'Release_Date']]
+df = df[['Title', 'Year', 'imdbRating', 'Genre', 'Director', 'Release_Date', 'Awards']]
 df['Rating'] = df['imdbRating'].astype(float)
 
 # Analyze the sentiment of the movie genres
@@ -72,8 +72,24 @@ df['Is_Peak_Season'] = df['Month'].isin([6, 7, 8]).astype(int)
 df['Year'] = df['Year'].astype(int)
 df['Genre_Sentiment'] = df['Genre_Sentiment'].astype(float)
 
+# New Feature: Extract the number of awards won
+def extract_awards_count(awards):
+    if pd.isna(awards):
+        return 0
+    import re
+    # Extract numbers from phrases like 'Won 3 Oscars' or 'Another 5 wins & 2 nominations'
+    numbers = [int(num) for num in re.findall(r'(\d+)', awards)]
+    return sum(numbers)
+
+df['Awards_Won'] = df['Awards'].apply(extract_awards_count)
+
+# New Feature: Calculate the budget to revenue ratio
+df['Budget'] = df['Budget'].fillna(0).astype(float)
+df['Revenue'] = df['Revenue'].fillna(0).astype(float)
+df['Budget_to_Revenue_Ratio'] = df.apply(lambda x: x['Budget'] / x['Revenue'] if x['Revenue'] > 0 else 0, axis=1)
+
 # Features for prediction
-features = ['Year', 'Genre_Sentiment', 'Is_Weekend', 'Is_Holiday_Release', 'Is_Peak_Season']
+features = ['Year', 'Genre_Sentiment', 'Is_Weekend', 'Is_Holiday_Release', 'Is_Peak_Season', 'Awards_Won', 'Budget_to_Revenue_Ratio']
 features += [col for col in df.columns if col.startswith('Season_')]
 
 # X = feature set
@@ -123,64 +139,15 @@ comparison = pd.DataFrame({'Actual Rating': y_test, 'Predicted Rating': y_pred})
 print(comparison.head())
 
 # Bonus: Make a prediction for a new movie
-def predict_rating(year, genre_sentiment, is_weekend, is_holiday_release, is_peak_season, season_features, director_avg_rating, genre_avg_rating, movies_per_year, title_length, total_genres):
-    features = [year, genre_sentiment, is_weekend, is_holiday_release, is_peak_season] + season_features + [director_avg_rating, genre_avg_rating, movies_per_year, title_length, total_genres]
+def predict_rating(year, genre_sentiment, is_weekend, is_holiday_release, is_peak_season, awards_won, budget_to_revenue_ratio, season_features, director_avg_rating, genre_avg_rating, movies_per_year, title_length, total_genres):
+    features = [year, genre_sentiment, is_weekend, is_holiday_release, is_peak_season, awards_won, budget_to_revenue_ratio] + season_features + [director_avg_rating, genre_avg_rating, movies_per_year, title_length, total_genres]
     return model.predict(np.array([features]))[0]
 
-# New Feature: Extract the number of awards won
-def extract_awards_count(awards):
-    if pd.isna(awards):
-        return 0
-    import re
-    # Extract numbers from phrases like 'Won 3 Oscars' or 'Another 5 wins & 2 nominations'
-    numbers = [int(num) for num in re.findall(r'(\d+)', awards)]
-    return sum(numbers)
+# Example usage with new features
+season_features = [0] * len([col for col in df.columns if col.startswith('Season_')])  # Adjust as needed
+predicted_rating = predict_rating(2024, 0.5, 1, 0, 1, 3, 0.75, season_features, 7.0, 6.5, 50, 10, 3)
 
-def calculate_average_rating(imdb_rating, rt_rating, metacritic_rating):
-    """
-    Calculate the average rating based on ratings from IMDb, Rotten Tomatoes, and Metacritic.
-    """
-    return (imdb_rating + rt_rating + metacritic_rating) / 3
+print(f'Predicted Rating for a movie in 2024 with genre sentiment 0.5, director average rating 7.0, genre average rating 6.5, 3 awards won, budget to revenue ratio 0.75, 50 movies released in the year, and title length of 10: {predicted_rating:.2f}')
 
-
-def sequel_potential_score(box_office, audience_score, critic_score):
-    """
-    Calculate a score that estimates the potential success of a sequel.
-    Factors considered include box office performance, audience reception, and critical reviews.
-    """
-    try:
-        if box_office > 0 and audience_score > 0 and critic_score > 0:
-            return (box_office / 1000000) * 0.5 + audience_score * 0.3 + critic_score * 0.2
-        return 0.0
-    except Exception as e:
-        print(f"Error calculating sequel potential score: {e}")
-        return 0.0
-    
-def calculate_marketing_spend(movie_budget):
-    """
-    Estimate marketing spend based on the movie's budget.
-    """
-    return movie_budget * 0.3  # Assuming 
-
-df['Awards_Won'] = df['Awards'].apply(extract_awards_count)
-
-# Add 'Awards_Won' to the features list
-features.append('Awards_Won')
-
-# Update the feature set
-X = df[features]
-
-# Re-split the data with the new feature
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-# Retrain the model with the new feature
-model = LinearRegression()
-model.fit(X_train, y_train)
-
-# Make predictions and evaluate again
-y_pred = model.predict(X_test)
-mse = mean_squared_error(y_test, y_pred)
-r2 = r2_score(y_test, y_pred)
-
-print(f'Updated Mean Squared Error: {mse}')
-print(f'Updated R-squared: {r2}')
+# Continue with existing plots and CSV saving
+df.to_csv('omdb_top_movies_with_sentiment_and_release_details.csv', index=False)
