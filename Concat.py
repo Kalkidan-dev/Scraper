@@ -127,11 +127,34 @@ def predict_rating(year, genre_sentiment, is_weekend, is_holiday_release, is_pea
     features = [year, genre_sentiment, is_weekend, is_holiday_release, is_peak_season] + season_features + [director_avg_rating, genre_avg_rating, movies_per_year, title_length, total_genres]
     return model.predict(np.array([features]))[0]
 
-# Example usage with new features
-season_features = [0] * len([col for col in df.columns if col.startswith('Season_')])  # Adjust as needed
-predicted_rating = predict_rating(2024, 0.5, 1, 0, 1, season_features, 7.0, 6.5, 50, 10, 3)
+# New Feature: Extract the number of awards won
+def extract_awards_count(awards):
+    if pd.isna(awards):
+        return 0
+    import re
+    # Extract numbers from phrases like 'Won 3 Oscars' or 'Another 5 wins & 2 nominations'
+    numbers = [int(num) for num in re.findall(r'(\d+)', awards)]
+    return sum(numbers)
 
-print(f'Predicted Rating for a movie in 2024 with genre sentiment 0.5, director average rating 7.0, genre average rating 6.5, 50 movies released in the year, and title length of 10: {predicted_rating:.2f}')
+df['Awards_Won'] = df['Awards'].apply(extract_awards_count)
 
-# Continue with existing plots and CSV saving
-df.to_csv('omdb_top_movies_with_sentiment_and_release_details.csv', index=False)
+# Add 'Awards_Won' to the features list
+features.append('Awards_Won')
+
+# Update the feature set
+X = df[features]
+
+# Re-split the data with the new feature
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Retrain the model with the new feature
+model = LinearRegression()
+model.fit(X_train, y_train)
+
+# Make predictions and evaluate again
+y_pred = model.predict(X_test)
+mse = mean_squared_error(y_test, y_pred)
+r2 = r2_score(y_test, y_pred)
+
+print(f'Updated Mean Squared Error: {mse}')
+print(f'Updated R-squared: {r2}')
