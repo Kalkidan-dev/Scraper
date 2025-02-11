@@ -136,6 +136,19 @@ def extract_awards_count(awards):
     numbers = [int(num) for num in re.findall(r'(\d+)', awards)]
     return sum(numbers)
 
+def sequel_potential_score(box_office, audience_score, critic_score):
+    """
+    Calculate a score that estimates the potential success of a sequel.
+    Factors considered include box office performance, audience reception, and critical reviews.
+    """
+    try:
+        if box_office > 0 and audience_score > 0 and critic_score > 0:
+            return (box_office / 1000000) * 0.5 + audience_score * 0.3 + critic_score * 0.2
+        return 0.0
+    except Exception as e:
+        print(f"Error calculating sequel potential score: {e}")
+        return 0.0
+
 df['Awards_Won'] = df['Awards'].apply(extract_awards_count)
 
 # Add 'Awards_Won' to the features list
