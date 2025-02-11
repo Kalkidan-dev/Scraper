@@ -136,6 +136,13 @@ def extract_awards_count(awards):
     numbers = [int(num) for num in re.findall(r'(\d+)', awards)]
     return sum(numbers)
 
+def calculate_average_rating(imdb_rating, rt_rating, metacritic_rating):
+    """
+    Calculate the average rating based on ratings from IMDb, Rotten Tomatoes, and Metacritic.
+    """
+    return (imdb_rating + rt_rating + metacritic_rating) / 3
+
+
 def sequel_potential_score(box_office, audience_score, critic_score):
     """
     Calculate a score that estimates the potential success of a sequel.
