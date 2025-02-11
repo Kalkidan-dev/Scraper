@@ -148,6 +148,12 @@ def sequel_potential_score(box_office, audience_score, critic_score):
     except Exception as e:
         print(f"Error calculating sequel potential score: {e}")
         return 0.0
+    
+def calculate_marketing_spend(movie_budget):
+    """
+    Estimate marketing spend based on the movie's budget.
+    """
+    return movie_budget * 0.3  # Assuming 
 
 df['Awards_Won'] = df['Awards'].apply(extract_awards_count)
 
