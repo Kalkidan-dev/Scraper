@@ -88,8 +88,11 @@ df['Budget'] = df['Budget'].fillna(0).astype(float)
 df['Revenue'] = df['Revenue'].fillna(0).astype(float)
 df['Budget_to_Revenue_Ratio'] = df.apply(lambda x: x['Budget'] / x['Revenue'] if x['Revenue'] > 0 else 0, axis=1)
 
+# New Feature: Calculate the length of the director's name
+df['Director_Name_Length'] = df['Director'].apply(lambda x: len(x) if pd.notna(x) else 0)
+
 # Features for prediction
-features = ['Year', 'Genre_Sentiment', 'Is_Weekend', 'Is_Holiday_Release', 'Is_Peak_Season', 'Awards_Won', 'Budget_to_Revenue_Ratio']
+features = ['Year', 'Genre_Sentiment', 'Is_Weekend', 'Is_Holiday_Release', 'Is_Peak_Season', 'Awards_Won', 'Budget_to_Revenue_Ratio', 'Director_Name_Length']
 features += [col for col in df.columns if col.startswith('Season_')]
 
 # X = feature set
@@ -139,15 +142,15 @@ comparison = pd.DataFrame({'Actual Rating': y_test, 'Predicted Rating': y_pred})
 print(comparison.head())
 
 # Bonus: Make a prediction for a new movie
-def predict_rating(year, genre_sentiment, is_weekend, is_holiday_release, is_peak_season, awards_won, budget_to_revenue_ratio, season_features, director_avg_rating, genre_avg_rating, movies_per_year, title_length, total_genres):
-    features = [year, genre_sentiment, is_weekend, is_holiday_release, is_peak_season, awards_won, budget_to_revenue_ratio] + season_features + [director_avg_rating, genre_avg_rating, movies_per_year, title_length, total_genres]
+def predict_rating(year, genre_sentiment, is_weekend, is_holiday_release, is_peak_season, awards_won, budget_to_revenue_ratio, director_name_length, season_features, director_avg_rating, genre_avg_rating, movies_per_year, title_length, total_genres):
+    features = [year, genre_sentiment, is_weekend, is_holiday_release, is_peak_season, awards_won, budget_to_revenue_ratio, director_name_length] + season_features + [director_avg_rating, genre_avg_rating, movies_per_year, title_length, total_genres]
     return model.predict(np.array([features]))[0]
 
 # Example usage with new features
 season_features = [0] * len([col for col in df.columns if col.startswith('Season_')])  # Adjust as needed
-predicted_rating = predict_rating(2024, 0.5, 1, 0, 1, 3, 0.75, season_features, 7.0, 6.5, 50, 10, 3)
+predicted_rating = predict_rating(2024, 0.5, 1, 0, 1, 3, 0.75, 12, season_features, 7.0, 6.5, 50, 10, 3)
 
-print(f'Predicted Rating for a movie in 2024 with genre sentiment 0.5, director average rating 7.0, genre average rating 6.5, 3 awards won, budget to revenue ratio 0.75, 50 movies released in the year, and title length of 10: {predicted_rating:.2f}')
+print(f'Predicted Rating for a movie in 2024 with genre sentiment 0.5, director average rating 7.0, genre average rating 6.5, 3 awards won, budget to revenue ratio 0.75, director name length 12, 50 movies released in the year, and title length of 10: {predicted_rating:.2f}')
 
 # Continue with existing plots and CSV saving
 df.to_csv('omdb_top_movies_with_sentiment_and_release_details.csv', index=False)
