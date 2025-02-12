@@ -17,82 +17,60 @@ if data:  # Only append if data was successfully retrieved
 df = pd.DataFrame(movie_data)
 
 # Select relevant columns and rename for clarity
-df = df[['Title', 'Year', 'imdbRating', 'Genre', 'Director', 'Release_Date', 'Awards']]
+df = df[['Title', 'Year', 'imdbRating', 'Genre', 'Director', 'Release_Date', 'Awards', 'Runtime']]
 df['Rating'] = df['imdbRating'].astype(float)
 
 # Analyze the sentiment of the movie genres
 df['Genre_Sentiment'] = df['Genre'].apply(analyze_genre_sentiment)
 
 # Step 2: Prepare Release Date Features
-# Convert 'Release_Date' to a datetime object
 df['Release_Date'] = pd.to_datetime(df['Release_Date'], errors='coerce')
-
-# Extract the month from the release date
 df['Month'] = df['Release_Date'].dt.month
 
-# Create a season feature
 def get_season(month):
-    if month in [12, 1, 2]:
-        return 'Winter'
-    elif month in [3, 4, 5]:
-        return 'Spring'
-    elif month in [6, 7, 8]:
-        return 'Summer'
-    else:
-        return 'Fall'
+    if month in [12, 1, 2]: return 'Winter'
+    elif month in [3, 4, 5]: return 'Spring'
+    elif month in [6, 7, 8]: return 'Summer'
+    else: return 'Fall'
 
 df['Season'] = df['Month'].apply(get_season)
-
-# One-hot encode the season feature
 df = pd.get_dummies(df, columns=['Season'], drop_first=True)
-
-# Extract the day of the week
 df['Day_of_Week'] = df['Release_Date'].dt.day_name()
-
-# Create a binary feature for weekend vs. weekday
 df['Is_Weekend'] = df['Day_of_Week'].isin(['Saturday', 'Sunday']).astype(int)
 
-# Create a holiday release indicator
 def is_holiday_release(date):
-    # List of specific holiday dates (you can expand or use a more dynamic method)
-    holiday_dates = [
-        '12-25',  # Christmas
-        '11-26',  # Example: Thanksgiving (date changes yearly)
-    ]
-    if pd.isna(date):
-        return 0
+    holiday_dates = ['12-25', '11-26']
+    if pd.isna(date): return 0
     return int(date.strftime('%m-%d') in holiday_dates)
 
 df['Is_Holiday_Release'] = df['Release_Date'].apply(is_holiday_release)
-
-# Define peak season (e.g., June to August)
 df['Is_Peak_Season'] = df['Month'].isin([6, 7, 8]).astype(int)
 
 # Step 3: Prepare the data for prediction
 df['Year'] = df['Year'].astype(int)
 df['Genre_Sentiment'] = df['Genre_Sentiment'].astype(float)
 
-# New Feature: Extract the number of awards won
 def extract_awards_count(awards):
-    if pd.isna(awards):
-        return 0
+    if pd.isna(awards): return 0
     import re
-    # Extract numbers from phrases like 'Won 3 Oscars' or 'Another 5 wins & 2 nominations'
     numbers = [int(num) for num in re.findall(r'(\d+)', awards)]
     return sum(numbers)
 
 df['Awards_Won'] = df['Awards'].apply(extract_awards_count)
 
-# New Feature: Calculate the budget to revenue ratio
+# Existing Features
 df['Budget'] = df['Budget'].fillna(0).astype(float)
 df['Revenue'] = df['Revenue'].fillna(0).astype(float)
 df['Budget_to_Revenue_Ratio'] = df.apply(lambda x: x['Budget'] / x['Revenue'] if x['Revenue'] > 0 else 0, axis=1)
-
-# New Feature: Calculate the length of the director's name
 df['Director_Name_Length'] = df['Director'].apply(lambda x: len(x) if pd.notna(x) else 0)
 
+# New Feature: Average Runtime per Director
+df['Runtime'] = df['Runtime'].fillna('0 min').apply(lambda x: int(x.split()[0]) if isinstance(x, str) else 0)
+df['Director_Avg_Runtime'] = df.groupby('Director')['Runtime'].transform('mean')
+
 # Features for prediction
-features = ['Year', 'Genre_Sentiment', 'Is_Weekend', 'Is_Holiday_Release', 'Is_Peak_Season', 'Awards_Won', 'Budget_to_Revenue_Ratio', 'Director_Name_Length']
+features = ['Year', 'Genre_Sentiment', 'Is_Weekend', 'Is_Holiday_Release', 'Is_Peak_Season',
+            'Awards_Won', 'Budget_to_Revenue_Ratio', 'Director_Name_Length', 'Director_Avg_Runtime']
 features += [col for col in df.columns if col.startswith('Season_')]
 
 # X = feature set
@@ -104,21 +82,6 @@ y = df['Rating'].astype(float)
 # Step 4: Normalize the 'Rating' column
 scaler = MinMaxScaler()
 df['Normalized_Rating'] = scaler.fit_transform(df[['Rating']])
-
-# New Feature: Calculate average rating per director
-df['Director_Avg_Rating'] = df.groupby('Director')['Rating'].transform('mean')
-
-# New Feature: Calculate average rating per genre
-df['Genre_Avg_Rating'] = df.groupby('Genre')['Rating'].transform('mean')
-
-# New Feature: Calculate number of movies released per year
-df['Movies_Per_Year'] = df.groupby('Year')['Title'].transform('count')
-
-# New Feature: Calculate the length of each movie title
-df['Title_Length'] = df['Title'].apply(len)
-
-# New Feature: Calculate the total number of genres a movie belongs to
-df['Total_Genres'] = df['Genre'].apply(lambda x: len(x.split(',')))
 
 # Step 5: Split the data into training and testing sets
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
@@ -141,16 +104,18 @@ print(f'R-squared: {r2}')
 comparison = pd.DataFrame({'Actual Rating': y_test, 'Predicted Rating': y_pred})
 print(comparison.head())
 
-# Bonus: Make a prediction for a new movie
-def predict_rating(year, genre_sentiment, is_weekend, is_holiday_release, is_peak_season, awards_won, budget_to_revenue_ratio, director_name_length, season_features, director_avg_rating, genre_avg_rating, movies_per_year, title_length, total_genres):
-    features = [year, genre_sentiment, is_weekend, is_holiday_release, is_peak_season, awards_won, budget_to_revenue_ratio, director_name_length] + season_features + [director_avg_rating, genre_avg_rating, movies_per_year, title_length, total_genres]
+# Predict with new feature included
+def predict_rating(year, genre_sentiment, is_weekend, is_holiday_release, is_peak_season, awards_won,
+                   budget_to_revenue_ratio, director_name_length, director_avg_runtime, season_features):
+    features = [year, genre_sentiment, is_weekend, is_holiday_release, is_peak_season,
+                awards_won, budget_to_revenue_ratio, director_name_length, director_avg_runtime] + season_features
     return model.predict(np.array([features]))[0]
 
-# Example usage with new features
-season_features = [0] * len([col for col in df.columns if col.startswith('Season_')])  # Adjust as needed
-predicted_rating = predict_rating(2024, 0.5, 1, 0, 1, 3, 0.75, 12, season_features, 7.0, 6.5, 50, 10, 3)
+# Example usage
+season_features = [0] * len([col for col in df.columns if col.startswith('Season_')])
+predicted_rating = predict_rating(2024, 0.5, 1, 0, 1, 3, 0.75, 12, 120, season_features)
 
-print(f'Predicted Rating for a movie in 2024 with genre sentiment 0.5, director average rating 7.0, genre average rating 6.5, 3 awards won, budget to revenue ratio 0.75, director name length 12, 50 movies released in the year, and title length of 10: {predicted_rating:.2f}')
+print(f'Predicted Rating for a movie in 2024 with director avg runtime 120 mins: {predicted_rating:.2f}')
 
-# Continue with existing plots and CSV saving
-df.to_csv('omdb_top_movies_with_sentiment_and_release_details.csv', index=False)
+# Save results
+df.to_csv('omdb_top_movies_with_new_features.csv', index=False)  # New feature 'Director_Avg_Runtime' included
