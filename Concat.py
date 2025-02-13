@@ -102,9 +102,12 @@ df['Actor_Count'] = df['Actors'].apply(lambda x: len(x.split(',')) if pd.notna(x
 # New Feature: Average Actor Name Length
 df['Avg_Actor_Name_Length'] = df['Actors'].apply(lambda x: np.mean([len(name.strip()) for name in x.split(',')]) if pd.notna(x) else 0)
 
+# New Feature: Movie Age in Years
+df['Movie_Age'] = 2025 - df['Year']
+
 # Features for prediction
 features = ['Year', 'Genre_Sentiment', 'Is_Weekend', 'Is_Holiday_Release', 'Is_Peak_Season',
-            'Awards_Won', 'Budget_to_Revenue_Ratio', 'Director_Name_Length', 'Director_Avg_Runtime', 'Num_Genres', 'Title_Word_Count', 'Title_Sentiment', 'Lead_Actor_Popularity', 'Director_Success_Score', 'Actor_Count', 'Avg_Actor_Name_Length']
+            'Awards_Won', 'Budget_to_Revenue_Ratio', 'Director_Name_Length', 'Director_Avg_Runtime', 'Num_Genres', 'Title_Word_Count', 'Title_Sentiment', 'Lead_Actor_Popularity', 'Director_Success_Score', 'Actor_Count', 'Avg_Actor_Name_Length', 'Movie_Age']
 features += [col for col in df.columns if col.startswith('Season_')]
 
 # X = feature set
