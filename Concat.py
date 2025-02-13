@@ -5,6 +5,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import MinMaxScaler
+from textblob import TextBlob
 
 # Assuming movie_data is a list where each item is a dictionary with movie details
 movie_data = []
@@ -53,7 +54,7 @@ df['Genre_Sentiment'] = df['Genre_Sentiment'].astype(float)
 def extract_awards_count(awards):
     if pd.isna(awards): return 0
     import re
-    numbers = [int(num) for num in re.findall(r'(\d+)', awards)]
+    numbers = [int(num) for num in re.findall(r'\d+', awards)]
     return sum(numbers)
 
 df['Awards_Won'] = df['Awards'].apply(extract_awards_count)
@@ -71,9 +72,15 @@ df['Director_Avg_Runtime'] = df.groupby('Director')['Runtime'].transform('mean')
 # New Feature: Number of Genres per Movie
 df['Num_Genres'] = df['Genre'].apply(lambda x: len(x.split(',')) if pd.notna(x) else 0)
 
+# New Feature: Number of Words in Title
+df['Title_Word_Count'] = df['Title'].apply(lambda x: len(x.split()) if pd.notna(x) else 0)
+
+# New Feature: Sentiment Analysis of Movie Titles
+df['Title_Sentiment'] = df['Title'].apply(lambda x: TextBlob(x).sentiment.polarity if pd.notna(x) else 0)
+
 # Features for prediction
 features = ['Year', 'Genre_Sentiment', 'Is_Weekend', 'Is_Holiday_Release', 'Is_Peak_Season',
-            'Awards_Won', 'Budget_to_Revenue_Ratio', 'Director_Name_Length', 'Director_Avg_Runtime', 'Num_Genres']
+            'Awards_Won', 'Budget_to_Revenue_Ratio', 'Director_Name_Length', 'Director_Avg_Runtime', 'Num_Genres', 'Title_Word_Count', 'Title_Sentiment']
 features += [col for col in df.columns if col.startswith('Season_')]
 
 # X = feature set
@@ -107,18 +114,5 @@ print(f'R-squared: {r2}')
 comparison = pd.DataFrame({'Actual Rating': y_test, 'Predicted Rating': y_pred})
 print(comparison.head())
 
-# Predict with new features included
-def predict_rating(year, genre_sentiment, is_weekend, is_holiday_release, is_peak_season, awards_won,
-                   budget_to_revenue_ratio, director_name_length, director_avg_runtime, num_genres, season_features):
-    features = [year, genre_sentiment, is_weekend, is_holiday_release, is_peak_season,
-                awards_won, budget_to_revenue_ratio, director_name_length, director_avg_runtime, num_genres] + season_features
-    return model.predict(np.array([features]))[0]
-
-# Example usage
-season_features = [0] * len([col for col in df.columns if col.startswith('Season_')])
-predicted_rating = predict_rating(2024, 0.5, 1, 0, 1, 3, 0.75, 12, 120, 3, season_features)
-
-print(f'Predicted Rating for a movie in 2024 with director avg runtime 120 mins and 3 genres: {predicted_rating:.2f}')
-
 # Save results
-df.to_csv('omdb_top_movies_with_new_features.csv', index=False)  # New features 'Director_Avg_Runtime' and 'Num_Genres' included
+df.to_csv('omdb_top_movies_with_new_features.csv', index=False)
