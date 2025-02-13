@@ -89,9 +89,16 @@ def get_actor_popularity(actor):
 df['Lead_Actor'] = df['Actors'].apply(get_lead_actor)
 df['Lead_Actor_Popularity'] = df['Lead_Actor'].apply(get_actor_popularity)
 
+# New Feature: Director's Past Success Score
+def calculate_director_success(director):
+    past_movies = df[df['Director'] == director]
+    return past_movies['Rating'].mean() if not past_movies.empty else 5.0  # Default score
+
+df['Director_Success_Score'] = df['Director'].apply(calculate_director_success)
+
 # Features for prediction
 features = ['Year', 'Genre_Sentiment', 'Is_Weekend', 'Is_Holiday_Release', 'Is_Peak_Season',
-            'Awards_Won', 'Budget_to_Revenue_Ratio', 'Director_Name_Length', 'Director_Avg_Runtime', 'Num_Genres', 'Title_Word_Count', 'Title_Sentiment', 'Lead_Actor_Popularity']
+            'Awards_Won', 'Budget_to_Revenue_Ratio', 'Director_Name_Length', 'Director_Avg_Runtime', 'Num_Genres', 'Title_Word_Count', 'Title_Sentiment', 'Lead_Actor_Popularity', 'Director_Success_Score']
 features += [col for col in df.columns if col.startswith('Season_')]
 
 # X = feature set
