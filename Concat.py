@@ -18,7 +18,7 @@ if data:  # Only append if data was successfully retrieved
 df = pd.DataFrame(movie_data)
 
 # Select relevant columns and rename for clarity
-df = df[['Title', 'Year', 'imdbRating', 'Genre', 'Director', 'Release_Date', 'Awards', 'Runtime']]
+df = df[['Title', 'Year', 'imdbRating', 'Genre', 'Director', 'Release_Date', 'Awards', 'Runtime', 'Actors']]
 df['Rating'] = df['imdbRating'].astype(float)
 
 # Analyze the sentiment of the movie genres
@@ -78,9 +78,20 @@ df['Title_Word_Count'] = df['Title'].apply(lambda x: len(x.split()) if pd.notna(
 # New Feature: Sentiment Analysis of Movie Titles
 df['Title_Sentiment'] = df['Title'].apply(lambda x: TextBlob(x).sentiment.polarity if pd.notna(x) else 0)
 
+# New Feature: Lead Actor Popularity
+def get_lead_actor(actors):
+    return actors.split(',')[0] if pd.notna(actors) else 'Unknown'
+
+def get_actor_popularity(actor):
+    actor_popularity = {'Leonardo DiCaprio': 90, 'Robert Downey Jr.': 85, 'Meryl Streep': 88}  # Example data
+    return actor_popularity.get(actor, 50)  # Default popularity
+
+df['Lead_Actor'] = df['Actors'].apply(get_lead_actor)
+df['Lead_Actor_Popularity'] = df['Lead_Actor'].apply(get_actor_popularity)
+
 # Features for prediction
 features = ['Year', 'Genre_Sentiment', 'Is_Weekend', 'Is_Holiday_Release', 'Is_Peak_Season',
-            'Awards_Won', 'Budget_to_Revenue_Ratio', 'Director_Name_Length', 'Director_Avg_Runtime', 'Num_Genres', 'Title_Word_Count', 'Title_Sentiment']
+            'Awards_Won', 'Budget_to_Revenue_Ratio', 'Director_Name_Length', 'Director_Avg_Runtime', 'Num_Genres', 'Title_Word_Count', 'Title_Sentiment', 'Lead_Actor_Popularity']
 features += [col for col in df.columns if col.startswith('Season_')]
 
 # X = feature set
