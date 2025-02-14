@@ -110,9 +110,16 @@ def get_lead_actor_rating(actor):
 
 df['Lead_Actor_Avg_IMDb_Rating'] = df['Lead_Actor'].apply(get_lead_actor_rating)
 
+# New Feature: Franchise Popularity Score
+def is_franchise(title):
+    franchise_keywords = ['Avengers', 'Star Wars', 'Harry Potter', 'Fast & Furious', 'Batman', 'Spider-Man']
+    return any(keyword in title for keyword in franchise_keywords)
+
+df['Franchise_Popularity'] = df['Title'].apply(lambda x: 1 if is_franchise(x) else 0)
+
 # Features for prediction
 features = ['Year', 'Genre_Sentiment', 'Is_Weekend', 'Is_Holiday_Release', 'Is_Peak_Season',
-            'Awards_Won', 'Budget_to_Revenue_Ratio', 'Director_Name_Length', 'Director_Avg_Runtime', 'Num_Genres', 'Title_Word_Count', 'Title_Sentiment', 'Lead_Actor_Popularity', 'Director_Success_Score', 'Actor_Ensemble_Popularity', 'Lead_Actor_Avg_IMDb_Rating']
+            'Awards_Won', 'Budget_to_Revenue_Ratio', 'Director_Name_Length', 'Director_Avg_Runtime', 'Num_Genres', 'Title_Word_Count', 'Title_Sentiment', 'Lead_Actor_Popularity', 'Director_Success_Score', 'Actor_Ensemble_Popularity', 'Lead_Actor_Avg_IMDb_Rating', 'Franchise_Popularity']
 features += [col for col in df.columns if col.startswith('Season_')]
 
 # X = feature set
