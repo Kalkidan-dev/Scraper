@@ -103,9 +103,16 @@ def calculate_ensemble_popularity(actors):
 
 df['Actor_Ensemble_Popularity'] = df['Actors'].apply(calculate_ensemble_popularity)
 
+# New Feature: Average Lead Actor IMDb Rating
+def get_lead_actor_rating(actor):
+    past_movies = df[df['Lead_Actor'] == actor]
+    return past_movies['Rating'].mean() if not past_movies.empty else 5.0
+
+df['Lead_Actor_Avg_IMDb_Rating'] = df['Lead_Actor'].apply(get_lead_actor_rating)
+
 # Features for prediction
 features = ['Year', 'Genre_Sentiment', 'Is_Weekend', 'Is_Holiday_Release', 'Is_Peak_Season',
-            'Awards_Won', 'Budget_to_Revenue_Ratio', 'Director_Name_Length', 'Director_Avg_Runtime', 'Num_Genres', 'Title_Word_Count', 'Title_Sentiment', 'Lead_Actor_Popularity', 'Director_Success_Score', 'Actor_Ensemble_Popularity']
+            'Awards_Won', 'Budget_to_Revenue_Ratio', 'Director_Name_Length', 'Director_Avg_Runtime', 'Num_Genres', 'Title_Word_Count', 'Title_Sentiment', 'Lead_Actor_Popularity', 'Director_Success_Score', 'Actor_Ensemble_Popularity', 'Lead_Actor_Avg_IMDb_Rating']
 features += [col for col in df.columns if col.startswith('Season_')]
 
 # X = feature set
@@ -134,10 +141,6 @@ r2 = r2_score(y_test, y_pred)
 
 print(f'Mean Squared Error: {mse}')
 print(f'R-squared: {r2}')
-
-# Display the actual vs. predicted ratings
-comparison = pd.DataFrame({'Actual Rating': y_test, 'Predicted Rating': y_pred})
-print(comparison.head())
 
 # Save results
 df.to_csv('omdb_top_movies_with_new_features.csv', index=False)
