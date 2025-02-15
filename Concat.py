@@ -63,7 +63,6 @@ def get_actor_career_length(actor):
     return 2025 - actor_career_start.get(actor, 2000)  # Default to 2000 if not found
 
 df['Actor_Career_Length'] = df['Lead_Actor'].apply(get_actor_career_length)
-
 def analyze_genre_sentiment(genres):
     sentiment_scores = []
     for genre in genres.split(","):
