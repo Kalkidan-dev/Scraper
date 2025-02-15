@@ -64,6 +64,12 @@ def get_actor_career_length(actor):
 
 df['Actor_Career_Length'] = df['Lead_Actor'].apply(get_actor_career_length)
 
+def analyze_genre_sentiment(genres):
+    sentiment_scores = []
+    for genre in genres.split(","):
+        analysis = TextBlob(genre.strip())
+        sentiment_scores.append(analysis.sentiment.polarity)
+    return sum(sentiment_scores) / len(sentiment_scores) if sentiment_scores else 0
 
 def extract_awards_count(awards):
     if pd.isna(awards): return 0
