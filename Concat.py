@@ -70,6 +70,11 @@ def analyze_genre_sentiment(genres):
         analysis = TextBlob(genre.strip())
         sentiment_scores.append(analysis.sentiment.polarity)
     return sum(sentiment_scores) / len(sentiment_scores) if sentiment_scores else 0
+def count_genres(genres):
+    """
+    Count the number of unique genres a movie belongs to.
+    """
+    return len(set(genres.split(',')))
 
 def extract_awards_count(awards):
     if pd.isna(awards): return 0
