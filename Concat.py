@@ -88,6 +88,20 @@ def get_actor_career_length(actor):
 
 df['Actor_Career_Length'] = df['Lead_Actor'].apply(get_actor_career_length)
 
+# New Feature: Lead Actor's Total Oscar Wins
+def get_actor_oscar_wins(actor):
+    actor_oscar_wins = {
+        'Leonardo DiCaprio': 1,
+        'Robert Downey Jr.': 0,
+        'Meryl Streep': 3,
+        'Denzel Washington': 2,
+        'Tom Hanks': 2,
+        # Add more actors as needed
+    }
+    return actor_oscar_wins.get(actor, 0)  # Default to 0 if not found
+
+df['Lead_Actor_Oscar_Wins'] = df['Lead_Actor'].apply(get_actor_oscar_wins)
+
 
 def extract_awards_count(awards):
     if pd.isna(awards): return 0
