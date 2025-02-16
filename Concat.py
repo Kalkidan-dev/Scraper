@@ -102,6 +102,20 @@ def get_actor_oscar_wins(actor):
 
 df['Lead_Actor_Oscar_Wins'] = df['Lead_Actor'].apply(get_actor_oscar_wins)
 
+# New Feature: Lead Actor's Average Box Office Earnings
+def get_actor_avg_box_office(actor):
+    actor_box_office = {
+        'Leonardo DiCaprio': 400_000_000,
+        'Robert Downey Jr.': 750_000_000,
+        'Meryl Streep': 180_000_000,
+        'Denzel Washington': 220_000_000,
+        'Tom Hanks': 300_000_000,
+        # Add more actors as needed
+    }
+    return actor_box_office.get(actor, 100_000_000)  # Default to $100M if not found
+
+df['Lead_Actor_Avg_Box_Office'] = df['Lead_Actor'].apply(get_actor_avg_box_office)
+
 
 def extract_awards_count(awards):
     if pd.isna(awards): return 0
