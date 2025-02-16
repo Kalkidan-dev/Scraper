@@ -140,6 +140,13 @@ def extract_award_nominations(awards):
 
 df['Total_Award_Nominations'] = df['Awards'].apply(extract_award_nominations)
 
+# New Feature: Average IMDb Rating of Director's Past Movies
+def get_director_avg_imdb(director):
+    past_movies = df[df['Director'] == director]
+    return past_movies['Rating'].mean() if not past_movies.empty else 5.0  # Default rating
+
+df['Director_Avg_IMDb_Rating'] = df['Director'].apply(get_director_avg_imdb)
+
 
 def extract_awards_count(awards):
     if pd.isna(awards): return 0
