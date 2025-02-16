@@ -130,6 +130,16 @@ def get_director_oscar_wins(director):
 
 df['Director_Oscar_Wins'] = df['Director'].apply(get_director_oscar_wins)
 
+# New Feature: Extract Total Award Nominations
+def extract_award_nominations(awards):
+    if pd.isna(awards):
+        return 0
+    import re
+    numbers = [int(num) for num in re.findall(r'\d+', awards)]
+    return numbers[-1] if numbers else 0  # Assuming last number represents nominations
+
+df['Total_Award_Nominations'] = df['Awards'].apply(extract_award_nominations)
+
 
 def extract_awards_count(awards):
     if pd.isna(awards): return 0
