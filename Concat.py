@@ -75,6 +75,20 @@ def count_genres(genres):
     """
     return len(set(genres.split(',')))
 
+# New Feature: Actor's Career Length
+def get_actor_career_length(actor):
+    # For simplicity, we'll assume we have data on when actors started their careers.
+    actor_career_start = {
+        'Leonardo DiCaprio': 1991,
+        'Robert Downey Jr.': 1970,
+        'Meryl Streep': 1977,
+        # Add more actors as needed
+    }
+    return 2025 - actor_career_start.get(actor, 2000)  # Default to 2000 if not found
+
+df['Actor_Career_Length'] = df['Lead_Actor'].apply(get_actor_career_length)
+
+
 def extract_awards_count(awards):
     if pd.isna(awards): return 0
     import re
