@@ -116,6 +116,20 @@ def get_actor_avg_box_office(actor):
 
 df['Lead_Actor_Avg_Box_Office'] = df['Lead_Actor'].apply(get_actor_avg_box_office)
 
+# New Feature: Director's Oscar Wins
+def get_director_oscar_wins(director):
+    director_oscar_wins = {
+        'Steven Spielberg': 3,
+        'Christopher Nolan': 1,
+        'Martin Scorsese': 1,
+        'Quentin Tarantino': 2,
+        'James Cameron': 1,
+        # Add more directors as needed
+    }
+    return director_oscar_wins.get(director, 0)  # Default to 0 if not found
+
+df['Director_Oscar_Wins'] = df['Director'].apply(get_director_oscar_wins)
+
 
 def extract_awards_count(awards):
     if pd.isna(awards): return 0
