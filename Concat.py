@@ -97,6 +97,18 @@ def calculate_critical_acclaim(imdb, rt, metacritic):
 df['Critical_Acclaim_Score'] = df.apply(lambda x: calculate_critical_acclaim(
     x.get('imdbRating'), x.get('Rotten_Tomatoes_Score'), x.get('Metacritic_Score')), axis=1)
 
+# New Feature: Movie Hype Score
+def calculate_hype_score(user_reviews, trailer_views, social_media_mentions):
+    # Normalize values to avoid large scale differences
+    reviews_weight = user_reviews / 1000 if user_reviews else 0
+    trailer_weight = trailer_views / 100000 if trailer_views else 0
+    social_weight = social_media_mentions / 10000 if social_media_mentions else 0
+    
+    return (reviews_weight * 0.5) + (trailer_weight * 0.3) + (social_weight * 0.2)
+
+df['Movie_Hype_Score'] = df.apply(lambda x: calculate_hype_score(
+    x.get('User_Reviews_Count'), x.get('Trailer_Views'), x.get('Social_Media_Mentions')), axis=1)
+
 
 # New Feature: Actor's Career Length
 def get_actor_career_length(actor):
