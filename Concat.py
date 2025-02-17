@@ -109,6 +109,20 @@ def calculate_hype_score(user_reviews, trailer_views, social_media_mentions):
 df['Movie_Hype_Score'] = df.apply(lambda x: calculate_hype_score(
     x.get('User_Reviews_Count'), x.get('Trailer_Views'), x.get('Social_Media_Mentions')), axis=1)
 
+# New Feature: Production Budget Category
+def categorize_budget(budget):
+    if budget < 10_000_000: 
+        return 'Low Budget'
+    elif budget < 100_000_000: 
+        return 'Mid Budget'
+    else: 
+        return 'High Budget'
+
+df['Budget_Category'] = df['Budget'].apply(lambda x: categorize_budget(x) if not pd.isna(x) else 'Unknown')
+
+# Convert to dummy variables for model training
+df = pd.get_dummies(df, columns=['Budget_Category'], drop_first=True)
+
 
 # New Feature: Actor's Career Length
 def get_actor_career_length(actor):
