@@ -51,6 +51,15 @@ df['Is_Peak_Season'] = df['Month'].isin([6, 7, 8]).astype(int)
 df['Year'] = df['Year'].astype(int)
 df['Genre_Sentiment'] = df['Genre_Sentiment'].astype(float)
 
+# New Feature: Box Office Success Score
+def calculate_box_office_success(budget, revenue):
+    if revenue > 0:
+        return (revenue / max(budget, 1)) + (revenue / 1e6)  # Normalize with a scaling factor
+    return 0
+
+df['Box_Office_Success_Score'] = df.apply(lambda x: calculate_box_office_success(x['Budget'], x['Revenue']), axis=1)
+
+
 # New Feature: Actor's Career Length
 def get_actor_career_length(actor):
     # For simplicity, we'll assume we have data on when actors started their careers.
