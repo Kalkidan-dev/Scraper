@@ -59,6 +59,14 @@ def calculate_box_office_success(budget, revenue):
 
 df['Box_Office_Success_Score'] = df.apply(lambda x: calculate_box_office_success(x['Budget'], x['Revenue']), axis=1)
 
+# New Feature: Genre Diversity Score
+def calculate_genre_diversity(genres):
+    if pd.isna(genres):
+        return 0
+    return len(set(genres.split(',')))  # Count unique genres
+
+df['Genre_Diversity_Score'] = df['Genre'].apply(calculate_genre_diversity)
+
 
 # New Feature: Actor's Career Length
 def get_actor_career_length(actor):
