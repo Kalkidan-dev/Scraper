@@ -79,6 +79,13 @@ def has_actor_won_award(actor):
 
 df['Lead_Actor_Has_Award'] = df['Lead_Actor'].apply(has_actor_won_award)
 
+# New Feature: Sequel Indicator
+def is_sequel(title):
+    sequel_keywords = ['2', 'II', '3', 'III', '4', 'IV', 'Returns', 'Revenge', 'Part', 'Chapter']
+    return int(any(keyword in title for keyword in sequel_keywords))
+
+df['Is_Sequel'] = df['Title'].apply(is_sequel)
+
 
 # New Feature: Actor's Career Length
 def get_actor_career_length(actor):
