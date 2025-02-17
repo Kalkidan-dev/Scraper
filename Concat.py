@@ -67,6 +67,18 @@ def calculate_genre_diversity(genres):
 
 df['Genre_Diversity_Score'] = df['Genre'].apply(calculate_genre_diversity)
 
+# New Feature: Actor's Award-Winning History
+def has_actor_won_award(actor):
+    award_winners = {
+        'Leonardo DiCaprio': 1,  # Won an Oscar
+        'Robert Downey Jr.': 1,  # Multiple awards
+        'Meryl Streep': 1,  # Multiple Oscars
+        'Chris Hemsworth': 0,  # No Oscar yet
+    }
+    return award_winners.get(actor, 0)  # Default to 0 if not found
+
+df['Lead_Actor_Has_Award'] = df['Lead_Actor'].apply(has_actor_won_award)
+
 
 # New Feature: Actor's Career Length
 def get_actor_career_length(actor):
