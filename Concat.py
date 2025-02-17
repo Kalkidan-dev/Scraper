@@ -86,6 +86,17 @@ def is_sequel(title):
 
 df['Is_Sequel'] = df['Title'].apply(is_sequel)
 
+# New Feature: Critical Acclaim Score
+def calculate_critical_acclaim(imdb, rt, metacritic):
+    scores = []
+    if not pd.isna(imdb): scores.append(imdb * 10)  # Scale IMDb to 100
+    if not pd.isna(rt): scores.append(rt)  # RT is already on a 100 scale
+    if not pd.isna(metacritic): scores.append(metacritic)  # Metacritic is on 100 scale
+    return np.mean(scores) if scores else np.nan
+
+df['Critical_Acclaim_Score'] = df.apply(lambda x: calculate_critical_acclaim(
+    x.get('imdbRating'), x.get('Rotten_Tomatoes_Score'), x.get('Metacritic_Score')), axis=1)
+
 
 # New Feature: Actor's Career Length
 def get_actor_career_length(actor):
