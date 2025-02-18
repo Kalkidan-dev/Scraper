@@ -132,6 +132,17 @@ def calculate_studio_reputation(studio):
 
 df['Studio_Reputation_Score'] = df['Studio'].apply(lambda x: calculate_studio_reputation(x) if pd.notna(x) else 5.0)
 
+from textblob import TextBlob
+
+# New Feature: Trailer Sentiment Score
+def analyze_trailer_sentiment(comments):
+    if pd.isna(comments) or not comments.strip():
+        return 0  # Default neutral sentiment
+    sentiment_scores = [TextBlob(comment).sentiment.polarity for comment in comments.split('|')]
+    return sum(sentiment_scores) / len(sentiment_scores) if sentiment_scores else 0
+
+df['Trailer_Sentiment_Score'] = df['Trailer_Comments'].apply(analyze_trailer_sentiment)
+
 
 # New Feature: Actor's Career Length
 def get_actor_career_length(actor):
