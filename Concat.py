@@ -123,6 +123,15 @@ df['Budget_Category'] = df['Budget'].apply(lambda x: categorize_budget(x) if not
 # Convert to dummy variables for model training
 df = pd.get_dummies(df, columns=['Budget_Category'], drop_first=True)
 
+# New Feature: Studio Reputation Score
+def calculate_studio_reputation(studio):
+    past_movies = df[df['Studio'] == studio]
+    if not past_movies.empty:
+        return (past_movies['Rating'].mean() * 0.7) + (past_movies['Revenue'].mean() / 1_000_000 * 0.3)
+    return 5.0  # Default reputation score for unknown studios
+
+df['Studio_Reputation_Score'] = df['Studio'].apply(lambda x: calculate_studio_reputation(x) if pd.notna(x) else 5.0)
+
 
 # New Feature: Actor's Career Length
 def get_actor_career_length(actor):
