@@ -182,6 +182,17 @@ def count_reviews(reviews):
 
 df['Review_Volume'] = df['Audience_Reviews'].apply(count_reviews)
 
+# New Feature: Review Sentiment Trend Over Time
+def calculate_sentiment_trend(reviews):
+    if pd.isna(reviews) or not reviews.strip():
+        return 0  # Default neutral trend
+    sentiment_scores = [TextBlob(review).sentiment.polarity for review in reviews.split('|')]
+    if len(sentiment_scores) < 2:
+        return 0  # Not enough data for trend calculation
+    return sentiment_scores[-1] - sentiment_scores[0]  # Change in sentiment from first to latest review
+
+df['Review_Sentiment_Trend'] = df['Audience_Reviews'].apply(calculate_sentiment_trend)
+
 
 # New Feature: Actor's Career Length
 def get_actor_career_length(actor):
