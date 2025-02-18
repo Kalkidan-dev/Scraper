@@ -143,6 +143,19 @@ def analyze_trailer_sentiment(comments):
 
 df['Trailer_Sentiment_Score'] = df['Trailer_Comments'].apply(analyze_trailer_sentiment)
 
+# New Feature: Pre-Release Hype Score
+def calculate_hype_score(trailer_views, social_mentions, google_trends_score):
+    # Normalize values and give weight to each component
+    weighted_views = trailer_views / 1_000_000 * 0.5  # Scale views in millions
+    weighted_mentions = social_mentions / 10_000 * 0.3  # Scale mentions in tens of thousands
+    weighted_trends = google_trends_score * 0.2  # Trends score is usually 0-100
+
+    return weighted_views + weighted_mentions + weighted_trends
+
+df['Pre_Release_Hype_Score'] = df.apply(lambda x: calculate_hype_score(
+    x['Trailer_Views'], x['Social_Media_Mentions'], x['Google_Trends_Score']
+) if not pd.isna(x['Trailer_Views']) else 0, axis=1)
+
 
 # New Feature: Actor's Career Length
 def get_actor_career_length(actor):
