@@ -157,6 +157,17 @@ df['Pre_Release_Hype_Score'] = df.apply(lambda x: calculate_hype_score(
 ) if not pd.isna(x['Trailer_Views']) else 0, axis=1)
 
 
+
+# New Feature: Critic Review Sentiment Score
+def analyze_critic_sentiment(reviews):
+    if pd.isna(reviews) or not reviews.strip():
+        return 0  # Default neutral sentiment
+    sentiment_scores = [TextBlob(review).sentiment.polarity for review in reviews.split('|')]
+    return sum(sentiment_scores) / len(sentiment_scores) if sentiment_scores else 0
+
+df['Critic_Review_Sentiment_Score'] = df['Critic_Reviews'].apply(analyze_critic_sentiment)
+
+
 # New Feature: Actor's Career Length
 def get_actor_career_length(actor):
     # For simplicity, we'll assume we have data on when actors started their careers.
