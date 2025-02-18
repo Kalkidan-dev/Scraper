@@ -167,6 +167,15 @@ def analyze_critic_sentiment(reviews):
 
 df['Critic_Review_Sentiment_Score'] = df['Critic_Reviews'].apply(analyze_critic_sentiment)
 
+# New Feature: Audience Review Sentiment Score
+def analyze_audience_sentiment(reviews):
+    if pd.isna(reviews) or not reviews.strip():
+        return 0  # Default neutral sentiment
+    sentiment_scores = [TextBlob(review).sentiment.polarity for review in reviews.split('|')]
+    return sum(sentiment_scores) / len(sentiment_scores) if sentiment_scores else 0
+
+df['Audience_Review_Sentiment_Score'] = df['Audience_Reviews'].apply(analyze_audience_sentiment)
+
 
 # New Feature: Actor's Career Length
 def get_actor_career_length(actor):
