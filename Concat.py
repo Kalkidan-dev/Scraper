@@ -176,6 +176,12 @@ def analyze_audience_sentiment(reviews):
 
 df['Audience_Review_Sentiment_Score'] = df['Audience_Reviews'].apply(analyze_audience_sentiment)
 
+# New Feature: Review Volume
+def count_reviews(reviews):
+    return len(reviews.split('|')) if pd.notna(reviews) and reviews.strip() else 0
+
+df['Review_Volume'] = df['Audience_Reviews'].apply(count_reviews)
+
 
 # New Feature: Actor's Career Length
 def get_actor_career_length(actor):
