@@ -15,6 +15,12 @@ def create_cache_table():
             response TEXT
         )
     """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS api_call_count (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
     conn.commit()
     conn.close()
 
@@ -37,6 +43,14 @@ def cache_response(api_url, response):
     conn.commit()
     conn.close()
 
+def log_api_call():
+    """Log an API call to the database."""
+    conn = sqlite3.connect("cache.db")
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO api_call_count DEFAULT VALUES")
+    conn.commit()
+    conn.close()
+
 def fetch_data(api_url, retries=3, backoff_factor=1):
     """Fetch data from the given API URL with retry mechanism and return the JSON response."""
     logging.info(f"Fetching data from {api_url}")
@@ -56,6 +70,7 @@ def fetch_data(api_url, retries=3, backoff_factor=1):
                 logging.info("Data fetched successfully")
                 json_data = response.json()
                 cache_response(api_url, json_data)
+                log_api_call()
                 return json_data
             else:
                 logging.error(f"Failed to fetch data. Status code: {response.status_code}")
