@@ -3,6 +3,7 @@ import logging
 import sqlite3
 import json
 import hashlib
+import time
 
 def create_cache_table():
     """Create a cache table if it doesn't exist."""
@@ -13,8 +14,7 @@ def create_cache_table():
             url_hash TEXT PRIMARY KEY,
             response TEXT
         )
-    ""
-    )
+    """)
     conn.commit()
     conn.close()
 
@@ -37,22 +37,31 @@ def cache_response(api_url, response):
     conn.commit()
     conn.close()
 
-def fetch_data(api_url):
-    """Fetch data from the given API URL and return the JSON response."""
+def fetch_data(api_url, retries=3, backoff_factor=1):
+    """Fetch data from the given API URL with retry mechanism and return the JSON response."""
     logging.info(f"Fetching data from {api_url}")
     cached_data = get_cached_response(api_url)
     if cached_data:
         logging.info("Using cached data")
         return cached_data
-    response = requests.get(api_url)
-    if response.status_code == 200:
-        logging.info("Data fetched successfully")
-        json_data = response.json()
-        cache_response(api_url, json_data)
-        return json_data
-    else:
-        logging.error(f"Failed to fetch data. Status code: {response.status_code}")
-        return None
+    
+    for attempt in range(retries):
+        try:
+            response = requests.get(api_url, timeout=10)
+            if response.status_code == 200:
+                logging.info("Data fetched successfully")
+                json_data = response.json()
+                cache_response(api_url, json_data)
+                return json_data
+            else:
+                logging.error(f"Failed to fetch data. Status code: {response.status_code}")
+                return None
+        except requests.RequestException as e:
+            logging.error(f"Attempt {attempt + 1} failed: {e}")
+            time.sleep(backoff_factor * (2 ** attempt))
+    
+    logging.error("Max retries reached. Unable to fetch data.")
+    return None
 
 def process_data(data):
     """Process the fetched data and return meaningful results."""
