@@ -47,7 +47,11 @@ def fetch_data(api_url, retries=3, backoff_factor=1):
     
     for attempt in range(retries):
         try:
+            start_time = time.time()
             response = requests.get(api_url, timeout=10)
+            duration = time.time() - start_time
+            logging.info(f"Request completed in {duration:.2f} seconds")
+            
             if response.status_code == 200:
                 logging.info("Data fetched successfully")
                 json_data = response.json()
