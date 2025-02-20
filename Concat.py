@@ -133,6 +133,17 @@ def get_cache_size():
     logging.info(f"Cache contains {count} entries.")
     return count
 
+def get_last_api_call_time():
+    """Retrieve the timestamp of the last API call."""
+    conn = sqlite3.connect("cache.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT timestamp FROM api_call_count ORDER BY timestamp DESC LIMIT 1")
+    row = cursor.fetchone()
+    conn.close()
+    last_call_time = row[0] if row else "No API calls made yet."
+    logging.info(f"Last API call was made at: {last_call_time}")
+    return last_call_time
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     create_cache_table()
@@ -143,6 +154,8 @@ if __name__ == "__main__":
     loaded_data = load_from_file()
     api_call_count = get_api_call_count()
     cache_size = get_cache_size()
+    last_api_call_time = get_last_api_call_time()
     logging.info(f"Total API calls made: {api_call_count}")
     logging.info(f"Cache size: {cache_size}")
+    logging.info(f"Last API call timestamp: {last_api_call_time}")
     clear_cache()
