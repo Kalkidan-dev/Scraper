@@ -112,6 +112,17 @@ def save_to_file(data, filename="output.json"):
         json.dump(data, f, indent=4)
     logging.info(f"Data saved to {filename}")
 
+def load_from_file(filename="output.json"):
+    """Load processed data from a JSON file."""
+    try:
+        with open(filename, "r") as f:
+            data = json.load(f)
+        logging.info(f"Data loaded from {filename}")
+        return data
+    except FileNotFoundError:
+        logging.error(f"File {filename} not found.")
+        return None
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     create_cache_table()
@@ -119,6 +130,7 @@ if __name__ == "__main__":
     raw_data = fetch_data(url)
     processed_data = process_data(raw_data)
     save_to_file(processed_data)
+    loaded_data = load_from_file()
     api_call_count = get_api_call_count()
     logging.info(f"Total API calls made: {api_call_count}")
     clear_cache()
