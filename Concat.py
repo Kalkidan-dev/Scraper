@@ -60,6 +60,15 @@ def get_api_call_count():
     conn.close()
     return count
 
+def clear_cache():
+    """Clear the API cache."""
+    conn = sqlite3.connect("cache.db")
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM api_cache")
+    conn.commit()
+    conn.close()
+    logging.info("Cache cleared successfully.")
+
 def fetch_data(api_url, retries=3, backoff_factor=1):
     """Fetch data from the given API URL with retry mechanism and return the JSON response."""
     logging.info(f"Fetching data from {api_url}")
@@ -112,3 +121,4 @@ if __name__ == "__main__":
     save_to_file(processed_data)
     api_call_count = get_api_call_count()
     logging.info(f"Total API calls made: {api_call_count}")
+    clear_cache()
