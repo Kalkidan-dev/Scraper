@@ -51,6 +51,15 @@ def log_api_call():
     conn.commit()
     conn.close()
 
+def get_api_call_count():
+    """Retrieve the total number of API calls made."""
+    conn = sqlite3.connect("cache.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT COUNT(*) FROM api_call_count")
+    count = cursor.fetchone()[0]
+    conn.close()
+    return count
+
 def fetch_data(api_url, retries=3, backoff_factor=1):
     """Fetch data from the given API URL with retry mechanism and return the JSON response."""
     logging.info(f"Fetching data from {api_url}")
@@ -101,3 +110,5 @@ if __name__ == "__main__":
     raw_data = fetch_data(url)
     processed_data = process_data(raw_data)
     save_to_file(processed_data)
+    api_call_count = get_api_call_count()
+    logging.info(f"Total API calls made: {api_call_count}")
