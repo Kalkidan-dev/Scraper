@@ -123,6 +123,16 @@ def load_from_file(filename="output.json"):
         logging.error(f"File {filename} not found.")
         return None
 
+def get_cache_size():
+    """Retrieve the number of cached entries."""
+    conn = sqlite3.connect("cache.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT COUNT(*) FROM api_cache")
+    count = cursor.fetchone()[0]
+    conn.close()
+    logging.info(f"Cache contains {count} entries.")
+    return count
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     create_cache_table()
@@ -132,5 +142,7 @@ if __name__ == "__main__":
     save_to_file(processed_data)
     loaded_data = load_from_file()
     api_call_count = get_api_call_count()
+    cache_size = get_cache_size()
     logging.info(f"Total API calls made: {api_call_count}")
+    logging.info(f"Cache size: {cache_size}")
     clear_cache()
