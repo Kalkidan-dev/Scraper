@@ -162,6 +162,14 @@ def delete_old_api_calls(days=30):
     conn.close()
     logging.info(f"Deleted API call logs older than {days} days.")
 
+def get_api_usage_stats():
+    """Retrieve API usage statistics including total calls and cache size."""
+    return {
+        "total_api_calls": get_api_call_count(),
+        "last_api_call": get_last_api_call_timestamp(),
+        "cache_size": get_cache_size()
+    }
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     create_cache_table()
@@ -169,13 +177,6 @@ if __name__ == "__main__":
     raw_data = fetch_data(url)
     processed_data = process_data(raw_data)
     save_to_file(processed_data)
-    loaded_data = load_from_file()
-    api_call_count = get_api_call_count()
-    last_api_timestamp = get_last_api_call_timestamp()
-    cache_size = get_cache_size()
-    export_cache_to_file()
-    delete_old_api_calls()
-    logging.info(f"Total API calls made: {api_call_count}")
-    logging.info(f"Last API call timestamp: {last_api_timestamp}")
-    logging.info(f"Cache size: {cache_size}")
+    api_usage_stats = get_api_usage_stats()
+    logging.info(f"API Usage Stats: {api_usage_stats}")
     clear_cache()
