@@ -153,6 +153,15 @@ def export_cache_to_file(filename="cache_export.json"):
         json.dump(data, f, indent=4)
     logging.info(f"Cache exported to {filename}")
 
+def delete_old_api_calls(days=30):
+    """Delete API call logs older than the specified number of days."""
+    conn = sqlite3.connect("cache.db")
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM api_call_count WHERE timestamp < datetime('now', ?)", (f'-{days} days',))
+    conn.commit()
+    conn.close()
+    logging.info(f"Deleted API call logs older than {days} days.")
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     create_cache_table()
@@ -165,6 +174,7 @@ if __name__ == "__main__":
     last_api_timestamp = get_last_api_call_timestamp()
     cache_size = get_cache_size()
     export_cache_to_file()
+    delete_old_api_calls()
     logging.info(f"Total API calls made: {api_call_count}")
     logging.info(f"Last API call timestamp: {last_api_timestamp}")
     logging.info(f"Cache size: {cache_size}")
