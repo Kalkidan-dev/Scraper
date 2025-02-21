@@ -142,6 +142,17 @@ def get_cache_size():
     logging.info(f"Cache contains {count} entries.")
     return count
 
+def export_cache_to_file(filename="cache_export.json"):
+    """Export cache data to a JSON file."""
+    conn = sqlite3.connect("cache.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT url_hash, response FROM api_cache")
+    data = {row[0]: json.loads(row[1]) for row in cursor.fetchall()}
+    conn.close()
+    with open(filename, "w") as f:
+        json.dump(data, f, indent=4)
+    logging.info(f"Cache exported to {filename}")
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     create_cache_table()
@@ -153,6 +164,7 @@ if __name__ == "__main__":
     api_call_count = get_api_call_count()
     last_api_timestamp = get_last_api_call_timestamp()
     cache_size = get_cache_size()
+    export_cache_to_file()
     logging.info(f"Total API calls made: {api_call_count}")
     logging.info(f"Last API call timestamp: {last_api_timestamp}")
     logging.info(f"Cache size: {cache_size}")
