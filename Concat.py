@@ -135,6 +135,24 @@ def clear_cache():
     conn.close()
     logging.info("Cache cleared successfully.")
 
+def get_last_api_call_timestamp():
+    """Retrieve the timestamp of the last API call."""
+    conn = sqlite3.connect("cache.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT timestamp FROM api_call_count ORDER BY id DESC LIMIT 1")
+    row = cursor.fetchone()
+    conn.close()
+    return row[0] if row else "No API calls logged."
+
+def get_api_call_count():
+    """Retrieve the total number of API calls made."""
+    conn = sqlite3.connect("cache.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT COUNT(*) FROM api_call_count")
+    count = cursor.fetchone()[0]
+    conn.close()
+    return count
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     create_cache_table()
