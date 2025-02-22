@@ -12,7 +12,8 @@ def create_cache_table():
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS api_cache (
             url_hash TEXT PRIMARY KEY,
-            response TEXT
+            response TEXT,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     """)
     cursor.execute("""
@@ -24,24 +25,38 @@ def create_cache_table():
     conn.commit()
     conn.close()
 
-def get_cached_response(api_url):
-    """Retrieve cached response if available."""
+def get_cached_response(api_url, cache_expiry=86400):
+    """Retrieve cached response if available and not expired."""
     conn = sqlite3.connect("cache.db")
     cursor = conn.cursor()
     url_hash = hashlib.md5(api_url.encode()).hexdigest()
-    cursor.execute("SELECT response FROM api_cache WHERE url_hash = ?", (url_hash,))
+    cursor.execute("SELECT response, timestamp FROM api_cache WHERE url_hash = ?", (url_hash,))
     row = cursor.fetchone()
     conn.close()
-    return json.loads(row[0]) if row else None
+    
+    if row:
+        cached_time = time.mktime(time.strptime(row[1], "%Y-%m-%d %H:%M:%S"))
+        if time.time() - cached_time < cache_expiry:
+            return json.loads(row[0])
+    return None
 
 def cache_response(api_url, response):
     """Cache API response."""
     conn = sqlite3.connect("cache.db")
     cursor = conn.cursor()
     url_hash = hashlib.md5(api_url.encode()).hexdigest()
-    cursor.execute("REPLACE INTO api_cache (url_hash, response) VALUES (?, ?)", (url_hash, json.dumps(response)))
+    cursor.execute("REPLACE INTO api_cache (url_hash, response, timestamp) VALUES (?, ?, CURRENT_TIMESTAMP)", (url_hash, json.dumps(response)))
     conn.commit()
     conn.close()
+
+def delete_expired_cache(cache_expiry=86400):
+    """Delete expired cache entries."""
+    conn = sqlite3.connect("cache.db")
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM api_cache WHERE timestamp < datetime('now', ?)", (f'-{cache_expiry} seconds',))
+    conn.commit()
+    conn.close()
+    logging.info("Expired cache entries removed.")
 
 def log_api_call():
     """Log an API call to the database."""
@@ -50,33 +65,6 @@ def log_api_call():
     cursor.execute("INSERT INTO api_call_count DEFAULT VALUES")
     conn.commit()
     conn.close()
-
-def get_api_call_count():
-    """Retrieve the total number of API calls made."""
-    conn = sqlite3.connect("cache.db")
-    cursor = conn.cursor()
-    cursor.execute("SELECT COUNT(*) FROM api_call_count")
-    count = cursor.fetchone()[0]
-    conn.close()
-    return count
-
-def get_last_api_call_timestamp():
-    """Retrieve the timestamp of the last API call."""
-    conn = sqlite3.connect("cache.db")
-    cursor = conn.cursor()
-    cursor.execute("SELECT timestamp FROM api_call_count ORDER BY timestamp DESC LIMIT 1")
-    row = cursor.fetchone()
-    conn.close()
-    return row[0] if row else "No API calls recorded."
-
-def clear_cache():
-    """Clear the API cache."""
-    conn = sqlite3.connect("cache.db")
-    cursor = conn.cursor()
-    cursor.execute("DELETE FROM api_cache")
-    conn.commit()
-    conn.close()
-    logging.info("Cache cleared successfully.")
 
 def fetch_data(api_url, retries=3, backoff_factor=1):
     """Fetch data from the given API URL with retry mechanism and return the JSON response."""
@@ -121,47 +109,6 @@ def save_to_file(data, filename="output.json"):
         json.dump(data, f, indent=4)
     logging.info(f"Data saved to {filename}")
 
-def load_from_file(filename="output.json"):
-    """Load processed data from a JSON file."""
-    try:
-        with open(filename, "r") as f:
-            data = json.load(f)
-        logging.info(f"Data loaded from {filename}")
-        return data
-    except FileNotFoundError:
-        logging.error(f"File {filename} not found.")
-        return None
-
-def get_cache_size():
-    """Retrieve the number of cached entries."""
-    conn = sqlite3.connect("cache.db")
-    cursor = conn.cursor()
-    cursor.execute("SELECT COUNT(*) FROM api_cache")
-    count = cursor.fetchone()[0]
-    conn.close()
-    logging.info(f"Cache contains {count} entries.")
-    return count
-
-def export_cache_to_file(filename="cache_export.json"):
-    """Export cache data to a JSON file."""
-    conn = sqlite3.connect("cache.db")
-    cursor = conn.cursor()
-    cursor.execute("SELECT url_hash, response FROM api_cache")
-    data = {row[0]: json.loads(row[1]) for row in cursor.fetchall()}
-    conn.close()
-    with open(filename, "w") as f:
-        json.dump(data, f, indent=4)
-    logging.info(f"Cache exported to {filename}")
-
-def delete_old_api_calls(days=30):
-    """Delete API call logs older than the specified number of days."""
-    conn = sqlite3.connect("cache.db")
-    cursor = conn.cursor()
-    cursor.execute("DELETE FROM api_call_count WHERE timestamp < datetime('now', ?)", (f'-{days} days',))
-    conn.commit()
-    conn.close()
-    logging.info(f"Deleted API call logs older than {days} days.")
-
 def get_api_usage_stats():
     """Retrieve API usage statistics including total calls and cache size."""
     return {
@@ -173,6 +120,7 @@ def get_api_usage_stats():
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     create_cache_table()
+    delete_expired_cache()
     url = "https://api.example.com/data"
     raw_data = fetch_data(url)
     processed_data = process_data(raw_data)
