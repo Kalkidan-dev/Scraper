@@ -22,6 +22,22 @@ def create_cache_table():
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS api_request_duration (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            url TEXT,
+            duration REAL,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+def log_request_duration(api_url, duration):
+    """Log the duration of an API request."""
+    conn = sqlite3.connect("cache.db")
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO api_request_duration (url, duration) VALUES (?, ?)", (api_url, duration))
     conn.commit()
     conn.close()
 
@@ -79,6 +95,7 @@ def fetch_data(api_url, retries=3, backoff_factor=1):
             start_time = time.time()
             response = requests.get(api_url, timeout=10)
             duration = time.time() - start_time
+            log_request_duration(api_url, duration)
             logging.info(f"Request completed in {duration:.2f} seconds")
             
             if response.status_code == 200:
@@ -109,50 +126,6 @@ def save_to_file(data, filename="output.json"):
         json.dump(data, f, indent=4)
     logging.info(f"Data saved to {filename}")
 
-def get_cache_size():
-    """Retrieve the total number of cached entries."""
-    conn = sqlite3.connect("cache.db")
-    cursor = conn.cursor()
-    cursor.execute("SELECT COUNT(*) FROM api_cache")
-    count = cursor.fetchone()[0]
-    conn.close()
-    return count
-
-def get_api_usage_stats():
-    """Retrieve API usage statistics including total calls and cache size."""
-    return {
-        "total_api_calls": get_api_call_count(),
-        "last_api_call": get_last_api_call_timestamp(),
-        "cache_size": get_cache_size()
-    }
-
-def clear_cache():
-    """Clear all cache entries."""
-    conn = sqlite3.connect("cache.db")
-    cursor = conn.cursor()
-    cursor.execute("DELETE FROM api_cache")
-    conn.commit()
-    conn.close()
-    logging.info("Cache cleared successfully.")
-
-def get_last_api_call_timestamp():
-    """Retrieve the timestamp of the last API call."""
-    conn = sqlite3.connect("cache.db")
-    cursor = conn.cursor()
-    cursor.execute("SELECT timestamp FROM api_call_count ORDER BY id DESC LIMIT 1")
-    row = cursor.fetchone()
-    conn.close()
-    return row[0] if row else "No API calls logged."
-
-def get_api_call_count():
-    """Retrieve the total number of API calls made."""
-    conn = sqlite3.connect("cache.db")
-    cursor = conn.cursor()
-    cursor.execute("SELECT COUNT(*) FROM api_call_count")
-    count = cursor.fetchone()[0]
-    conn.close()
-    return count
-
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     create_cache_table()
@@ -161,7 +134,3 @@ if __name__ == "__main__":
     raw_data = fetch_data(url)
     processed_data = process_data(raw_data)
     save_to_file(processed_data)
-    api_usage_stats = get_api_usage_stats()
-    logging.info(f"API Usage Stats: {api_usage_stats}")
-    logging.info(f"Total cache entries: {get_cache_size()}")
-    clear_cache()
