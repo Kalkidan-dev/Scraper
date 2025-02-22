@@ -117,6 +117,15 @@ def get_api_usage_stats():
         "cache_size": get_cache_size()
     }
 
+def clear_cache():
+    """Clear all cache entries."""
+    conn = sqlite3.connect("cache.db")
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM api_cache")
+    conn.commit()
+    conn.close()
+    logging.info("Cache cleared successfully.")
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     create_cache_table()
