@@ -109,6 +109,15 @@ def save_to_file(data, filename="output.json"):
         json.dump(data, f, indent=4)
     logging.info(f"Data saved to {filename}")
 
+def get_cache_size():
+    """Retrieve the total number of cached entries."""
+    conn = sqlite3.connect("cache.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT COUNT(*) FROM api_cache")
+    count = cursor.fetchone()[0]
+    conn.close()
+    return count
+
 def get_api_usage_stats():
     """Retrieve API usage statistics including total calls and cache size."""
     return {
@@ -136,4 +145,5 @@ if __name__ == "__main__":
     save_to_file(processed_data)
     api_usage_stats = get_api_usage_stats()
     logging.info(f"API Usage Stats: {api_usage_stats}")
+    logging.info(f"Total cache entries: {get_cache_size()}")
     clear_cache()
