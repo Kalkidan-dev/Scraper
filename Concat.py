@@ -6,31 +6,32 @@ import hashlib
 import time
 
 def create_cache_table():
-    """Create a cache table if it doesn't exist."""
+    """Create necessary cache tables if they don't exist."""
     conn = sqlite3.connect("cache.db")
     cursor = conn.cursor()
-    cursor.execute("""
+    tables = [
+        """
         CREATE TABLE IF NOT EXISTS api_cache (
             url_hash TEXT PRIMARY KEY,
             response TEXT,
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
         )
-    """)
-    cursor.execute("""
+        """,
+        """
         CREATE TABLE IF NOT EXISTS api_call_count (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
         )
-    """)
-    cursor.execute("""
+        """,
+        """
         CREATE TABLE IF NOT EXISTS api_request_duration (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             url TEXT,
             duration REAL,
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
         )
-    """)
-    cursor.execute("""
+        """,
+        """
         CREATE TABLE IF NOT EXISTS api_request_failures (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             url TEXT,
@@ -38,40 +39,47 @@ def create_cache_table():
             retry_attempts INTEGER,
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
         )
-    """)
-    cursor.execute("""
+        """,
+        """
         CREATE TABLE IF NOT EXISTS api_successful_requests (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             url TEXT,
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
         )
-    """)
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS api_response_size (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            url TEXT,
+            response_size INTEGER,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+        """
+    ]
+    for table in tables:
+        cursor.execute(table)
+    conn.commit()
+    conn.close()
+
+def execute_query(query, params=()):
+    """Execute a database query safely."""
+    conn = sqlite3.connect("cache.db")
+    cursor = conn.cursor()
+    cursor.execute(query, params)
     conn.commit()
     conn.close()
 
 def log_successful_request(api_url):
-    """Log successful API request."""
-    conn = sqlite3.connect("cache.db")
-    cursor = conn.cursor()
-    cursor.execute("INSERT INTO api_successful_requests (url) VALUES (?)", (api_url,))
-    conn.commit()
-    conn.close()
+    execute_query("INSERT INTO api_successful_requests (url) VALUES (?)", (api_url,))
 
 def log_request_duration(api_url, duration):
-    """Log the duration of an API request."""
-    conn = sqlite3.connect("cache.db")
-    cursor = conn.cursor()
-    cursor.execute("INSERT INTO api_request_duration (url, duration) VALUES (?, ?)", (api_url, duration))
-    conn.commit()
-    conn.close()
+    execute_query("INSERT INTO api_request_duration (url, duration) VALUES (?, ?)", (api_url, duration))
 
 def log_failed_request(api_url, error_message, retry_attempts):
-    """Log failed API request attempts."""
-    conn = sqlite3.connect("cache.db")
-    cursor = conn.cursor()
-    cursor.execute("INSERT INTO api_request_failures (url, error_message, retry_attempts) VALUES (?, ?, ?)", (api_url, error_message, retry_attempts))
-    conn.commit()
-    conn.close()
+    execute_query("INSERT INTO api_request_failures (url, error_message, retry_attempts) VALUES (?, ?, ?)", (api_url, error_message, retry_attempts))
+
+def log_response_size(api_url, response_size):
+    execute_query("INSERT INTO api_response_size (url, response_size) VALUES (?, ?)", (api_url, response_size))
 
 def get_cached_response(api_url, cache_expiry=86400):
     """Retrieve cached response if available and not expired."""
@@ -90,29 +98,15 @@ def get_cached_response(api_url, cache_expiry=86400):
 
 def cache_response(api_url, response):
     """Cache API response."""
-    conn = sqlite3.connect("cache.db")
-    cursor = conn.cursor()
-    url_hash = hashlib.md5(api_url.encode()).hexdigest()
-    cursor.execute("REPLACE INTO api_cache (url_hash, response, timestamp) VALUES (?, ?, CURRENT_TIMESTAMP)", (url_hash, json.dumps(response)))
-    conn.commit()
-    conn.close()
+    execute_query("REPLACE INTO api_cache (url_hash, response, timestamp) VALUES (?, ?, CURRENT_TIMESTAMP)", (hashlib.md5(api_url.encode()).hexdigest(), json.dumps(response)))
 
 def delete_expired_cache(cache_expiry=86400):
-    """Delete expired cache entries."""
-    conn = sqlite3.connect("cache.db")
-    cursor = conn.cursor()
-    cursor.execute("DELETE FROM api_cache WHERE timestamp < datetime('now', ?)", (f'-{cache_expiry} seconds',))
-    conn.commit()
-    conn.close()
+    """Delete expired cache entries efficiently."""
+    execute_query("DELETE FROM api_cache WHERE timestamp < datetime('now', ?)", (f'-{cache_expiry} seconds',))
     logging.info("Expired cache entries removed.")
 
 def log_api_call():
-    """Log an API call to the database."""
-    conn = sqlite3.connect("cache.db")
-    cursor = conn.cursor()
-    cursor.execute("INSERT INTO api_call_count DEFAULT VALUES")
-    conn.commit()
-    conn.close()
+    execute_query("INSERT INTO api_call_count DEFAULT VALUES")
 
 def fetch_data(api_url, retries=3, backoff_factor=1):
     """Fetch data from the given API URL with retry mechanism and return the JSON response."""
@@ -136,6 +130,7 @@ def fetch_data(api_url, retries=3, backoff_factor=1):
                 cache_response(api_url, json_data)
                 log_api_call()
                 log_successful_request(api_url)
+                log_response_size(api_url, len(response.content))
                 return json_data
             else:
                 logging.error(f"Failed to fetch data. Status code: {response.status_code}")
@@ -148,24 +143,3 @@ def fetch_data(api_url, retries=3, backoff_factor=1):
     
     logging.error("Max retries reached. Unable to fetch data.")
     return None
-
-def process_data(data):
-    """Process the fetched data and return meaningful results."""
-    if data:
-        return {key: value for key, value in data.items() if value}
-    return {}
-
-def save_to_file(data, filename="output.json"):
-    """Save processed data to a JSON file."""
-    with open(filename, "w") as f:
-        json.dump(data, f, indent=4)
-    logging.info(f"Data saved to {filename}")
-
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
-    create_cache_table()
-    delete_expired_cache()
-    url = "https://api.example.com/data"
-    raw_data = fetch_data(url)
-    processed_data = process_data(raw_data)
-    save_to_file(processed_data)
