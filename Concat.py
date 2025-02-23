@@ -35,6 +35,7 @@ def create_cache_table():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             url TEXT,
             error_message TEXT,
+            retry_attempts INTEGER,
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     """)
@@ -49,11 +50,11 @@ def log_request_duration(api_url, duration):
     conn.commit()
     conn.close()
 
-def log_failed_request(api_url, error_message):
+def log_failed_request(api_url, error_message, retry_attempts):
     """Log failed API request attempts."""
     conn = sqlite3.connect("cache.db")
     cursor = conn.cursor()
-    cursor.execute("INSERT INTO api_request_failures (url, error_message) VALUES (?, ?)", (api_url, error_message))
+    cursor.execute("INSERT INTO api_request_failures (url, error_message, retry_attempts) VALUES (?, ?, ?)", (api_url, error_message, retry_attempts))
     conn.commit()
     conn.close()
 
@@ -122,11 +123,11 @@ def fetch_data(api_url, retries=3, backoff_factor=1):
                 return json_data
             else:
                 logging.error(f"Failed to fetch data. Status code: {response.status_code}")
-                log_failed_request(api_url, f"Status code: {response.status_code}")
+                log_failed_request(api_url, f"Status code: {response.status_code}", attempt + 1)
                 return None
         except requests.RequestException as e:
             logging.error(f"Attempt {attempt + 1} failed: {e}")
-            log_failed_request(api_url, str(e))
+            log_failed_request(api_url, str(e), attempt + 1)
             time.sleep(backoff_factor * (2 ** attempt))
     
     logging.error("Max retries reached. Unable to fetch data.")
