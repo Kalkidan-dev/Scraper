@@ -39,6 +39,21 @@ def create_cache_table():
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS api_successful_requests (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            url TEXT,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+def log_successful_request(api_url):
+    """Log successful API request."""
+    conn = sqlite3.connect("cache.db")
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO api_successful_requests (url) VALUES (?)", (api_url,))
     conn.commit()
     conn.close()
 
@@ -120,6 +135,7 @@ def fetch_data(api_url, retries=3, backoff_factor=1):
                 json_data = response.json()
                 cache_response(api_url, json_data)
                 log_api_call()
+                log_successful_request(api_url)
                 return json_data
             else:
                 logging.error(f"Failed to fetch data. Status code: {response.status_code}")
