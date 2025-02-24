@@ -9,29 +9,28 @@ def create_cache_table():
     """Create necessary cache tables if they don't exist."""
     conn = sqlite3.connect("cache.db")
     cursor = conn.cursor()
-    tables = [
-        """
+    cursor.execute("""
         CREATE TABLE IF NOT EXISTS api_cache (
             url_hash TEXT PRIMARY KEY,
             response TEXT,
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
         )
-        """,
-        """
+    """)
+    cursor.execute("""
         CREATE TABLE IF NOT EXISTS api_call_count (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
         )
-        """,
-        """
+    """)
+    cursor.execute("""
         CREATE TABLE IF NOT EXISTS api_request_duration (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             url TEXT,
             duration REAL,
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
         )
-        """,
-        """
+    """)
+    cursor.execute("""
         CREATE TABLE IF NOT EXISTS api_request_failures (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             url TEXT,
@@ -39,47 +38,73 @@ def create_cache_table():
             retry_attempts INTEGER,
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
         )
-        """,
-        """
+    """)
+    cursor.execute("""
         CREATE TABLE IF NOT EXISTS api_successful_requests (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             url TEXT,
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
         )
-        """,
-        """
+    """)
+    cursor.execute("""
         CREATE TABLE IF NOT EXISTS api_response_size (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             url TEXT,
             response_size INTEGER,
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
         )
-        """
-    ]
-    for table in tables:
-        cursor.execute(table)
-    conn.commit()
-    conn.close()
-
-def execute_query(query, params=()):
-    """Execute a database query safely."""
-    conn = sqlite3.connect("cache.db")
-    cursor = conn.cursor()
-    cursor.execute(query, params)
+    """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS api_url_access_count (
+            url TEXT PRIMARY KEY,
+            access_count INTEGER DEFAULT 0
+        )
+    """)
     conn.commit()
     conn.close()
 
 def log_successful_request(api_url):
-    execute_query("INSERT INTO api_successful_requests (url) VALUES (?)", (api_url,))
+    """Log successful API request."""
+    conn = sqlite3.connect("cache.db")
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO api_successful_requests (url) VALUES (?)", (api_url,))
+    conn.commit()
+    conn.close()
 
 def log_request_duration(api_url, duration):
-    execute_query("INSERT INTO api_request_duration (url, duration) VALUES (?, ?)", (api_url, duration))
+    """Log the duration of an API request."""
+    conn = sqlite3.connect("cache.db")
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO api_request_duration (url, duration) VALUES (?, ?)", (api_url, duration))
+    conn.commit()
+    conn.close()
 
 def log_failed_request(api_url, error_message, retry_attempts):
-    execute_query("INSERT INTO api_request_failures (url, error_message, retry_attempts) VALUES (?, ?, ?)", (api_url, error_message, retry_attempts))
+    """Log failed API request attempts."""
+    conn = sqlite3.connect("cache.db")
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO api_request_failures (url, error_message, retry_attempts) VALUES (?, ?, ?)", (api_url, error_message, retry_attempts))
+    conn.commit()
+    conn.close()
 
 def log_response_size(api_url, response_size):
-    execute_query("INSERT INTO api_response_size (url, response_size) VALUES (?, ?)", (api_url, response_size))
+    """Log the size of an API response."""
+    conn = sqlite3.connect("cache.db")
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO api_response_size (url, response_size) VALUES (?, ?)", (api_url, response_size))
+    conn.commit()
+    conn.close()
+
+def log_url_access(api_url):
+    """Log the number of times an API URL is accessed."""
+    conn = sqlite3.connect("cache.db")
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO api_url_access_count (url, access_count) VALUES (?, 1)
+        ON CONFLICT(url) DO UPDATE SET access_count = access_count + 1
+    """, (api_url,))
+    conn.commit()
+    conn.close()
 
 def get_cached_response(api_url, cache_expiry=86400):
     """Retrieve cached response if available and not expired."""
@@ -98,19 +123,17 @@ def get_cached_response(api_url, cache_expiry=86400):
 
 def cache_response(api_url, response):
     """Cache API response."""
-    execute_query("REPLACE INTO api_cache (url_hash, response, timestamp) VALUES (?, ?, CURRENT_TIMESTAMP)", (hashlib.md5(api_url.encode()).hexdigest(), json.dumps(response)))
-
-def delete_expired_cache(cache_expiry=86400):
-    """Delete expired cache entries efficiently."""
-    execute_query("DELETE FROM api_cache WHERE timestamp < datetime('now', ?)", (f'-{cache_expiry} seconds',))
-    logging.info("Expired cache entries removed.")
-
-def log_api_call():
-    execute_query("INSERT INTO api_call_count DEFAULT VALUES")
+    conn = sqlite3.connect("cache.db")
+    cursor = conn.cursor()
+    url_hash = hashlib.md5(api_url.encode()).hexdigest()
+    cursor.execute("REPLACE INTO api_cache (url_hash, response, timestamp) VALUES (?, ?, CURRENT_TIMESTAMP)", (url_hash, json.dumps(response)))
+    conn.commit()
+    conn.close()
 
 def fetch_data(api_url, retries=3, backoff_factor=1):
     """Fetch data from the given API URL with retry mechanism and return the JSON response."""
     logging.info(f"Fetching data from {api_url}")
+    log_url_access(api_url)
     cached_data = get_cached_response(api_url)
     if cached_data:
         logging.info("Using cached data")
@@ -128,7 +151,6 @@ def fetch_data(api_url, retries=3, backoff_factor=1):
                 logging.info("Data fetched successfully")
                 json_data = response.json()
                 cache_response(api_url, json_data)
-                log_api_call()
                 log_successful_request(api_url)
                 log_response_size(api_url, len(response.content))
                 return json_data
