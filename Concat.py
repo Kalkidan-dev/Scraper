@@ -26,6 +26,14 @@ def create_cache_table():
     conn.commit()
     conn.close()
 
+def log_api_call():
+    """Log an API call to track usage."""
+    conn = sqlite3.connect("cache.db")
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO api_call_count DEFAULT VALUES")
+    conn.commit()
+    conn.close()
+
 def clear_old_cache(expiry_time=86400):
     """Remove cache entries older than the expiry time."""
     conn = sqlite3.connect("cache.db")
@@ -77,6 +85,7 @@ def fetch_data(api_url, retries=3, backoff_factor=1):
                 logging.info("Data fetched successfully")
                 json_data = response.json()
                 cache_response(api_url, json_data)
+                log_api_call()
                 return json_data
             else:
                 logging.error(f"Failed to fetch data. Status code: {response.status_code}")
