@@ -4,6 +4,7 @@ import sqlite3
 import json
 import hashlib
 import time
+import os
 
 def create_cache_table():
     """Create necessary cache tables if they don't exist."""
@@ -68,6 +69,14 @@ def create_cache_table():
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     """)
+    conn.commit()
+    conn.close()
+
+def clear_old_cache(expiry_time=86400):
+    """Remove cache entries older than the expiry time."""
+    conn = sqlite3.connect("cache.db")
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM api_cache WHERE timestamp < datetime('now', '-{} seconds')".format(expiry_time))
     conn.commit()
     conn.close()
 
