@@ -60,6 +60,22 @@ def create_cache_table():
             access_count INTEGER DEFAULT 0
         )
     """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS api_error_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            url TEXT,
+            error_message TEXT,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+def log_error(api_url, error_message):
+    """Log API errors in a dedicated table."""
+    conn = sqlite3.connect("cache.db")
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO api_error_log (url, error_message) VALUES (?, ?)", (api_url, error_message))
     conn.commit()
     conn.close()
 
@@ -157,10 +173,12 @@ def fetch_data(api_url, retries=3, backoff_factor=1):
             else:
                 logging.error(f"Failed to fetch data. Status code: {response.status_code}")
                 log_failed_request(api_url, f"Status code: {response.status_code}", attempt + 1)
+                log_error(api_url, f"Status code: {response.status_code}")
                 return None
         except requests.RequestException as e:
             logging.error(f"Attempt {attempt + 1} failed: {e}")
             log_failed_request(api_url, str(e), attempt + 1)
+            log_error(api_url, str(e))
             time.sleep(backoff_factor * (2 ** attempt))
     
     logging.error("Max retries reached. Unable to fetch data.")
