@@ -207,15 +207,81 @@ def get_cached_response(api_url):
     return None
 
 
+
 def save_to_file(data, filename="output.json"):
     """Save processed data to a JSON file."""
     with open(filename, "w") as f:
         json.dump(data, f, indent=4)
     logging.info(f"Data saved to {filename}")
+def create_log_table():
+    """Create a table to log API requests if it doesn't exist."""
+    conn = sqlite3.connect("cache.db")
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS api_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            url TEXT,
+            status_code INTEGER,
+            response_time REAL,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+def log_api_request(api_url, status_code, response_time):
+    """Log API request details into the database."""
+    conn = sqlite3.connect("cache.db")
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO api_log (url, status_code, response_time) 
+        VALUES (?, ?, ?)
+    """, (api_url, status_code, response_time))
+    conn.commit()
+    conn.close()
+
+def fetch_data(api_url, retries=3, backoff_factor=1):
+    """Fetch data from the given API URL with retry mechanism, rate limiting, and caching."""
+    logging.info(f"Fetching data from {api_url}")
+    
+    if not check_rate_limit():
+        logging.error("Rate limit exceeded. Try again later.")
+        return None
+
+    cached_data = get_cached_response(api_url)
+    if cached_data:
+        logging.info("Using cached data")
+        return cached_data
+
+    for attempt in range(retries):
+        try:
+            start_time = time.time()
+            response = requests.get(api_url, timeout=10)
+            duration = time.time() - start_time
+            logging.info(f"Request completed in {duration:.2f} seconds")
+
+            log_api_request(api_url, response.status_code, duration)
+
+            if response.status_code == 200:
+                logging.info("Data fetched successfully")
+                json_data = response.json()
+                cache_response(api_url, json_data)
+                log_api_call()
+                return json_data
+            else:
+                logging.error(f"Failed to fetch data. Status code: {response.status_code}")
+                return None
+        except requests.RequestException as e:
+            logging.error(f"Attempt {attempt + 1} failed: {e}")
+            time.sleep(backoff_factor * (2 ** attempt))
+
+    logging.error("Max retries reached. Unable to fetch data.")
+    return None
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     create_cache_table()
+    create_log_table()  # Initialize log table
     url = "https://api.example.com/data"
     raw_data = fetch_data(url)
     processed_data = process_data(raw_data)
