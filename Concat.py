@@ -103,6 +103,56 @@ def process_data(data):
         return {key: value for key, value in data.items() if value}
     return {}
 
+def check_rate_limit(max_calls=100, time_window=3600):
+    """Check if the API call rate has been exceeded."""
+    conn = sqlite3.connect("cache.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT COUNT(*) FROM api_call_count WHERE timestamp > datetime('now', '-{} seconds')".format(time_window))
+    call_count = cursor.fetchone()[0]
+    conn.close()
+
+    if call_count >= max_calls:
+        logging.warning(f"Rate limit exceeded: {call_count} requests in {time_window} seconds.")
+        return False
+    return True
+
+def fetch_data(api_url, retries=3, backoff_factor=1):
+    """Fetch data from the given API URL with retry mechanism, rate limiting, and caching."""
+    logging.info(f"Fetching data from {api_url}")
+    
+    if not check_rate_limit():
+        logging.error("Rate limit exceeded. Try again later.")
+        return None
+
+    cached_data = get_cached_response(api_url)
+    if cached_data:
+        logging.info("Using cached data")
+        return cached_data
+
+    for attempt in range(retries):
+        try:
+            start_time = time.time()
+            response = requests.get(api_url, timeout=10)
+            duration = time.time() - start_time
+            logging.info(f"Request completed in {duration:.2f} seconds")
+
+            if response.status_code == 200:
+                logging.info("Data fetched successfully")
+                json_data = response.json()
+                cache_response(api_url, json_data)
+                log_api_call()
+                return json_data
+            else:
+                logging.error(f"Failed to fetch data. Status code: {response.status_code}")
+                return None
+        except requests.RequestException as e:
+            logging.error(f"Attempt {attempt + 1} failed: {e}")
+            time.sleep(backoff_factor * (2 ** attempt))
+
+    logging.error("Max retries reached. Unable to fetch data.")
+    return None
+
+
 def save_to_file(data, filename="output.json"):
     """Save processed data to a JSON file."""
     with open(filename, "w") as f:
