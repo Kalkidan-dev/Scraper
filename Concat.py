@@ -152,6 +152,30 @@ def fetch_data(api_url, retries=3, backoff_factor=1):
     logging.error("Max retries reached. Unable to fetch data.")
     return None
 
+def create_cache_table():
+    """Create necessary cache tables if they don't exist and clear old cache entries."""
+    conn = sqlite3.connect("cache.db")
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS api_cache (
+            url_hash TEXT PRIMARY KEY,
+            response TEXT,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS api_call_count (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+    # Clear expired cache entries on startup
+    logging.info("Cleaning up expired cache entries...")
+    clear_old_cache()
+
 
 def save_to_file(data, filename="output.json"):
     """Save processed data to a JSON file."""
