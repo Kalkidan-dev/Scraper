@@ -176,6 +176,36 @@ def create_cache_table():
     logging.info("Cleaning up expired cache entries...")
     clear_old_cache()
 
+def get_cache_expiry():
+    """Retrieve cache expiry time from environment variable or default to 24 hours."""
+    return int(os.getenv("CACHE_EXPIRY", 86400))  # Default to 24 hours
+
+def clear_old_cache():
+    """Remove cache entries older than the expiry time."""
+    expiry_time = get_cache_expiry()
+    conn = sqlite3.connect("cache.db")
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM api_cache WHERE timestamp < datetime('now', '-{} seconds')".format(expiry_time))
+    conn.commit()
+    conn.close()
+
+def get_cached_response(api_url):
+    """Retrieve cached response if available and not expired."""
+    expiry_time = get_cache_expiry()
+    conn = sqlite3.connect("cache.db")
+    cursor = conn.cursor()
+    url_hash = hashlib.md5(api_url.encode()).hexdigest()
+    cursor.execute("SELECT response, timestamp FROM api_cache WHERE url_hash = ?", (url_hash,))
+    row = cursor.fetchone()
+    conn.close()
+
+    if row:
+        cached_time = time.mktime(time.strptime(row[1], "%Y-%m-%d %H:%M:%S"))
+        if time.time() - cached_time < expiry_time:
+            return json.loads(row[0])
+    
+    return None
+
 
 def save_to_file(data, filename="output.json"):
     """Save processed data to a JSON file."""
