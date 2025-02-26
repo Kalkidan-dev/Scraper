@@ -30,6 +30,15 @@ def create_cache_table():
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS request_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            url TEXT,
+            status_code INTEGER,
+            response_time REAL,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
     conn.commit()
     conn.close()
 
@@ -40,6 +49,32 @@ def log_cache_status(status_type):
     cursor.execute("INSERT INTO cache_stats (type) VALUES (?)", (status_type,))
     conn.commit()
     conn.close()
+
+def log_request(api_url, status_code, response_time):
+    """Log API request details."""
+    conn = sqlite3.connect("cache.db")
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO request_logs (url, status_code, response_time) VALUES (?, ?, ?)", (api_url, status_code, response_time))
+    conn.commit()
+    conn.close()
+
+def get_cache_summary():
+    """Retrieve cache statistics summary."""
+    conn = sqlite3.connect("cache.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT type, COUNT(*) FROM cache_stats GROUP BY type")
+    stats = cursor.fetchall()
+    conn.close()
+    return {row[0]: row[1] for row in stats}
+
+def get_request_logs():
+    """Retrieve API request logs."""
+    conn = sqlite3.connect("cache.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM request_logs ORDER BY timestamp DESC LIMIT 10")
+    logs = cursor.fetchall()
+    conn.close()
+    return logs
 
 def clear_old_cache(expiry_time=86400):
     """Remove cache entries older than the expiry time."""
@@ -89,6 +124,7 @@ def fetch_data(api_url, retries=3, backoff_factor=1):
             response = requests.get(api_url, timeout=10)
             duration = time.time() - start_time
             logging.info(f"Request completed in {duration:.2f} seconds")
+            log_request(api_url, response.status_code, duration)
             
             if response.status_code == 200:
                 logging.info("Data fetched successfully")
@@ -124,3 +160,7 @@ if __name__ == "__main__":
     raw_data = fetch_data(url)
     processed_data = process_data(raw_data)
     save_to_file(processed_data)
+    cache_summary = get_cache_summary()
+    request_logs = get_request_logs()
+    logging.info(f"Cache Summary: {cache_summary}")
+    logging.info(f"Recent API Request Logs: {request_logs}")
