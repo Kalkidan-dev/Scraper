@@ -39,6 +39,13 @@ def create_cache_table():
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS error_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            error_message TEXT,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
     conn.commit()
     conn.close()
 
@@ -58,6 +65,14 @@ def log_request(api_url, status_code, response_time):
     conn.commit()
     conn.close()
 
+def log_error(error_message):
+    """Log errors to the database."""
+    conn = sqlite3.connect("cache.db")
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO error_logs (error_message) VALUES (?)", (error_message,))
+    conn.commit()
+    conn.close()
+
 def get_cache_summary():
     """Retrieve cache statistics summary."""
     conn = sqlite3.connect("cache.db")
@@ -72,6 +87,15 @@ def get_request_logs():
     conn = sqlite3.connect("cache.db")
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM request_logs ORDER BY timestamp DESC LIMIT 10")
+    logs = cursor.fetchall()
+    conn.close()
+    return logs
+
+def get_error_logs():
+    """Retrieve error logs."""
+    conn = sqlite3.connect("cache.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM error_logs ORDER BY timestamp DESC LIMIT 10")
     logs = cursor.fetchall()
     conn.close()
     return logs
@@ -135,32 +159,23 @@ def fetch_data(api_url, retries=3, backoff_factor=1):
                 logging.error(f"Failed to fetch data. Status code: {response.status_code}")
                 return None
         except requests.RequestException as e:
-            logging.error(f"Attempt {attempt + 1} failed: {e}")
+            error_message = f"Attempt {attempt + 1} failed: {e}"
+            logging.error(error_message)
+            log_error(error_message)
             time.sleep(backoff_factor * (2 ** attempt))
     
     logging.error("Max retries reached. Unable to fetch data.")
     return None
 
-def process_data(data):
-    """Process the fetched data and return meaningful results."""
-    if data:
-        return {key: value for key, value in data.items() if value}
-    return {}
-
-def save_to_file(data, filename="output.json"):
-    """Save processed data to a JSON file."""
-    with open(filename, "w") as f:
-        json.dump(data, f, indent=4)
-    logging.info(f"Data saved to {filename}")
-
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     create_cache_table()
+    clear_old_cache()  # Automatically clear old cache on startup
     url = "https://api.example.com/data"
     raw_data = fetch_data(url)
-    processed_data = process_data(raw_data)
-    save_to_file(processed_data)
     cache_summary = get_cache_summary()
     request_logs = get_request_logs()
+    error_logs = get_error_logs()
     logging.info(f"Cache Summary: {cache_summary}")
     logging.info(f"Recent API Request Logs: {request_logs}")
+    logging.info(f"Recent Error Logs: {error_logs}")
