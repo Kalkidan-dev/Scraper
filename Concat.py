@@ -46,8 +46,39 @@ def create_cache_table():
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS performance_metrics (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            api_url TEXT,
+            avg_response_time REAL,
+            last_accessed DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
     conn.commit()
     conn.close()
+
+def log_performance(api_url, response_time):
+    """Log API performance metrics."""
+    conn = sqlite3.connect("cache.db")
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO performance_metrics (api_url, avg_response_time) 
+        VALUES (?, ?) 
+        ON CONFLICT(api_url) DO UPDATE SET 
+        avg_response_time = (avg_response_time + ?) / 2, 
+        last_accessed = CURRENT_TIMESTAMP
+    """, (api_url, response_time, response_time))
+    conn.commit()
+    conn.close()
+
+def get_performance_metrics():
+    """Retrieve API performance metrics."""
+    conn = sqlite3.connect("cache.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM performance_metrics ORDER BY last_accessed DESC LIMIT 5")
+    metrics = cursor.fetchall()
+    conn.close()
+    return metrics
 
 def log_cache_status(status_type):
     """Log cache hit or miss."""
@@ -149,6 +180,7 @@ def fetch_data(api_url, retries=3, backoff_factor=1):
             duration = time.time() - start_time
             logging.info(f"Request completed in {duration:.2f} seconds")
             log_request(api_url, response.status_code, duration)
+            log_performance(api_url, duration)
             
             if response.status_code == 200:
                 logging.info("Data fetched successfully")
@@ -166,16 +198,3 @@ def fetch_data(api_url, retries=3, backoff_factor=1):
     
     logging.error("Max retries reached. Unable to fetch data.")
     return None
-
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
-    create_cache_table()
-    clear_old_cache()  # Automatically clear old cache on startup
-    url = "https://api.example.com/data"
-    raw_data = fetch_data(url)
-    cache_summary = get_cache_summary()
-    request_logs = get_request_logs()
-    error_logs = get_error_logs()
-    logging.info(f"Cache Summary: {cache_summary}")
-    logging.info(f"Recent API Request Logs: {request_logs}")
-    logging.info(f"Recent Error Logs: {error_logs}")
