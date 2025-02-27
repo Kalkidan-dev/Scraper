@@ -110,6 +110,14 @@ def clear_old_cache(expiry_time=86400):
     conn.commit()
     conn.close()
 
+def clear_all_cache():
+    """Remove all cache entries."""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM api_cache")
+    conn.commit()
+    conn.close()
+
 def get_cached_response(api_url, cache_expiry=86400):
     """Retrieve cached response if available and not expired."""
     conn = sqlite3.connect(DB_PATH)
@@ -176,6 +184,7 @@ def fetch_data(api_url, retries=3):
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     create_cache_table()
+    clear_all_cache()  # Ensure clean cache at startup
     clear_old_cache()  # Automatically clear old cache on startup
     url = "https://api.example.com/data"
     raw_data = fetch_data(url)
