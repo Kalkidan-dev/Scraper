@@ -24,6 +24,8 @@ def create_cache_table():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             url TEXT,
             count INTEGER DEFAULT 1,
+            total_response_time REAL DEFAULT 0,
+            average_response_time REAL DEFAULT 0,
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     """)
@@ -65,8 +67,18 @@ def log_request(api_url, status_code, response_time):
     """Log API request details."""
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    cursor.execute("INSERT INTO request_logs (url, status_code, response_time) VALUES (?, ?, ?)", (api_url, status_code, response_time))
-    cursor.execute("INSERT INTO api_call_count (url, count) VALUES (?, 1) ON CONFLICT(url) DO UPDATE SET count = count + 1", (api_url,))
+    cursor.execute("""
+        INSERT INTO request_logs (url, status_code, response_time) 
+        VALUES (?, ?, ?)
+    """, (api_url, status_code, response_time))
+    cursor.execute("""
+        INSERT INTO api_call_count (url, count, total_response_time, average_response_time) 
+        VALUES (?, 1, ?, ?) 
+        ON CONFLICT(url) DO UPDATE 
+        SET count = count + 1, 
+            total_response_time = total_response_time + ?, 
+            average_response_time = total_response_time / count
+    """, (api_url, response_time, response_time, response_time))
     conn.commit()
     conn.close()
 
@@ -109,7 +121,7 @@ def get_most_requested_urls(limit=5):
     """Retrieve the most frequently requested API URLs."""
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    cursor.execute("SELECT url, count FROM api_call_count ORDER BY count DESC LIMIT ?", (limit,))
+    cursor.execute("SELECT url, count, average_response_time FROM api_call_count ORDER BY count DESC LIMIT ?", (limit,))
     urls = cursor.fetchall()
     conn.close()
     return urls
