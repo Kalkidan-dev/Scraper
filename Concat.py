@@ -22,6 +22,8 @@ def create_cache_table():
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS api_call_count (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            url TEXT,
+            count INTEGER DEFAULT 1,
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     """)
@@ -64,6 +66,7 @@ def log_request(api_url, status_code, response_time):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("INSERT INTO request_logs (url, status_code, response_time) VALUES (?, ?, ?)", (api_url, status_code, response_time))
+    cursor.execute("INSERT INTO api_call_count (url, count) VALUES (?, 1) ON CONFLICT(url) DO UPDATE SET count = count + 1", (api_url,))
     conn.commit()
     conn.close()
 
@@ -101,6 +104,15 @@ def get_error_logs():
     logs = cursor.fetchall()
     conn.close()
     return logs
+
+def get_most_requested_urls(limit=5):
+    """Retrieve the most frequently requested API URLs."""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT url, count FROM api_call_count ORDER BY count DESC LIMIT ?", (limit,))
+    urls = cursor.fetchall()
+    conn.close()
+    return urls
 
 def clear_old_cache(expiry_time=86400):
     """Remove cache entries older than the expiry time."""
@@ -180,17 +192,3 @@ def fetch_data(api_url, retries=3):
     
     logging.error("Max retries reached. Unable to fetch data.")
     return None
-
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
-    create_cache_table()
-    clear_all_cache()  # Ensure clean cache at startup
-    clear_old_cache()  # Automatically clear old cache on startup
-    url = "https://api.example.com/data"
-    raw_data = fetch_data(url)
-    cache_summary = get_cache_summary()
-    request_logs = get_request_logs()
-    error_logs = get_error_logs()
-    logging.info(f"Cache Summary: {cache_summary}")
-    logging.info(f"Recent API Request Logs: {request_logs}")
-    logging.info(f"Recent Error Logs: {error_logs}")
