@@ -6,9 +6,11 @@ import hashlib
 import time
 import os
 
+DB_PATH = os.getenv("CACHE_DB_PATH", "cache.db")
+
 def create_cache_table():
     """Create necessary cache tables if they don't exist."""
-    conn = sqlite3.connect("cache.db")
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS api_cache (
@@ -51,7 +53,7 @@ def create_cache_table():
 
 def log_cache_status(status_type):
     """Log cache hit or miss."""
-    conn = sqlite3.connect("cache.db")
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("INSERT INTO cache_stats (type) VALUES (?)", (status_type,))
     conn.commit()
@@ -59,7 +61,7 @@ def log_cache_status(status_type):
 
 def log_request(api_url, status_code, response_time):
     """Log API request details."""
-    conn = sqlite3.connect("cache.db")
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("INSERT INTO request_logs (url, status_code, response_time) VALUES (?, ?, ?)", (api_url, status_code, response_time))
     conn.commit()
@@ -67,7 +69,7 @@ def log_request(api_url, status_code, response_time):
 
 def log_error(error_message):
     """Log errors to the database."""
-    conn = sqlite3.connect("cache.db")
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("INSERT INTO error_logs (error_message) VALUES (?)", (error_message,))
     conn.commit()
@@ -75,7 +77,7 @@ def log_error(error_message):
 
 def get_cache_summary():
     """Retrieve cache statistics summary."""
-    conn = sqlite3.connect("cache.db")
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("SELECT type, COUNT(*) FROM cache_stats GROUP BY type")
     stats = cursor.fetchall()
@@ -84,7 +86,7 @@ def get_cache_summary():
 
 def get_request_logs():
     """Retrieve API request logs."""
-    conn = sqlite3.connect("cache.db")
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM request_logs ORDER BY timestamp DESC LIMIT 10")
     logs = cursor.fetchall()
@@ -93,7 +95,7 @@ def get_request_logs():
 
 def get_error_logs():
     """Retrieve error logs."""
-    conn = sqlite3.connect("cache.db")
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM error_logs ORDER BY timestamp DESC LIMIT 10")
     logs = cursor.fetchall()
@@ -102,7 +104,7 @@ def get_error_logs():
 
 def clear_old_cache(expiry_time=86400):
     """Remove cache entries older than the expiry time."""
-    conn = sqlite3.connect("cache.db")
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("DELETE FROM api_cache WHERE timestamp < datetime('now', '-{} seconds')".format(expiry_time))
     conn.commit()
@@ -110,7 +112,7 @@ def clear_old_cache(expiry_time=86400):
 
 def get_cached_response(api_url, cache_expiry=86400):
     """Retrieve cached response if available and not expired."""
-    conn = sqlite3.connect("cache.db")
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     url_hash = hashlib.md5(api_url.encode()).hexdigest()
     cursor.execute("SELECT response, timestamp FROM api_cache WHERE url_hash = ?", (url_hash,))
@@ -127,7 +129,7 @@ def get_cached_response(api_url, cache_expiry=86400):
 
 def cache_response(api_url, response):
     """Cache API response."""
-    conn = sqlite3.connect("cache.db")
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     url_hash = hashlib.md5(api_url.encode()).hexdigest()
     cursor.execute("REPLACE INTO api_cache (url_hash, response, timestamp) VALUES (?, ?, CURRENT_TIMESTAMP)", (url_hash, json.dumps(response)))
