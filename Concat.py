@@ -108,6 +108,15 @@ def get_request_logs():
     conn.close()
     return logs
 
+def get_recent_requests(limit=10):
+    """Retrieve the most recent API requests."""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT url, status_code, response_time, timestamp FROM request_logs ORDER BY timestamp DESC LIMIT ?", (limit,))
+    logs = cursor.fetchall()
+    conn.close()
+    return logs
+
 def get_error_logs():
     """Retrieve error logs."""
     conn = sqlite3.connect(DB_PATH)
