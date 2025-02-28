@@ -190,6 +190,53 @@ def exponential_backoff(attempt, base_delay=1, max_delay=60):
     """Calculate exponential backoff time."""
     return min(base_delay * (2 ** attempt), max_delay)
 
+def monitor_response_time_distribution():
+    """Monitors and logs the distribution of response times."""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    
+    # Create the table for storing response time distribution if it doesn't exist
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS response_time_distribution (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            url TEXT,
+            response_time REAL,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+def log_response_time_distribution(api_url, response_time):
+    """Log each API response time to the response_time_distribution table."""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO response_time_distribution (url, response_time)
+        VALUES (?, ?)
+    """, (api_url, response_time))
+    conn.commit()
+    conn.close()
+
+def get_response_time_distribution():
+    """Retrieve the distribution of response times for analysis."""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    
+    # Get the response time distribution (grouped by response time range)
+    cursor.execute("""
+        SELECT url, 
+               COUNT(*) AS request_count, 
+               AVG(response_time) AS avg_response_time 
+        FROM response_time_distribution
+        GROUP BY url
+        ORDER BY avg_response_time DESC
+    """)
+    distribution = cursor.fetchall()
+    conn.close()
+    return distribution
+
+
 def fetch_data(api_url, retries=3):
     """Fetch data from the given API URL with retry mechanism and return the JSON response."""
     logging.info(f"Fetching data from {api_url}")
