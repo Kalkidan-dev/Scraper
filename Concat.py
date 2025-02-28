@@ -263,6 +263,19 @@ def log_request(api_url, status_code, response_time):
     conn.commit()
     conn.close()
 
+def get_response_time_summary():
+    """Retrieve summary of response time distribution."""
+    distribution = get_response_time_distribution()
+    
+    summary = []
+    for url, request_count, avg_response_time in distribution:
+        summary.append({
+            'url': url,
+            'request_count': request_count,
+            'avg_response_time': avg_response_time
+        })
+    return summary
+
 
 def fetch_data(api_url, retries=3):
     """Fetch data from the given API URL with retry mechanism and return the JSON response."""
