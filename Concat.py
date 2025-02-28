@@ -276,6 +276,12 @@ def get_response_time_summary():
         })
     return summary
 
+@app.route("/api/response-time-distribution")
+def response_time_distribution():
+    """Retrieve the response time distribution summary."""
+    summary = get_response_time_summary()
+    return jsonify(summary)
+
 
 def fetch_data(api_url, retries=3):
     """Fetch data from the given API URL with retry mechanism and return the JSON response."""
