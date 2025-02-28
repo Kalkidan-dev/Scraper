@@ -236,6 +236,33 @@ def get_response_time_distribution():
     conn.close()
     return distribution
 
+def log_request(api_url, status_code, response_time):
+    """Log API request details and response time distribution."""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    
+    # Insert request log
+    cursor.execute("""
+        INSERT INTO request_logs (url, status_code, response_time) 
+        VALUES (?, ?, ?)
+    """, (api_url, status_code, response_time))
+    
+    # Insert into api_call_count for statistics
+    cursor.execute("""
+        INSERT INTO api_call_count (url, count, total_response_time, average_response_time) 
+        VALUES (?, 1, ?, ?) 
+        ON CONFLICT(url) DO UPDATE 
+        SET count = count + 1, 
+            total_response_time = total_response_time + ?, 
+            average_response_time = total_response_time / count
+    """, (api_url, response_time, response_time, response_time))
+    
+    # Log response time distribution
+    log_response_time_distribution(api_url, response_time)
+
+    conn.commit()
+    conn.close()
+
 
 def fetch_data(api_url, retries=3):
     """Fetch data from the given API URL with retry mechanism and return the JSON response."""
