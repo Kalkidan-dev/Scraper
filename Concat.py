@@ -276,11 +276,21 @@ def get_response_time_summary():
         })
     return summary
 
-@app.route("/api/response-time-distribution")
-def response_time_distribution():
-    """Retrieve the response time distribution summary."""
-    summary = get_response_time_summary()
-    return jsonify(summary)
+def initialize_rate_limit_table():
+    """Create a table to track API requests per user."""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS rate_limit (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            ip_address TEXT,
+            request_count INTEGER DEFAULT 0,
+            last_request_time DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    conn.commit()
+    conn.close()
+
 
 
 def fetch_data(api_url, retries=3):
