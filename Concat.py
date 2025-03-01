@@ -14,6 +14,21 @@ DB_PATH = os.getenv("CACHE_DB_PATH", "cache.db")
 RATE_LIMIT = 100  # Max requests allowed per time window
 TIME_WINDOW = timedelta(minutes=1)  # Time window duration
 
+def initialize_alert_table():
+    """Create a table to store admin alerts."""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS admin_alerts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            alert_message TEXT,
+            error_count INTEGER,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    conn.commit()
+    conn.close()
+
 
 @app.before_request
 def enforce_rate_limit():
