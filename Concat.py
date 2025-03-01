@@ -29,6 +29,37 @@ def initialize_alert_table():
     conn.commit()
     conn.close()
 
+ALERT_THRESHOLD = 5  # Number of errors to trigger an alert
+TIME_WINDOW_MINUTES = 10  # Time frame to check errors
+
+def check_and_trigger_alert():
+    """Check recent errors and trigger an alert if the threshold is exceeded."""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    # Get error count in the last TIME_WINDOW_MINUTES
+    cursor.execute("""
+        SELECT COUNT(*) FROM error_logs 
+        WHERE timestamp > datetime('now', '-{} minutes')
+    """.format(TIME_WINDOW_MINUTES))
+    
+    error_count = cursor.fetchone()[0]
+    
+    if error_count >= ALERT_THRESHOLD:
+        alert_message = f"High error rate detected: {error_count} errors in the last {TIME_WINDOW_MINUTES} minutes."
+
+        # Log the alert
+        cursor.execute("""
+            INSERT INTO admin_alerts (alert_message, error_count) 
+            VALUES (?, ?)
+        """, (alert_message, error_count))
+        
+        logging.warning(alert_message)  # Log alert
+        print(alert_message)  # Optional: Print alert to console
+
+    conn.commit()
+    conn.close()
+
 
 @app.before_request
 def enforce_rate_limit():
