@@ -6,12 +6,22 @@ import hashlib
 import time
 import os
 from datetime import datetime, timedelta
+from flask import request, jsonify
 
 
 DB_PATH = os.getenv("CACHE_DB_PATH", "cache.db")
 
 RATE_LIMIT = 100  # Max requests allowed per time window
 TIME_WINDOW = timedelta(minutes=1)  # Time window duration
+
+
+@app.before_request
+def enforce_rate_limit():
+    """Check the rate limit before processing a request."""
+    ip_address = request.remote_addr
+    if not check_rate_limit(ip_address):
+        return jsonify({"error": "Rate limit exceeded. Try again later."}), 429
+
 
 def check_rate_limit(ip_address):
     """Check if the IP address has exceeded the rate limit."""
