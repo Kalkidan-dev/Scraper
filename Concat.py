@@ -5,8 +5,58 @@ import json
 import hashlib
 import time
 import os
+from datetime import datetime, timedelta
+
 
 DB_PATH = os.getenv("CACHE_DB_PATH", "cache.db")
+
+RATE_LIMIT = 100  # Max requests allowed per time window
+TIME_WINDOW = timedelta(minutes=1)  # Time window duration
+
+def check_rate_limit(ip_address):
+    """Check if the IP address has exceeded the rate limit."""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    # Get the last request count and time
+    cursor.execute("""
+        SELECT request_count, last_request_time FROM rate_limit 
+        WHERE ip_address = ?
+    """, (ip_address,))
+    result = cursor.fetchone()
+
+    now = datetime.utcnow()
+    
+    if result:
+        request_count, last_request_time = result
+        last_request_time = datetime.strptime(last_request_time, "%Y-%m-%d %H:%M:%S")
+
+        # Reset the count if outside the time window
+        if now - last_request_time > TIME_WINDOW:
+            cursor.execute("""
+                UPDATE rate_limit SET request_count = 1, last_request_time = ? 
+                WHERE ip_address = ?
+            """, (now, ip_address))
+        else:
+            # Deny request if limit is exceeded
+            if request_count >= RATE_LIMIT:
+                conn.close()
+                return False
+
+            cursor.execute("""
+                UPDATE rate_limit SET request_count = request_count + 1 
+                WHERE ip_address = ?
+            """, (ip_address,))
+    else:
+        # First request from this IP
+        cursor.execute("""
+            INSERT INTO rate_limit (ip_address, request_count, last_request_time) 
+            VALUES (?, 1, ?)
+        """, (ip_address, now))
+
+    conn.commit()
+    conn.close()
+    return True
 
 def create_cache_table():
     """Create necessary cache tables if they don't exist."""
