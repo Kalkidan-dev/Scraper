@@ -143,6 +143,20 @@ def fetch_data(api_url, client_ip, retries=3):
     logging.error("Max retries reached. Unable to fetch data.")
     return None
 
+def initialize_alert_table():
+    """Create a table to store error alerts."""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS error_alerts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            message TEXT,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    conn.commit()
+    conn.close()
+
 
 @app.before_request
 def enforce_rate_limit():
