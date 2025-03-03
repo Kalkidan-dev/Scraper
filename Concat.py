@@ -60,6 +60,20 @@ def check_and_trigger_alert():
     conn.commit()
     conn.close()
 
+def initialize_rate_limit_table():
+    """Create a table to track API request counts per IP."""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS rate_limit (
+            ip TEXT PRIMARY KEY,
+            count INTEGER DEFAULT 0,
+            last_request_time DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    conn.commit()
+    conn.close()
+
 
 @app.before_request
 def enforce_rate_limit():
