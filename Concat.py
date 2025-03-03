@@ -108,6 +108,41 @@ def check_rate_limit(ip_address):
     conn.close()
     return True  # Allow request
 
+def fetch_data(api_url, client_ip, retries=3):
+    """Fetch data from an API with rate-limiting enforcement."""
+    if not check_rate_limit(client_ip):
+        logging.error(f"Request blocked for IP: {client_ip} due to rate limit")
+        return {"error": "Rate limit exceeded. Please try again later."}
+
+    logging.info(f"Fetching data from {api_url} for IP: {client_ip}")
+    cached_data = get_cached_response(api_url)
+    if cached_data:
+        logging.info("Using cached data")
+        return cached_data
+
+    for attempt in range(retries):
+        try:
+            start_time = time.time()
+            response = requests.get(api_url, timeout=10)
+            duration = time.time() - start_time
+            logging.info(f"Request completed in {duration:.2f} seconds")
+            log_request(api_url, response.status_code, duration)
+
+            if response.status_code == 200:
+                json_data = response.json()
+                cache_response(api_url, json_data)
+                return json_data
+            else:
+                logging.error(f"Failed to fetch data. Status code: {response.status_code}")
+                return None
+        except requests.RequestException as e:
+            logging.error(f"Request failed: {e}")
+            log_error(str(e))
+            time.sleep(exponential_backoff(attempt))
+
+    logging.error("Max retries reached. Unable to fetch data.")
+    return None
+
 
 @app.before_request
 def enforce_rate_limit():
