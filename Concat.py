@@ -74,6 +74,40 @@ def initialize_rate_limit_table():
     conn.commit()
     conn.close()
 
+RATE_LIMIT = 100  # Max requests allowed
+TIME_WINDOW_SECONDS = 60  # Time frame in seconds
+
+def check_rate_limit(ip_address):
+    """Check if an IP has exceeded the allowed request limit."""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    # Fetch the request count and last request time
+    cursor.execute("SELECT count, last_request_time FROM rate_limit WHERE ip = ?", (ip_address,))
+    row = cursor.fetchone()
+
+    current_time = time.time()
+
+    if row:
+        request_count, last_request_time = row
+        last_request_timestamp = time.mktime(time.strptime(last_request_time, "%Y-%m-%d %H:%M:%S"))
+        
+        # Reset count if time window has passed
+        if current_time - last_request_timestamp > TIME_WINDOW_SECONDS:
+            cursor.execute("UPDATE rate_limit SET count = 1, last_request_time = CURRENT_TIMESTAMP WHERE ip = ?", (ip_address,))
+        elif request_count >= RATE_LIMIT:
+            conn.close()
+            logging.warning(f"Rate limit exceeded for IP: {ip_address}")
+            return False  # Block request
+        else:
+            cursor.execute("UPDATE rate_limit SET count = count + 1 WHERE ip = ?", (ip_address,))
+    else:
+        cursor.execute("INSERT INTO rate_limit (ip, count) VALUES (?, 1)", (ip_address,))
+
+    conn.commit()
+    conn.close()
+    return True  # Allow request
+
 
 @app.before_request
 def enforce_rate_limit():
