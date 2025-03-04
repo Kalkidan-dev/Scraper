@@ -2,44 +2,51 @@ import requests
 from bs4 import BeautifulSoup
 import csv
 
-URL = "http://quotes.toscrape.com"
-response = requests.get(URL)
+base_url = "http://quotes.toscrape.com"
+page_num = 1
+quotes_list = []
 
-tag_filter = "love"  # Filter quotes by this tag
+while True:
+    URL = f"{base_url}/page/{page_num}/"
+    response = requests.get(URL)
 
-if response.status_code == 200:
-    soup = BeautifulSoup(response.text, "html.parser")
-    quotes = soup.find_all("div", class_="quote")
+    if response.status_code == 200:
+        soup = BeautifulSoup(response.text, "html.parser")
+        quotes = soup.find_all("div", class_="quote")
 
-    filtered_quotes = []
-
-    for quote in quotes:
-        tags = [tag.get_text() for tag in quote.find_all("a", class_="tag")]
-        if tag_filter in tags:
+        for quote in quotes:
             text = quote.find("span", class_="text").get_text()
             author = quote.find("small", class_="author").get_text()
+            tags = [tag.get_text() for tag in quote.find_all("a", class_="tag")]
 
-            filtered_quotes.append({
+            quotes_list.append({
                 'text': text,
                 'author': author,
                 'tags': tags
             })
 
-    # Saving to a text file
-    with open("filtered_quotes.txt", "w") as file:
-        for quote in filtered_quotes:
-            file.write(f"Quote: {quote['text']}\nAuthor: {quote['author']}\nTags: {', '.join(quote['tags'])}\n\n")
+        next_page = soup.find("li", class_="next")
+        if next_page:
+            page_num += 1
+        else:
+            break
+    else:
+        print("Failed to retrieve the webpage.")
+        break
 
-    # Saving to a CSV file
-    with open("filtered_quotes.csv", "w", newline='', encoding='utf-8') as csvfile:
-        fieldnames = ['Quote', 'Author', 'Tags']
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+# Saving to a text file
+with open("all_quotes.txt", "w") as file:
+    for quote in quotes_list:
+        file.write(f"Quote: {quote['text']}\nAuthor: {quote['author']}\nTags: {', '.join(quote['tags'])}\n\n")
 
-        writer.writeheader()
+# Saving to a CSV file
+with open("all_quotes.csv", "w", newline='', encoding='utf-8') as csvfile:
+    fieldnames = ['Quote', 'Author', 'Tags']
+    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
-        for quote in filtered_quotes:
-            writer.writerow({'Quote': quote['text'], 'Author': quote['author'], 'Tags': ', '.join(quote['tags'])})
+    writer.writeheader()
 
-    print(f"Filtered quotes with the tag '{tag_filter}' have been saved to filtered_quotes.txt and filtered_quotes.csv.")
-else:
-    print("Failed to retrieve the webpage.")
+    for quote in quotes_list:
+        writer.writerow({'Quote': quote['text'], 'Author': quote['author'], 'Tags': ', '.join(quote['tags'])})
+
+print("All quotes have been saved to all_quotes.txt and all_quotes.csv.")
