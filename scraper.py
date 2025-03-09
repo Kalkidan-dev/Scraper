@@ -11,8 +11,8 @@ while True:
     URL = f"{base_url}/page/{page_num}/"
     
     try:
-        response = requests.get(URL, timeout=10)  # Set timeout to avoid hanging requests
-        response.raise_for_status()  # Raise HTTP errors
+        response = requests.get(URL, timeout=10)
+        response.raise_for_status()
     except requests.exceptions.RequestException as e:
         print(f"Error fetching {URL}: {e}")
         break
@@ -32,10 +32,24 @@ while True:
         author_link = quote.find("a")["href"] if quote.find("a") else None
         author_url = f"{base_url}{author_link}" if author_link else "N/A"
 
+        # Extract author birth details
+        birth_date, birth_place = "N/A", "N/A"
+        if author_link:
+            try:
+                author_response = requests.get(author_url, timeout=10)
+                author_response.raise_for_status()
+                author_soup = BeautifulSoup(author_response.text, "html.parser")
+                birth_date = author_soup.find("span", class_="author-born-date").get_text() if author_soup.find("span", class_="author-born-date") else "N/A"
+                birth_place = author_soup.find("span", class_="author-born-location").get_text() if author_soup.find("span", class_="author-born-location") else "N/A"
+            except requests.exceptions.RequestException as e:
+                print(f"Error fetching author details for {author}: {e}")
+
         quotes_list.append({
             'text': text,
             'author': author,
             'author_url': author_url,
+            'birth_date': birth_date,
+            'birth_place': birth_place,
             'tags': tags
         })
 
@@ -44,16 +58,16 @@ while True:
 # Saving to a text file
 with open("all_quotes.txt", "w", encoding="utf-8") as file:
     for quote in quotes_list:
-        file.write(f"Quote: {quote['text']}\nAuthor: {quote['author']}\nAuthor URL: {quote['author_url']}\nTags: {', '.join(quote['tags'])}\n\n")
+        file.write(f"Quote: {quote['text']}\nAuthor: {quote['author']}\nAuthor URL: {quote['author_url']}\nBirth Date: {quote['birth_date']}\nBirth Place: {quote['birth_place']}\nTags: {', '.join(quote['tags'])}\n\n")
 
 # Saving to a CSV file
 with open("all_quotes.csv", "w", newline='', encoding='utf-8') as csvfile:
-    fieldnames = ['Quote', 'Author', 'Author URL', 'Tags']
+    fieldnames = ['Quote', 'Author', 'Author URL', 'Birth Date', 'Birth Place', 'Tags']
     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
     writer.writeheader()
 
     for quote in quotes_list:
-        writer.writerow({'Quote': quote['text'], 'Author': quote['author'], 'Author URL': quote['author_url'], 'Tags': ', '.join(quote['tags'])})
+        writer.writerow({'Quote': quote['text'], 'Author': quote['author'], 'Author URL': quote['author_url'], 'Birth Date': quote['birth_date'], 'Birth Place': quote['birth_place'], 'Tags': ', '.join(quote['tags'])})
 
 # Saving to a JSON file
 with open("all_quotes.json", "w", encoding="utf-8") as jsonfile:
