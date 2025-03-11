@@ -4,6 +4,7 @@ import csv
 import json
 import sqlite3
 import concurrent.futures
+import time
 
 # Database setup
 conn = sqlite3.connect("quotes.db")
@@ -18,7 +19,8 @@ cursor.execute("""
         author_url TEXT,
         birth_date TEXT,
         birth_place TEXT,
-        tags TEXT
+        tags TEXT,
+        scrape_time TEXT
     )
 """)
 conn.commit()
@@ -61,6 +63,7 @@ while True:
             tags = [tag.get_text() for tag in quote.find_all("a", class_="tag")]
             author_link = quote.find("a")["href"] if quote.find("a") else None
             author_url = f"{base_url}{author_link}" if author_link else "N/A"
+            scrape_time = time.strftime("%Y-%m-%d %H:%M:%S")
             
             # Fetch author details concurrently
             if author_url != "N/A":
@@ -70,7 +73,8 @@ while True:
                 'text': text,
                 'author': author,
                 'author_url': author_url,
-                'tags': tags
+                'tags': tags,
+                'scrape_time': scrape_time
             }
             quotes_list.append(quote_data)
     
@@ -88,9 +92,9 @@ while True:
 # Insert data into SQLite
 for quote in quotes_list:
     cursor.execute("""
-        INSERT INTO quotes (text, author, author_url, birth_date, birth_place, tags)
-        VALUES (?, ?, ?, ?, ?, ?)
-    """, (quote['text'], quote['author'], quote['author_url'], quote['birth_date'], quote['birth_place'], ", ".join(quote['tags'])))
+        INSERT INTO quotes (text, author, author_url, birth_date, birth_place, tags, scrape_time)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    """, (quote['text'], quote['author'], quote['author_url'], quote['birth_date'], quote['birth_place'], ", ".join(quote['tags']), quote['scrape_time']))
     conn.commit()
 
 conn.close()
