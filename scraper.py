@@ -6,6 +6,9 @@ import sqlite3
 import concurrent.futures
 import time
 
+# Start time tracking
+start_time = time.time()
+
 # Database setup
 conn = sqlite3.connect("quotes.db")
 cursor = conn.cursor()
@@ -123,4 +126,8 @@ with open("all_quotes.csv", "w", newline="", encoding="utf-8") as csvfile:
 with open("quote_count.txt", "w") as countfile:
     countfile.write(f"Total Quotes Scraped: {len(quotes_list)}\n")
 
-print("Quotes saved to all_quotes.json, all_quotes.csv, quote_count.txt, and database.")
+# End time tracking and display execution time
+end_time = time.time()
+execution_time = end_time - start_time
+print(f"Quotes saved to all_quotes.json, all_quotes.csv, quote_count.txt, and database.")
+print(f"Total execution time: {execution_time:.2f} seconds")
