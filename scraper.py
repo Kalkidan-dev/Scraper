@@ -119,4 +119,8 @@ with open("all_quotes.csv", "w", newline="", encoding="utf-8") as csvfile:
     for quote in quotes_list:
         writer.writerow(quote)
 
-print("Quotes saved to all_quotes.json, all_quotes.csv, and database.")
+# Save quote count to a text file
+with open("quote_count.txt", "w") as countfile:
+    countfile.write(f"Total Quotes Scraped: {len(quotes_list)}\n")
+
+print("Quotes saved to all_quotes.json, all_quotes.csv, quote_count.txt, and database.")
