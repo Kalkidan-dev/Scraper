@@ -111,4 +111,12 @@ conn.close()
 with open("all_quotes.json", "w", encoding="utf-8") as jsonfile:
     json.dump(quotes_list, jsonfile, indent=4, ensure_ascii=False)
 
-print("Quotes saved to all_quotes.json and database.")
+# Save to CSV
+with open("all_quotes.csv", "w", newline="", encoding="utf-8") as csvfile:
+    fieldnames = ["text", "author", "author_url", "birth_date", "birth_place", "tags", "scrape_time"]
+    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+    writer.writeheader()
+    for quote in quotes_list:
+        writer.writerow(quote)
+
+print("Quotes saved to all_quotes.json, all_quotes.csv, and database.")
