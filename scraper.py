@@ -25,6 +25,11 @@ cursor.execute("""
 """)
 conn.commit()
 
+# Error logging setup
+def log_error(message):
+    with open("scraper_errors.log", "a") as log_file:
+        log_file.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} - {message}\n")
+
 base_url = "http://quotes.toscrape.com"
 page_num = 1
 quotes_list = []
@@ -38,7 +43,8 @@ def fetch_author_details(author_url):
         birth_date = author_soup.find("span", class_="author-born-date").get_text() if author_soup.find("span", class_="author-born-date") else "N/A"
         birth_place = author_soup.find("span", class_="author-born-location").get_text() if author_soup.find("span", class_="author-born-location") else "N/A"
         return birth_date, birth_place
-    except requests.exceptions.RequestException:
+    except requests.exceptions.RequestException as e:
+        log_error(f"Error fetching author details from {author_url}: {e}")
         return "N/A", "N/A"
 
 while True:
@@ -47,7 +53,9 @@ while True:
         response = requests.get(URL, timeout=10)
         response.raise_for_status()
     except requests.exceptions.RequestException as e:
-        print(f"Error fetching {URL}: {e}")
+        error_message = f"Error fetching {URL}: {e}"
+        print(error_message)
+        log_error(error_message)
         break
 
     soup = BeautifulSoup(response.text, "html.parser")
