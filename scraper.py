@@ -95,12 +95,14 @@ while True:
                 author_futures[author_url] = executor.submit(fetch_author_details, author_url)
             
             quote_data = {
-                'text': text,
-                'author': author,
-                'author_url': author_url,
-                'tags': tags,
-                'scrape_time': scrape_time
-            }
+                    'text': text,
+                    'author': author,
+                    'author_url': author_url,
+                    'tags': tags,
+                    'scrape_time': scrape_time,
+                    'sentiment': get_sentiment(text)  # New Sentiment Analysis
+}
+
             quotes_list.append(quote_data)
     
     # Retrieve author details after threading
