@@ -25,10 +25,12 @@ cursor.execute("""
         birth_date TEXT,
         birth_place TEXT,
         tags TEXT,
-        scrape_time TEXT
+        scrape_time TEXT,
+        sentiment TEXT  -- New Column
     )
 """)
 conn.commit()
+
 
 
 def get_sentiment(text):
