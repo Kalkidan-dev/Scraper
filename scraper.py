@@ -5,6 +5,8 @@ import json
 import sqlite3
 import concurrent.futures
 import time
+from textblob import TextBlob
+
 
 # Start time tracking
 start_time = time.time()
@@ -27,6 +29,18 @@ cursor.execute("""
     )
 """)
 conn.commit()
+
+
+def get_sentiment(text):
+    """Determine sentiment of a quote."""
+    analysis = TextBlob(text)
+    if analysis.sentiment.polarity > 0:
+        return "Positive"
+    elif analysis.sentiment.polarity < 0:
+        return "Negative"
+    else:
+        return "Neutral"
+
 
 # Error logging setup
 def log_error(message):
