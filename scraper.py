@@ -15,7 +15,7 @@ start_time = time.time()
 conn = sqlite3.connect("quotes.db")
 cursor = conn.cursor()
 
-# Create table if not exists
+# Create table if not exists (modified to include popularity)
 cursor.execute("""
     CREATE TABLE IF NOT EXISTS quotes (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -26,11 +26,11 @@ cursor.execute("""
         birth_place TEXT,
         tags TEXT,
         scrape_time TEXT,
-        sentiment TEXT  -- New Column
+        sentiment TEXT,  -- Sentiment Analysis
+        popularity INTEGER  -- New Column for Popularity
     )
 """)
 conn.commit()
-
 
 
 def get_sentiment(text):
@@ -42,6 +42,12 @@ def get_sentiment(text):
         return "Negative"
     else:
         return "Neutral"
+
+
+# Function to calculate popularity based on the number of tags
+def calculate_popularity(tags):
+    """Estimate popularity based on the number of tags."""
+    return len(tags)
 
 
 # Error logging setup
@@ -102,7 +108,8 @@ while True:
                     'author_url': author_url,
                     'tags': tags,
                     'scrape_time': scrape_time,
-                    'sentiment': get_sentiment(text)  # New Sentiment Analysis
+                    'sentiment': get_sentiment(text),  # Sentiment Analysis
+                    'popularity': calculate_popularity(tags)  # New Popularity Feature
 }
 
             quotes_list.append(quote_data)
@@ -121,9 +128,9 @@ while True:
 # Insert data into SQLite
 for quote in quotes_list:
     cursor.execute("""
-        INSERT INTO quotes (text, author, author_url, birth_date, birth_place, tags, scrape_time)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-    """, (quote['text'], quote['author'], quote['author_url'], quote['birth_date'], quote['birth_place'], ", ".join(quote['tags']), quote['scrape_time']))
+        INSERT INTO quotes (text, author, author_url, birth_date, birth_place, tags, scrape_time, sentiment, popularity)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (quote['text'], quote['author'], quote['author_url'], quote['birth_date'], quote['birth_place'], ", ".join(quote['tags']), quote['scrape_time'], quote['sentiment'], quote['popularity']))
     conn.commit()
 
 conn.close()
@@ -134,7 +141,7 @@ with open("all_quotes.json", "w", encoding="utf-8") as jsonfile:
 
 # Save to CSV
 with open("all_quotes.csv", "w", newline="", encoding="utf-8") as csvfile:
-    fieldnames = ["text", "author", "author_url", "birth_date", "birth_place", "tags", "scrape_time"]
+    fieldnames = ["text", "author", "author_url", "birth_date", "birth_place", "tags", "scrape_time", "sentiment", "popularity"]
     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
     writer.writeheader()
     for quote in quotes_list:
