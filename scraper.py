@@ -27,7 +27,8 @@ cursor.execute("""
         tags TEXT,
         scrape_time TEXT,
         sentiment TEXT,  -- New Column
-        length INTEGER  -- New Feature: Quote Length
+        length INTEGER,  -- New Feature: Quote Length
+        word_count INTEGER  -- New Feature: Word Count
     )
 """)
 conn.commit()
@@ -47,6 +48,11 @@ def get_sentiment(text):
 def get_quote_length(text):
     """Calculate the length of the quote."""
     return len(text)
+
+
+def get_word_count(text):
+    """Calculate the word count of the quote."""
+    return len(text.split())
 
 
 # Error logging setup
@@ -108,7 +114,8 @@ while True:
                     'tags': tags,
                     'scrape_time': scrape_time,
                     'sentiment': get_sentiment(text),  # New Sentiment Analysis
-                    'length': get_quote_length(text)  # New Feature: Quote Length
+                    'length': get_quote_length(text),  # New Feature: Quote Length
+                    'word_count': get_word_count(text)  # New Feature: Word Count
 }
 
             quotes_list.append(quote_data)
@@ -127,9 +134,9 @@ while True:
 # Insert data into SQLite
 for quote in quotes_list:
     cursor.execute("""
-        INSERT INTO quotes (text, author, author_url, birth_date, birth_place, tags, scrape_time, sentiment, length)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (quote['text'], quote['author'], quote['author_url'], quote['birth_date'], quote['birth_place'], ", ".join(quote['tags']), quote['scrape_time'], quote['sentiment'], quote['length']))
+        INSERT INTO quotes (text, author, author_url, birth_date, birth_place, tags, scrape_time, sentiment, length, word_count)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (quote['text'], quote['author'], quote['author_url'], quote['birth_date'], quote['birth_place'], ", ".join(quote['tags']), quote['scrape_time'], quote['sentiment'], quote['length'], quote['word_count']))
     conn.commit()
 
 conn.close()
@@ -140,7 +147,7 @@ with open("all_quotes.json", "w", encoding="utf-8") as jsonfile:
 
 # Save to CSV
 with open("all_quotes.csv", "w", newline="", encoding="utf-8") as csvfile:
-    fieldnames = ["text", "author", "author_url", "birth_date", "birth_place", "tags", "scrape_time", "sentiment", "length"]
+    fieldnames = ["text", "author", "author_url", "birth_date", "birth_place", "tags", "scrape_time", "sentiment", "length", "word_count"]
     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
     writer.writeheader()
     for quote in quotes_list:
