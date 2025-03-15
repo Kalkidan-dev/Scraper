@@ -7,6 +7,7 @@ import concurrent.futures
 import time
 from textblob import TextBlob
 
+
 # Start time tracking
 start_time = time.time()
 
@@ -25,8 +26,8 @@ cursor.execute("""
         birth_place TEXT,
         tags TEXT,
         scrape_time TEXT,
-        sentiment TEXT,
-        quote_length INTEGER  -- New Column for Quote Length
+        sentiment TEXT,  -- New Column
+        length INTEGER  -- New Feature: Quote Length
     )
 """)
 conn.commit()
@@ -41,6 +42,11 @@ def get_sentiment(text):
         return "Negative"
     else:
         return "Neutral"
+
+
+def get_quote_length(text):
+    """Calculate the length of the quote."""
+    return len(text)
 
 
 # Error logging setup
@@ -96,15 +102,15 @@ while True:
                 author_futures[author_url] = executor.submit(fetch_author_details, author_url)
             
             quote_data = {
-                'text': text,
-                'author': author,
-                'author_url': author_url,
-                'tags': tags,
-                'scrape_time': scrape_time,
-                'sentiment': get_sentiment(text),
-                'quote_length': len(text)  # New Quote Length Feature
-            }
-            
+                    'text': text,
+                    'author': author,
+                    'author_url': author_url,
+                    'tags': tags,
+                    'scrape_time': scrape_time,
+                    'sentiment': get_sentiment(text),  # New Sentiment Analysis
+                    'length': get_quote_length(text)  # New Feature: Quote Length
+}
+
             quotes_list.append(quote_data)
     
     # Retrieve author details after threading
@@ -121,9 +127,9 @@ while True:
 # Insert data into SQLite
 for quote in quotes_list:
     cursor.execute("""
-        INSERT INTO quotes (text, author, author_url, birth_date, birth_place, tags, scrape_time, sentiment, quote_length)
+        INSERT INTO quotes (text, author, author_url, birth_date, birth_place, tags, scrape_time, sentiment, length)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (quote['text'], quote['author'], quote['author_url'], quote['birth_date'], quote['birth_place'], ", ".join(quote['tags']), quote['scrape_time'], quote['sentiment'], quote['quote_length']))
+    """, (quote['text'], quote['author'], quote['author_url'], quote['birth_date'], quote['birth_place'], ", ".join(quote['tags']), quote['scrape_time'], quote['sentiment'], quote['length']))
     conn.commit()
 
 conn.close()
@@ -134,7 +140,7 @@ with open("all_quotes.json", "w", encoding="utf-8") as jsonfile:
 
 # Save to CSV
 with open("all_quotes.csv", "w", newline="", encoding="utf-8") as csvfile:
-    fieldnames = ["text", "author", "author_url", "birth_date", "birth_place", "tags", "scrape_time", "sentiment", "quote_length"]
+    fieldnames = ["text", "author", "author_url", "birth_date", "birth_place", "tags", "scrape_time", "sentiment", "length"]
     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
     writer.writeheader()
     for quote in quotes_list:
