@@ -10,7 +10,6 @@ import uuid
 from langdetect import detect  # Language detection
 import gender_guesser.detector as gender  # Gender prediction library
 
-
 # Start time tracking
 start_time = time.time()
 
@@ -18,7 +17,7 @@ start_time = time.time()
 conn = sqlite3.connect("quotes.db")
 cursor = conn.cursor()
 
-# Create table if not exists (with new "gender" column)
+# Create table if not exists (with new "nationality" column)
 cursor.execute("""
     CREATE TABLE IF NOT EXISTS quotes (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -35,7 +34,8 @@ cursor.execute("""
         word_count INTEGER,  -- New Feature: Word Count
         source TEXT,  -- New Feature: Quote Source
         language TEXT,  -- New Feature: Quote Language
-        gender TEXT  -- New Feature: Author's Gender
+        gender TEXT,  -- New Feature: Author's Gender
+        nationality TEXT  -- New Feature: Author's Nationality
     )
 """)
 conn.commit()
@@ -75,6 +75,19 @@ def detect_language(text):
 def get_author_gender(author_name):
     """Predict the gender of the author."""
     return d.get_gender(author_name.split()[0])  # We predict based on the first name
+
+
+def get_author_nationality(author_name):
+    """Predict the nationality of the author based on their first name."""
+    # Using the Genderize API to predict nationality. (This is a simple approach for now)
+    api_url = f"https://api.genderize.io?name={author_name.split()[0]}"
+    try:
+        response = requests.get(api_url)
+        data = response.json()
+        nationality = data.get("country_id", "Unknown")
+        return nationality
+    except Exception as e:
+        return "Unknown"  # In case the API fails or returns no data
 
 
 # Error logging setup
@@ -141,7 +154,8 @@ while True:
                     'word_count': get_word_count(text),  # New Feature: Word Count
                     'source': base_url,  # New Feature: Source URL
                     'language': detect_language(text),  # New Feature: Quote Language
-                    'gender': get_author_gender(author)  # New Feature: Author's Gender
+                    'gender': get_author_gender(author),  # New Feature: Author's Gender
+                    'nationality': get_author_nationality(author)  # New Feature: Author's Nationality
 }
 
             quotes_list.append(quote_data)
@@ -160,9 +174,9 @@ while True:
 # Insert data into SQLite
 for quote in quotes_list:
     cursor.execute("""
-        INSERT INTO quotes (quote_id, text, author, author_url, birth_date, birth_place, tags, scrape_time, sentiment, length, word_count, source, language, gender)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (quote['quote_id'], quote['text'], quote['author'], quote['author_url'], quote['birth_date'], quote['birth_place'], ", ".join(quote['tags']), quote['scrape_time'], quote['sentiment'], quote['length'], quote['word_count'], quote['source'], quote['language'], quote['gender']))
+        INSERT INTO quotes (quote_id, text, author, author_url, birth_date, birth_place, tags, scrape_time, sentiment, length, word_count, source, language, gender, nationality)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (quote['quote_id'], quote['text'], quote['author'], quote['author_url'], quote['birth_date'], quote['birth_place'], ", ".join(quote['tags']), quote['scrape_time'], quote['sentiment'], quote['length'], quote['word_count'], quote['source'], quote['language'], quote['gender'], quote['nationality']))
     conn.commit()
 
 conn.close()
@@ -173,7 +187,7 @@ with open("all_quotes.json", "w", encoding="utf-8") as jsonfile:
 
 # Save to CSV
 with open("all_quotes.csv", "w", newline="", encoding="utf-8") as csvfile:
-    fieldnames = ["quote_id", "text", "author", "author_url", "birth_date", "birth_place", "tags", "scrape_time", "sentiment", "length", "word_count", "source", "language", "gender"]
+    fieldnames = ["quote_id", "text", "author", "author_url", "birth_date", "birth_place", "tags", "scrape_time", "sentiment", "length", "word_count", "source", "language", "gender", "nationality"]
     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
     writer.writeheader()
     for quote in quotes_list:
