@@ -7,7 +7,8 @@ import concurrent.futures
 import time
 from textblob import TextBlob
 import uuid
-from langdetect import detect  # New Library for language detection
+from langdetect import detect  # Language detection
+import gender_guesser.detector as gender  # Gender prediction library
 
 
 # Start time tracking
@@ -17,7 +18,7 @@ start_time = time.time()
 conn = sqlite3.connect("quotes.db")
 cursor = conn.cursor()
 
-# Create table if not exists (with new "quote_id" and "language" columns)
+# Create table if not exists (with new "gender" column)
 cursor.execute("""
     CREATE TABLE IF NOT EXISTS quotes (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -33,11 +34,14 @@ cursor.execute("""
         length INTEGER,  -- New Feature: Quote Length
         word_count INTEGER,  -- New Feature: Word Count
         source TEXT,  -- New Feature: Quote Source
-        language TEXT  -- New Feature: Quote Language
+        language TEXT,  -- New Feature: Quote Language
+        gender TEXT  -- New Feature: Author's Gender
     )
 """)
 conn.commit()
 
+# Initialize gender detector
+d = gender.Detector()
 
 def get_sentiment(text):
     """Determine sentiment of a quote."""
@@ -66,6 +70,11 @@ def detect_language(text):
         return detect(text)
     except:
         return "unknown"  # Return unknown if detection fails
+
+
+def get_author_gender(author_name):
+    """Predict the gender of the author."""
+    return d.get_gender(author_name.split()[0])  # We predict based on the first name
 
 
 # Error logging setup
@@ -131,7 +140,8 @@ while True:
                     'length': get_quote_length(text),  # New Feature: Quote Length
                     'word_count': get_word_count(text),  # New Feature: Word Count
                     'source': base_url,  # New Feature: Source URL
-                    'language': detect_language(text)  # New Feature: Quote Language
+                    'language': detect_language(text),  # New Feature: Quote Language
+                    'gender': get_author_gender(author)  # New Feature: Author's Gender
 }
 
             quotes_list.append(quote_data)
@@ -150,9 +160,9 @@ while True:
 # Insert data into SQLite
 for quote in quotes_list:
     cursor.execute("""
-        INSERT INTO quotes (quote_id, text, author, author_url, birth_date, birth_place, tags, scrape_time, sentiment, length, word_count, source, language)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (quote['quote_id'], quote['text'], quote['author'], quote['author_url'], quote['birth_date'], quote['birth_place'], ", ".join(quote['tags']), quote['scrape_time'], quote['sentiment'], quote['length'], quote['word_count'], quote['source'], quote['language']))
+        INSERT INTO quotes (quote_id, text, author, author_url, birth_date, birth_place, tags, scrape_time, sentiment, length, word_count, source, language, gender)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (quote['quote_id'], quote['text'], quote['author'], quote['author_url'], quote['birth_date'], quote['birth_place'], ", ".join(quote['tags']), quote['scrape_time'], quote['sentiment'], quote['length'], quote['word_count'], quote['source'], quote['language'], quote['gender']))
     conn.commit()
 
 conn.close()
@@ -163,7 +173,7 @@ with open("all_quotes.json", "w", encoding="utf-8") as jsonfile:
 
 # Save to CSV
 with open("all_quotes.csv", "w", newline="", encoding="utf-8") as csvfile:
-    fieldnames = ["quote_id", "text", "author", "author_url", "birth_date", "birth_place", "tags", "scrape_time", "sentiment", "length", "word_count", "source", "language"]
+    fieldnames = ["quote_id", "text", "author", "author_url", "birth_date", "birth_place", "tags", "scrape_time", "sentiment", "length", "word_count", "source", "language", "gender"]
     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
     writer.writeheader()
     for quote in quotes_list:
