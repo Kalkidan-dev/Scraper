@@ -15,7 +15,7 @@ start_time = time.time()
 conn = sqlite3.connect("quotes.db")
 cursor = conn.cursor()
 
-# Create table if not exists
+# Create table if not exists (with new "source" column)
 cursor.execute("""
     CREATE TABLE IF NOT EXISTS quotes (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -28,7 +28,8 @@ cursor.execute("""
         scrape_time TEXT,
         sentiment TEXT,  -- New Column
         length INTEGER,  -- New Feature: Quote Length
-        word_count INTEGER  -- New Feature: Word Count
+        word_count INTEGER,  -- New Feature: Word Count
+        source TEXT  -- New Feature: Quote Source
     )
 """)
 conn.commit()
@@ -115,7 +116,8 @@ while True:
                     'scrape_time': scrape_time,
                     'sentiment': get_sentiment(text),  # New Sentiment Analysis
                     'length': get_quote_length(text),  # New Feature: Quote Length
-                    'word_count': get_word_count(text)  # New Feature: Word Count
+                    'word_count': get_word_count(text),  # New Feature: Word Count
+                    'source': base_url  # New Feature: Source URL
 }
 
             quotes_list.append(quote_data)
@@ -134,9 +136,9 @@ while True:
 # Insert data into SQLite
 for quote in quotes_list:
     cursor.execute("""
-        INSERT INTO quotes (text, author, author_url, birth_date, birth_place, tags, scrape_time, sentiment, length, word_count)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (quote['text'], quote['author'], quote['author_url'], quote['birth_date'], quote['birth_place'], ", ".join(quote['tags']), quote['scrape_time'], quote['sentiment'], quote['length'], quote['word_count']))
+        INSERT INTO quotes (text, author, author_url, birth_date, birth_place, tags, scrape_time, sentiment, length, word_count, source)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (quote['text'], quote['author'], quote['author_url'], quote['birth_date'], quote['birth_place'], ", ".join(quote['tags']), quote['scrape_time'], quote['sentiment'], quote['length'], quote['word_count'], quote['source']))
     conn.commit()
 
 conn.close()
@@ -147,7 +149,7 @@ with open("all_quotes.json", "w", encoding="utf-8") as jsonfile:
 
 # Save to CSV
 with open("all_quotes.csv", "w", newline="", encoding="utf-8") as csvfile:
-    fieldnames = ["text", "author", "author_url", "birth_date", "birth_place", "tags", "scrape_time", "sentiment", "length", "word_count"]
+    fieldnames = ["text", "author", "author_url", "birth_date", "birth_place", "tags", "scrape_time", "sentiment", "length", "word_count", "source"]
     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
     writer.writeheader()
     for quote in quotes_list:
