@@ -6,6 +6,8 @@ import sqlite3
 import concurrent.futures
 import time
 from textblob import TextBlob
+import uuid
+from langdetect import detect  # New Library for language detection
 
 
 # Start time tracking
@@ -15,10 +17,11 @@ start_time = time.time()
 conn = sqlite3.connect("quotes.db")
 cursor = conn.cursor()
 
-# Create table if not exists (with new "source" column)
+# Create table if not exists (with new "quote_id" and "language" columns)
 cursor.execute("""
     CREATE TABLE IF NOT EXISTS quotes (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        quote_id TEXT,  -- New Feature: Unique Quote ID
         text TEXT,
         author TEXT,
         author_url TEXT,
@@ -29,7 +32,8 @@ cursor.execute("""
         sentiment TEXT,  -- New Column
         length INTEGER,  -- New Feature: Quote Length
         word_count INTEGER,  -- New Feature: Word Count
-        source TEXT  -- New Feature: Quote Source
+        source TEXT,  -- New Feature: Quote Source
+        language TEXT  -- New Feature: Quote Language
     )
 """)
 conn.commit()
@@ -54,6 +58,14 @@ def get_quote_length(text):
 def get_word_count(text):
     """Calculate the word count of the quote."""
     return len(text.split())
+
+
+def detect_language(text):
+    """Detect the language of the quote."""
+    try:
+        return detect(text)
+    except:
+        return "unknown"  # Return unknown if detection fails
 
 
 # Error logging setup
@@ -109,6 +121,7 @@ while True:
                 author_futures[author_url] = executor.submit(fetch_author_details, author_url)
             
             quote_data = {
+                    'quote_id': str(uuid.uuid4()),  # New Unique Quote ID
                     'text': text,
                     'author': author,
                     'author_url': author_url,
@@ -117,7 +130,8 @@ while True:
                     'sentiment': get_sentiment(text),  # New Sentiment Analysis
                     'length': get_quote_length(text),  # New Feature: Quote Length
                     'word_count': get_word_count(text),  # New Feature: Word Count
-                    'source': base_url  # New Feature: Source URL
+                    'source': base_url,  # New Feature: Source URL
+                    'language': detect_language(text)  # New Feature: Quote Language
 }
 
             quotes_list.append(quote_data)
@@ -136,9 +150,9 @@ while True:
 # Insert data into SQLite
 for quote in quotes_list:
     cursor.execute("""
-        INSERT INTO quotes (text, author, author_url, birth_date, birth_place, tags, scrape_time, sentiment, length, word_count, source)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (quote['text'], quote['author'], quote['author_url'], quote['birth_date'], quote['birth_place'], ", ".join(quote['tags']), quote['scrape_time'], quote['sentiment'], quote['length'], quote['word_count'], quote['source']))
+        INSERT INTO quotes (quote_id, text, author, author_url, birth_date, birth_place, tags, scrape_time, sentiment, length, word_count, source, language)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (quote['quote_id'], quote['text'], quote['author'], quote['author_url'], quote['birth_date'], quote['birth_place'], ", ".join(quote['tags']), quote['scrape_time'], quote['sentiment'], quote['length'], quote['word_count'], quote['source'], quote['language']))
     conn.commit()
 
 conn.close()
@@ -149,7 +163,7 @@ with open("all_quotes.json", "w", encoding="utf-8") as jsonfile:
 
 # Save to CSV
 with open("all_quotes.csv", "w", newline="", encoding="utf-8") as csvfile:
-    fieldnames = ["text", "author", "author_url", "birth_date", "birth_place", "tags", "scrape_time", "sentiment", "length", "word_count", "source"]
+    fieldnames = ["quote_id", "text", "author", "author_url", "birth_date", "birth_place", "tags", "scrape_time", "sentiment", "length", "word_count", "source", "language"]
     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
     writer.writeheader()
     for quote in quotes_list:
