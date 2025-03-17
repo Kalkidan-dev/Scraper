@@ -17,7 +17,7 @@ start_time = time.time()
 conn = sqlite3.connect("quotes.db")
 cursor = conn.cursor()
 
-# Create table if not exists (with new "occupation" column)
+# Create table if not exists (with new "source_url" column)
 cursor.execute("""
     CREATE TABLE IF NOT EXISTS quotes (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -36,7 +36,8 @@ cursor.execute("""
         language TEXT,  -- New Feature: Quote Language
         gender TEXT,  -- New Feature: Author's Gender
         nationality TEXT,  -- New Feature: Author's Nationality
-        occupation TEXT  -- New Feature: Author's Occupation
+        occupation TEXT,  -- New Feature: Author's Occupation
+        source_url TEXT  -- New Feature: Quote's Source URL
     )
 """)
 conn.commit()
@@ -153,6 +154,7 @@ while True:
             author_link = quote.find("a")["href"] if quote.find("a") else None
             author_url = f"{base_url}{author_link}" if author_link else "N/A"
             scrape_time = time.strftime("%Y-%m-%d %H:%M:%S")
+            source_url = f"{base_url}{quote.find('a')['href']}" if quote.find('a') else "N/A"  # Source URL of the quote
             
             # Fetch author details concurrently
             if author_url != "N/A":
@@ -172,7 +174,8 @@ while True:
                     'language': detect_language(text),  # New Feature: Quote Language
                     'gender': get_author_gender(author),  # New Feature: Author's Gender
                     'nationality': get_author_nationality(author),  # New Feature: Author's Nationality
-                    'occupation': get_author_occupation(author_url)  # New Feature: Author's Occupation
+                    'occupation': get_author_occupation(author_url),  # New Feature: Author's Occupation
+                    'source_url': source_url  # New Feature: Quote's Source URL
 }
 
             quotes_list.append(quote_data)
@@ -191,9 +194,9 @@ while True:
 # Insert data into SQLite
 for quote in quotes_list:
     cursor.execute("""
-        INSERT INTO quotes (quote_id, text, author, author_url, birth_date, birth_place, tags, scrape_time, sentiment, length, word_count, source, language, gender, nationality, occupation)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (quote['quote_id'], quote['text'], quote['author'], quote['author_url'], quote['birth_date'], quote['birth_place'], ", ".join(quote['tags']), quote['scrape_time'], quote['sentiment'], quote['length'], quote['word_count'], quote['source'], quote['language'], quote['gender'], quote['nationality'], quote['occupation']))
+        INSERT INTO quotes (quote_id, text, author, author_url, birth_date, birth_place, tags, scrape_time, sentiment, length, word_count, source, language, gender, nationality, occupation, source_url)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (quote['quote_id'], quote['text'], quote['author'], quote['author_url'], quote['birth_date'], quote['birth_place'], ", ".join(quote['tags']), quote['scrape_time'], quote['sentiment'], quote['length'], quote['word_count'], quote['source'], quote['language'], quote['gender'], quote['nationality'], quote['occupation'], quote['source_url']))
     conn.commit()
 
 conn.close()
@@ -204,7 +207,7 @@ with open("all_quotes.json", "w", encoding="utf-8") as jsonfile:
 
 # Save to CSV
 with open("all_quotes.csv", "w", newline="", encoding="utf-8") as csvfile:
-    fieldnames = ["quote_id", "text", "author", "author_url", "birth_date", "birth_place", "tags", "scrape_time", "sentiment", "length", "word_count", "source", "language", "gender", "nationality", "occupation"]
+    fieldnames = ["quote_id", "text", "author", "author_url", "birth_date", "birth_place", "tags", "scrape_time", "sentiment", "length", "word_count", "source", "language", "gender", "nationality", "occupation", "source_url"]
     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
     writer.writeheader()
     for quote in quotes_list:
