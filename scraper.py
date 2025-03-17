@@ -6,9 +6,10 @@ import sqlite3
 import concurrent.futures
 import time
 from textblob import TextBlob
-import uuid
-from langdetect import detect  # Language detection
-import gender_guesser.detector as gender  # Gender prediction library
+
+# Bing API Key (Replace with your own key)
+BING_API_KEY = "your_bing_api_key"
+BING_SEARCH_URL = "https://api.bing.microsoft.com/v7.0/search"
 
 # Start time tracking
 start_time = time.time()
@@ -17,11 +18,10 @@ start_time = time.time()
 conn = sqlite3.connect("quotes.db")
 cursor = conn.cursor()
 
-# Create table if not exists (with new "language" column)
+# Create table if not exists (added popularity_score column)
 cursor.execute("""
     CREATE TABLE IF NOT EXISTS quotes (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        quote_id TEXT,  -- New Feature: Unique Quote ID
         text TEXT,
         author TEXT,
         author_url TEXT,
@@ -29,31 +29,19 @@ cursor.execute("""
         birth_place TEXT,
         tags TEXT,
         scrape_time TEXT,
-        sentiment TEXT,  -- New Column
-        length INTEGER,  -- New Feature: Quote Length
-        word_count INTEGER,  -- New Feature: Word Count
-        source TEXT,  -- New Feature: Quote Source
-        language TEXT,  -- New Feature: Quote Language
-        gender TEXT,  -- New Feature: Author's Gender
-        nationality TEXT,  -- New Feature: Author's Nationality
-        occupation TEXT,  -- New Feature: Author's Occupation
-        source_url TEXT  -- New Feature: Quote's Source URL
+        sentiment TEXT,
+        length INTEGER,
+        word_count INTEGER,
+        popularity_score INTEGER  -- New Feature: Quote Popularity Score
     )
 """)
 conn.commit()
 
-# Initialize gender detector
-d = gender.Detector()
 
 def get_sentiment(text):
     """Determine sentiment of a quote."""
     analysis = TextBlob(text)
-    if analysis.sentiment.polarity > 0:
-        return "Positive"
-    elif analysis.sentiment.polarity < 0:
-        return "Negative"
-    else:
-        return "Neutral"
+    return "Positive" if analysis.sentiment.polarity > 0 else "Negative" if analysis.sentiment.polarity < 0 else "Neutral"
 
 
 def get_quote_length(text):
@@ -66,45 +54,18 @@ def get_word_count(text):
     return len(text.split())
 
 
-def detect_language(text):
-    """Detect the language of the quote."""
+def get_popularity_score(quote):
+    """Fetch the estimated popularity of a quote using Bing Search API."""
+    headers = {"Ocp-Apim-Subscription-Key": BING_API_KEY}
+    params = {"q": f'"{quote}"', "count": 1}  # Search for the exact quote
     try:
-        return detect(text)
-    except:
-        return "unknown"  # Return unknown if detection fails
-
-
-def get_author_gender(author_name):
-    """Predict the gender of the author."""
-    return d.get_gender(author_name.split()[0])  # We predict based on the first name
-
-
-def get_author_nationality(author_name):
-    """Predict the nationality of the author based on their first name."""
-    api_url = f"https://api.genderize.io?name={author_name.split()[0]}"
-    try:
-        response = requests.get(api_url)
+        response = requests.get(BING_SEARCH_URL, headers=headers, params=params, timeout=10)
+        response.raise_for_status()
         data = response.json()
-        nationality = data.get("country_id", "Unknown")
-        return nationality
-    except Exception as e:
-        return "Unknown"  # In case the API fails or returns no data
-
-
-def get_author_occupation(author_url):
-    """Fetch the author's occupation."""
-    try:
-        author_response = requests.get(author_url, timeout=10)
-        author_response.raise_for_status()
-        author_soup = BeautifulSoup(author_response.text, "html.parser")
-        # Trying to scrape occupation from author's page (this is an example, depends on the structure of the site)
-        occupation = author_soup.find("div", class_="author-occupation")  # Placeholder class
-        if occupation:
-            return occupation.get_text().strip()
-        else:
-            return "Unknown"  # If no occupation is found
+        return data.get("webPages", {}).get("totalEstimatedMatches", 0)  # Get the estimated search count
     except requests.exceptions.RequestException as e:
-        return "Unknown"  # In case of error
+        log_error(f"Error fetching popularity score for quote: {e}")
+        return 0
 
 
 # Error logging setup
@@ -154,29 +115,22 @@ while True:
             author_link = quote.find("a")["href"] if quote.find("a") else None
             author_url = f"{base_url}{author_link}" if author_link else "N/A"
             scrape_time = time.strftime("%Y-%m-%d %H:%M:%S")
-            source_url = f"{base_url}{quote.find('a')['href']}" if quote.find('a') else "N/A"  # Source URL of the quote
             
             # Fetch author details concurrently
             if author_url != "N/A":
                 author_futures[author_url] = executor.submit(fetch_author_details, author_url)
             
             quote_data = {
-                    'quote_id': str(uuid.uuid4()),  # New Unique Quote ID
-                    'text': text,
-                    'author': author,
-                    'author_url': author_url,
-                    'tags': tags,
-                    'scrape_time': scrape_time,
-                    'sentiment': get_sentiment(text),  # New Sentiment Analysis
-                    'length': get_quote_length(text),  # New Feature: Quote Length
-                    'word_count': get_word_count(text),  # New Feature: Word Count
-                    'source': base_url,  # New Feature: Source URL
-                    'language': detect_language(text),  # New Feature: Quote Language
-                    'gender': get_author_gender(author),  # New Feature: Author's Gender
-                    'nationality': get_author_nationality(author),  # New Feature: Author's Nationality
-                    'occupation': get_author_occupation(author_url),  # New Feature: Author's Occupation
-                    'source_url': source_url  # New Feature: Quote's Source URL
-}
+                'text': text,
+                'author': author,
+                'author_url': author_url,
+                'tags': tags,
+                'scrape_time': scrape_time,
+                'sentiment': get_sentiment(text),
+                'length': get_quote_length(text),
+                'word_count': get_word_count(text),
+                'popularity_score': get_popularity_score(text)  # New Feature: Quote Popularity Score
+            }
 
             quotes_list.append(quote_data)
     
@@ -194,9 +148,9 @@ while True:
 # Insert data into SQLite
 for quote in quotes_list:
     cursor.execute("""
-        INSERT INTO quotes (quote_id, text, author, author_url, birth_date, birth_place, tags, scrape_time, sentiment, length, word_count, source, language, gender, nationality, occupation, source_url)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (quote['quote_id'], quote['text'], quote['author'], quote['author_url'], quote['birth_date'], quote['birth_place'], ", ".join(quote['tags']), quote['scrape_time'], quote['sentiment'], quote['length'], quote['word_count'], quote['source'], quote['language'], quote['gender'], quote['nationality'], quote['occupation'], quote['source_url']))
+        INSERT INTO quotes (text, author, author_url, birth_date, birth_place, tags, scrape_time, sentiment, length, word_count, popularity_score)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (quote['text'], quote['author'], quote['author_url'], quote['birth_date'], quote['birth_place'], ", ".join(quote['tags']), quote['scrape_time'], quote['sentiment'], quote['length'], quote['word_count'], quote['popularity_score']))
     conn.commit()
 
 conn.close()
@@ -207,7 +161,7 @@ with open("all_quotes.json", "w", encoding="utf-8") as jsonfile:
 
 # Save to CSV
 with open("all_quotes.csv", "w", newline="", encoding="utf-8") as csvfile:
-    fieldnames = ["quote_id", "text", "author", "author_url", "birth_date", "birth_place", "tags", "scrape_time", "sentiment", "length", "word_count", "source", "language", "gender", "nationality", "occupation", "source_url"]
+    fieldnames = ["text", "author", "author_url", "birth_date", "birth_place", "tags", "scrape_time", "sentiment", "length", "word_count", "popularity_score"]
     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
     writer.writeheader()
     for quote in quotes_list:
