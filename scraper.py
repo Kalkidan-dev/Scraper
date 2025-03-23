@@ -3,9 +3,9 @@ from bs4 import BeautifulSoup
 import csv
 import json
 import sqlite3
-import concurrent.futures
 import time
 from textblob import TextBlob
+from collections import Counter
 
 # Start time tracking
 start_time = time.time()
@@ -28,11 +28,15 @@ cursor.execute("""
         sentiment TEXT,
         length INTEGER,
         word_count INTEGER,
-        popularity_score INTEGER,  -- New Feature: Popularity Score
-        source TEXT  -- New Feature: Verified Source
+        popularity_score INTEGER,
+        source TEXT
     )
 """)
 conn.commit()
+
+# New feature: To track most common author and popular tags
+author_counter = Counter()
+tag_counter = Counter()
 
 def get_sentiment(text):
     """Determine sentiment of a quote."""
@@ -107,6 +111,10 @@ while True:
         author_url = base_url + quote.find("a")["href"] if quote.find("a") else "N/A"
         scrape_time = time.strftime("%Y-%m-%d %H:%M:%S")
         
+        # Update counters for author and tags
+        author_counter[author] += 1
+        tag_counter.update(tags)
+
         quote_data = {
             'text': text,
             'author': author,
@@ -116,8 +124,8 @@ while True:
             'sentiment': get_sentiment(text),
             'length': get_quote_length(text),
             'word_count': get_word_count(text),
-            'popularity_score': get_popularity_score(text),  # New Feature
-            'source': get_verified_source(text)  # New Feature
+            'popularity_score': get_popularity_score(text),
+            'source': get_verified_source(text)
         }
 
         quotes_list.append(quote_data)
@@ -150,8 +158,14 @@ with open("all_quotes.csv", "w", newline="", encoding="utf-8") as csvfile:
 with open("quote_count.txt", "w") as countfile:
     countfile.write(f"Total Quotes Scraped: {len(quotes_list)}\n")
 
+# Save most common author and popular tags to a text file
+with open("analysis.txt", "w") as analysis_file:
+    analysis_file.write(f"Most Common Author: {author_counter.most_common(1)[0][0]}\n")
+    analysis_file.write(f"Most Common Tags: {', '.join([tag for tag, _ in tag_counter.most_common(5)])}\n")
+
 # End time tracking and display execution time
 end_time = time.time()
 execution_time = end_time - start_time
 print(f"Quotes saved to all_quotes.json, all_quotes.csv, quote_count.txt, and database.")
+print(f"Analysis saved to analysis.txt.")
 print(f"Total execution time: {execution_time:.2f} seconds")
