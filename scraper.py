@@ -73,13 +73,30 @@ def get_popularity_score(text):
         return 0  # Default to 0 if API fails
 
 def get_verified_source(text):
-    """Fetch the verified source of a quote using Wikiquote or another source."""
-    # This is a placeholder implementation; you can improve it using an API
-    sources = {
-        "The only thing we have to fear is fear itself.": "Franklin D. Roosevelt, 1933 Inaugural Address",
-        "I think, therefore I am.": "René Descartes, Discourse on the Method"
+    """Verify the source of a quote using Wikipedia or Wikiquote."""
+    search_url = f"https://en.wikipedia.org/w/api.php"
+    params = {
+        "action": "query",
+        "format": "json",
+        "titles": text,
+        "prop": "revisions",
+        "rvprop": "content"
     }
-    return sources.get(text, "Unknown")
+    
+    try:
+        response = requests.get(search_url, params=params, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+
+        # Check if the quote is found and has revisions
+        pages = data.get("query", {}).get("pages", {})
+        for page in pages.values():
+            if "revisions" in page:
+                return page["title"]  # Return the Wikipedia title of the quote's source
+        return "Unknown"
+    except Exception as e:
+        log_error(f"Error fetching source for {text}: {e}")
+        return "Unknown"
 
 # Error logging setup
 def log_error(message):
@@ -125,7 +142,7 @@ while True:
             'length': get_quote_length(text),
             'word_count': get_word_count(text),
             'popularity_score': get_popularity_score(text),
-            'source': get_verified_source(text)
+            'source': get_verified_source(text)  # New feature: Source verification
         }
 
         quotes_list.append(quote_data)
