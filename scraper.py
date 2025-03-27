@@ -193,6 +193,50 @@ cursor.execute("""
 """)
 conn.commit()
 
+# Define keyword-based categories
+CATEGORIES = {
+    "Motivation": ["dream", "goal", "success", "work", "hard", "achieve", "overcome"],
+    "Love": ["love", "heart", "romance", "relationship", "affection"],
+    "Life": ["life", "living", "experience", "journey", "existence"],
+    "Success": ["success", "win", "achieve", "effort", "struggle"],
+    "Wisdom": ["wisdom", "knowledge", "learning", "intelligence", "insight"]
+}
+
+def get_category(text):
+    """Classify quote based on predefined categories."""
+    text_lower = text.lower()
+    for category, keywords in CATEGORIES.items():
+        if any(keyword in text_lower for keyword in keywords):
+            return category
+    return "General"  # Default category if no match found
+
+# Modify database schema to add a category column (Run once)
+cursor.execute("""
+    ALTER TABLE quotes ADD COLUMN category TEXT;
+""")
+conn.commit()
+
+# Add category classification in data collection
+for quote in quotes_list:
+    quote['category'] = get_category(quote['text'])
+
+    cursor.execute("""
+        INSERT INTO quotes (text, author, author_url, birth_date, birth_place, tags, scrape_time, sentiment, length, word_count, popularity_score, source, language, category)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (quote['text'], quote['author'], quote['author_url'], "N/A", "N/A", ", ".join(quote['tags']), quote['scrape_time'], quote['sentiment'], quote['length'], quote['word_count'], quote['popularity_score'], quote['source'], quote['language'], quote['category']))
+    conn.commit()
+
+# Include category in JSON and CSV
+with open("all_quotes.json", "w", encoding="utf-8") as jsonfile:
+    json.dump(quotes_list, jsonfile, indent=4, ensure_ascii=False)
+
+with open("all_quotes.csv", "w", newline="", encoding="utf-8") as csvfile:
+    fieldnames = ["text", "author", "author_url", "birth_date", "birth_place", "tags", "scrape_time", "sentiment", "length", "word_count", "popularity_score", "source", "language", "category"]
+    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+    writer.writeheader()
+    for quote in quotes_list:
+        writer.writerow(quote)
+
 # Add language detection in data collection
 for quote in quotes_list:
     quote['language'] = get_language(quote['text'])
