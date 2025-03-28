@@ -423,6 +423,51 @@ with open("all_quotes.csv", "w", newline="", encoding="utf-8") as csvfile:
     for quote in quotes_list:
         writer.writerow(quote)
 
+# Simple rule-based genre classifier (can be improved with ML models)
+def get_quote_genre(text):
+    """Classify the genre of the quote based on its content."""
+    motivational_keywords = ["inspire", "dream", "goal", "achieve", "success"]
+    philosophical_keywords = ["life", "meaning", "existence", "truth", "reality"]
+    love_keywords = ["love", "heart", "emotion", "affection", "passion"]
+
+    text_lower = text.lower()
+    
+    if any(keyword in text_lower for keyword in motivational_keywords):
+        return "Motivational"
+    elif any(keyword in text_lower for keyword in philosophical_keywords):
+        return "Philosophical"
+    elif any(keyword in text_lower for keyword in love_keywords):
+        return "Love"
+    else:
+        return "Unknown"
+
+# Modify database schema to add a genre column (Run once)
+cursor.execute("""
+    ALTER TABLE quotes ADD COLUMN genre TEXT;
+""")
+conn.commit()
+
+# Add genre classification in data collection
+for quote in quotes_list:
+    genre = get_quote_genre(quote['text'])
+
+    cursor.execute("""
+        INSERT INTO quotes (text, author, author_url, birth_date, birth_place, tags, scrape_time, sentiment, length, word_count, popularity_score, source, language, theme, author_bio, social_media_mentions, genre)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (quote['text'], quote['author'], quote['author_url'], "N/A", "N/A", ", ".join(quote['tags']), quote['scrape_time'], quote['sentiment'], quote['length'], quote['word_count'], quote['popularity_score'], quote['source'], quote['language'], quote['theme'], quote['author_bio'], quote['social_media_mentions'], genre))
+    conn.commit()
+
+# Include genre in JSON and CSV
+with open("all_quotes.json", "w", encoding="utf-8") as jsonfile:
+    json.dump(quotes_list, jsonfile, indent=4, ensure_ascii=False)
+
+with open("all_quotes.csv", "w", newline="", encoding="utf-8") as csvfile:
+    fieldnames = ["text", "author", "author_url", "birth_date", "birth_place", "tags", "scrape_time", "sentiment", "length", "word_count", "popularity_score", "source", "language", "theme", "author_bio", "social_media_mentions", "genre"]
+    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+    writer.writeheader()
+    for quote in quotes_list:
+        writer.writerow(quote)
+
 
 # End time tracking and display execution time
 end_time = time.time()
