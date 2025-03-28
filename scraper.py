@@ -376,6 +376,53 @@ with open("all_quotes.csv", "w", newline="", encoding="utf-8") as csvfile:
     for quote in quotes_list:
         writer.writerow(quote)
 
+import tweepy
+
+# Set up Twitter API client
+def get_twitter_api():
+    auth = tweepy.OAuthHandler("consumer_key", "consumer_secret")
+    auth.set_access_token("access_token", "access_token_secret")
+    api = tweepy.API(auth)
+    return api
+
+def get_social_media_mentions(text):
+    """Fetch the number of mentions of the quote on Twitter."""
+    api = get_twitter_api()
+    try:
+        # Search for the quote text on Twitter
+        tweets = api.search(q=text, count=100, result_type="recent", lang="en")
+        return len(tweets)
+    except tweepy.TweepError as e:
+        log_error(f"Error fetching social media mentions for {text}: {e}")
+        return 0
+
+# Modify database schema to add a social_media_mentions column (Run once)
+cursor.execute("""
+    ALTER TABLE quotes ADD COLUMN social_media_mentions INTEGER;
+""")
+conn.commit()
+
+# Add social media mentions in data collection
+for quote in quotes_list:
+    social_media_mentions = get_social_media_mentions(quote['text'])
+
+    cursor.execute("""
+        INSERT INTO quotes (text, author, author_url, birth_date, birth_place, tags, scrape_time, sentiment, length, word_count, popularity_score, source, language, theme, author_bio, social_media_mentions)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (quote['text'], quote['author'], quote['author_url'], "N/A", "N/A", ", ".join(quote['tags']), quote['scrape_time'], quote['sentiment'], quote['length'], quote['word_count'], quote['popularity_score'], quote['source'], quote['language'], quote['theme'], quote['author_bio'], social_media_mentions))
+    conn.commit()
+
+# Include social media mentions in JSON and CSV
+with open("all_quotes.json", "w", encoding="utf-8") as jsonfile:
+    json.dump(quotes_list, jsonfile, indent=4, ensure_ascii=False)
+
+with open("all_quotes.csv", "w", newline="", encoding="utf-8") as csvfile:
+    fieldnames = ["text", "author", "author_url", "birth_date", "birth_place", "tags", "scrape_time", "sentiment", "length", "word_count", "popularity_score", "source", "language", "theme", "author_bio", "social_media_mentions"]
+    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+    writer.writeheader()
+    for quote in quotes_list:
+        writer.writerow(quote)
+
 
 # End time tracking and display execution time
 end_time = time.time()
