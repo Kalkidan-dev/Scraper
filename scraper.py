@@ -468,6 +468,44 @@ with open("all_quotes.csv", "w", newline="", encoding="utf-8") as csvfile:
     for quote in quotes_list:
         writer.writerow(quote)
 
+from langdetect import detect, DetectorFactory
+DetectorFactory.seed = 0  # Ensures consistent results
+
+def get_quote_language(text):
+    """Detect the language of the quote."""
+    try:
+        return detect(text)
+    except Exception as e:
+        log_error(f"Error detecting language for {text}: {e}")
+        return "Unknown"
+
+# Modify database schema to add a language column (Run once)
+cursor.execute("""
+    ALTER TABLE quotes ADD COLUMN language TEXT;
+""")
+conn.commit()
+
+# Add language detection in data collection
+for quote in quotes_list:
+    language = get_quote_language(quote['text'])
+
+    cursor.execute("""
+        INSERT INTO quotes (text, author, author_url, birth_date, birth_place, tags, scrape_time, sentiment, length, word_count, popularity_score, source, language)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (quote['text'], quote['author'], quote['author_url'], "N/A", "N/A", ", ".join(quote['tags']), quote['scrape_time'], quote['sentiment'], quote['length'], quote['word_count'], quote['popularity_score'], quote['source'], language))
+    conn.commit()
+
+# Include language in JSON and CSV
+with open("all_quotes.json", "w", encoding="utf-8") as jsonfile:
+    json.dump(quotes_list, jsonfile, indent=4, ensure_ascii=False)
+
+with open("all_quotes.csv", "w", newline="", encoding="utf-8") as csvfile:
+    fieldnames = ["text", "author", "author_url", "birth_date", "birth_place", "tags", "scrape_time", "sentiment", "length", "word_count", "popularity_score", "source", "language"]
+    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+    writer.writeheader()
+    for quote in quotes_list:
+        writer.writerow(quote)
+
 
 # End time tracking and display execution time
 end_time = time.time()
