@@ -594,6 +594,57 @@ with open("language_analysis.txt", "w") as analysis_file:
     analysis_file.write("Most Common Quote Languages:\n")
     for lang, count in most_common_languages:
         analysis_file.write(f"{lang}: {count} occurrences\n")
+import requests
+
+def verify_attribution(text, author):
+    """Verify if a quote is correctly attributed to the author using Wikiquote."""
+    search_url = "https://en.wikiquote.org/w/api.php"
+    params = {
+        "action": "query",
+        "format": "json",
+        "list": "search",
+        "srsearch": f"{text} {author}"
+    }
+    
+    try:
+        response = requests.get(search_url, params=params, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        
+        # If a relevant result is found, assume attribution is verified
+        search_results = data.get("query", {}).get("search", [])
+        return bool(search_results)
+    except Exception as e:
+        log_error(f"Error verifying attribution for {text}: {e}")
+        return False  # Assume false if verification fails
+
+# Modify database schema to add an attribution_verified column (Run once)
+cursor.execute("""
+    ALTER TABLE quotes ADD COLUMN attribution_verified BOOLEAN;
+""")
+conn.commit()
+
+# Attribution tracking
+misattributed_quotes = []
+
+# Add verification in data collection
+for quote in quotes_list:
+    is_verified = verify_attribution(quote['text'], quote['author'])
+    
+    if not is_verified:
+        misattributed_quotes.append((quote['text'], quote['author']))
+
+    cursor.execute("""
+        INSERT INTO quotes (text, author, author_url, birth_date, birth_place, tags, scrape_time, sentiment, length, word_count, popularity_score, source, language, attribution_verified)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (quote['text'], quote['author'], quote['author_url'], "N/A", "N/A", ", ".join(quote['tags']), quote['scrape_time'], quote['sentiment'], quote['length'], quote['word_count'], quote['popularity_score'], quote['source'], quote['language'], is_verified))
+    conn.commit()
+
+# Save misattributed quotes analysis
+with open("misattributed_quotes.txt", "w") as misattr_file:
+    misattr_file.write("Misattributed Quotes Detected:\n")
+    for text, author in misattributed_quotes:
+        misattr_file.write(f'"{text}" - {author} (Possibly Misattributed)\n')
 
 
 # End time tracking and display execution time
