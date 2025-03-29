@@ -505,6 +505,47 @@ with open("all_quotes.csv", "w", newline="", encoding="utf-8") as csvfile:
     writer.writeheader()
     for quote in quotes_list:
         writer.writerow(quote)
+def get_character_count(text):
+    """Calculate the number of characters in the quote."""
+    return len(text)
+
+# Modify database schema to add a character_count column (Run once)
+cursor.execute("""
+    ALTER TABLE quotes ADD COLUMN character_count INTEGER;
+""")
+conn.commit()
+
+# Character count tracking
+char_count_counter = Counter()
+
+# Add character count in data collection
+for quote in quotes_list:
+    character_count = get_character_count(quote['text'])
+    char_count_counter[character_count] += 1  # Track character count distribution
+
+    cursor.execute("""
+        INSERT INTO quotes (text, author, author_url, birth_date, birth_place, tags, scrape_time, sentiment, length, word_count, popularity_score, source, language, character_count)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (quote['text'], quote['author'], quote['author_url'], "N/A", "N/A", ", ".join(quote['tags']), quote['scrape_time'], quote['sentiment'], quote['length'], quote['word_count'], quote['popularity_score'], quote['source'], quote.get("language", "Unknown"), character_count))
+    conn.commit()
+
+# Include character count in JSON and CSV
+with open("all_quotes.json", "w", encoding="utf-8") as jsonfile:
+    json.dump(quotes_list, jsonfile, indent=4, ensure_ascii=False)
+
+with open("all_quotes.csv", "w", newline="", encoding="utf-8") as csvfile:
+    fieldnames = ["text", "author", "author_url", "birth_date", "birth_place", "tags", "scrape_time", "sentiment", "length", "word_count", "popularity_score", "source", "language", "character_count"]
+    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+    writer.writeheader()
+    for quote in quotes_list:
+        writer.writerow(quote)
+
+# Save character count analysis
+with open("character_count_analysis.txt", "w") as analysis_file:
+    most_common_lengths = char_count_counter.most_common(5)
+    analysis_file.write("Most Common Quote Character Lengths:\n")
+    for length, count in most_common_lengths:
+        analysis_file.write(f"{length} characters: {count} occurrences\n")
 
 
 # End time tracking and display execution time
