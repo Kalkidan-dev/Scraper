@@ -645,6 +645,41 @@ with open("misattributed_quotes.txt", "w") as misattr_file:
     misattr_file.write("Misattributed Quotes Detected:\n")
     for text, author in misattributed_quotes:
         misattr_file.write(f'"{text}" - {author} (Possibly Misattributed)\n')
+from textblob import TextBlob
+
+def detect_language(text):
+    """Detect the language of a quote."""
+    try:
+        return TextBlob(text).detect_language()
+    except Exception as e:
+        log_error(f"Error detecting language for quote: {e}")
+        return "unknown"
+
+# Modify database schema to add a language column (Run once)
+cursor.execute("""
+    ALTER TABLE quotes ADD COLUMN language TEXT;
+""")
+conn.commit()
+
+# Language tracking
+language_counter = Counter()
+
+# Add language detection in data collection
+for quote in quotes_list:
+    quote_language = detect_language(quote['text'])
+    language_counter[quote_language] += 1
+
+    cursor.execute("""
+        INSERT INTO quotes (text, author, author_url, birth_date, birth_place, tags, scrape_time, sentiment, length, word_count, popularity_score, source, language)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (quote['text'], quote['author'], quote['author_url'], "N/A", "N/A", ", ".join(quote['tags']), quote['scrape_time'], quote['sentiment'], quote['length'], quote['word_count'], quote['popularity_score'], quote['source'], quote_language))
+    conn.commit()
+
+# Save language distribution analysis
+with open("language_analysis.txt", "w") as lang_file:
+    lang_file.write("Most Common Quote Languages:\n")
+    for lang, count in language_counter.most_common(5):
+        lang_file.write(f"{lang}: {count} quotes\n")
 
 
 # End time tracking and display execution time
