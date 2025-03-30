@@ -680,6 +680,22 @@ with open("language_analysis.txt", "w") as lang_file:
     lang_file.write("Most Common Quote Languages:\n")
     for lang, count in language_counter.most_common(5):
         lang_file.write(f"{lang}: {count} quotes\n")
+def get_complexity_score(text):
+    """Calculate the complexity score based on average word length."""
+    words = text.split()
+    if not words:
+        return 0
+    return sum(len(word) for word in words) / len(words)
+
+# Update data collection
+for quote in quotes_list:
+    quote['complexity_score'] = round(get_complexity_score(quote['text']), 2)
+
+    cursor.execute("""
+        INSERT INTO quotes (text, author, author_url, birth_date, birth_place, tags, scrape_time, sentiment, length, word_count, popularity_score, source, complexity_score)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (quote['text'], quote['author'], quote['author_url'], "N/A", "N/A", ", ".join(quote['tags']), quote['scrape_time'], quote['sentiment'], quote['length'], quote['word_count'], quote['popularity_score'], quote['source'], quote['complexity_score']))
+    conn.commit()
 
 
 # End time tracking and display execution time
