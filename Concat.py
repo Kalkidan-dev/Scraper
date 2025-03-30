@@ -496,6 +496,7 @@ def initialize_rate_limit_table():
 
 
 
+
 def fetch_data(api_url, retries=3):
     """Fetch data from the given API URL with retry mechanism and return the JSON response."""
     logging.info(f"Fetching data from {api_url}")
