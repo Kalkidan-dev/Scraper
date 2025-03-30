@@ -696,6 +696,19 @@ for quote in quotes_list:
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (quote['text'], quote['author'], quote['author_url'], "N/A", "N/A", ", ".join(quote['tags']), quote['scrape_time'], quote['sentiment'], quote['length'], quote['word_count'], quote['popularity_score'], quote['source'], quote['complexity_score']))
     conn.commit()
+def is_first_letter_capital(text):
+    """Check if the first letter of the quote is capitalized."""
+    return "Yes" if text and text[0].isupper() else "No"
+
+# Update data collection
+for quote in quotes_list:
+    quote['first_letter_capitalized'] = is_first_letter_capital(quote['text'])
+
+    cursor.execute("""
+        INSERT INTO quotes (text, author, author_url, birth_date, birth_place, tags, scrape_time, sentiment, length, word_count, popularity_score, source, first_letter_capitalized)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (quote['text'], quote['author'], quote['author_url'], "N/A", "N/A", ", ".join(quote['tags']), quote['scrape_time'], quote['sentiment'], quote['length'], quote['word_count'], quote['popularity_score'], quote['source'], quote['first_letter_capitalized']))
+    conn.commit()
 
 
 # End time tracking and display execution time
