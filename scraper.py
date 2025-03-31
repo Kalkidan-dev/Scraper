@@ -740,6 +740,26 @@ for quote in quotes_list:
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (quote['text'], quote['author'], quote['author_url'], "N/A", "N/A", ", ".join(quote['tags']), quote['scrape_time'], quote['sentiment'], quote['length'], quote['word_count'], quote['popularity_score'], quote['source'], quote['language']))
     conn.commit()
+def get_complexity_score(text):
+    """Calculate Automated Readability Index (ARI) for the quote."""
+    word_count = get_word_count(text)
+    char_count = sum(len(word) for word in text.split())
+    
+    if word_count == 0:  # Avoid division by zero
+        return 0
+    
+    ari_score = 4.71 * (char_count / word_count) + 0.5 * (word_count / 1) - 21.43
+    return round(ari_score, 2)
+
+# Update data collection
+for quote in quotes_list:
+    quote['complexity_score'] = get_complexity_score(quote['text'])
+
+    cursor.execute("""
+        INSERT INTO quotes (text, author, author_url, birth_date, birth_place, tags, scrape_time, sentiment, length, word_count, popularity_score, source, complexity_score)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (quote['text'], quote['author'], quote['author_url'], "N/A", "N/A", ", ".join(quote['tags']), quote['scrape_time'], quote['sentiment'], quote['length'], quote['word_count'], quote['popularity_score'], quote['source'], quote['complexity_score']))
+    conn.commit()
 
 # End time tracking and display execution time
 end_time = time.time()
