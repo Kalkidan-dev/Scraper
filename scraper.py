@@ -799,6 +799,23 @@ for quote in quotes_list:
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (quote['text'], quote['author'], quote['author_url'], "N/A", "N/A", ", ".join(quote['tags']), quote['scrape_time'], quote['sentiment'], quote['length'], quote['word_count'], quote['popularity_score'], quote['source'], quote['is_inspirational']))
     conn.commit()
+def is_duplicate(text, existing_quotes):
+    """Check if a quote already exists in the database."""
+    return text in existing_quotes
+
+# Fetch existing quotes from the database
+cursor.execute("SELECT text FROM quotes")
+existing_quotes = {row[0] for row in cursor.fetchall()}
+
+# Update data collection
+for quote in quotes_list:
+    quote['is_duplicate'] = is_duplicate(quote['text'], existing_quotes)
+
+    cursor.execute("""
+        INSERT INTO quotes (text, author, author_url, birth_date, birth_place, tags, scrape_time, sentiment, length, word_count, popularity_score, source, is_duplicate)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (quote['text'], quote['author'], quote['author_url'], "N/A", "N/A", ", ".join(quote['tags']), quote['scrape_time'], quote['sentiment'], quote['length'], quote['word_count'], quote['popularity_score'], quote['source'], quote['is_duplicate']))
+    conn.commit()
 
 
 # End time tracking and display execution time
