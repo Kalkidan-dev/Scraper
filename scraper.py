@@ -859,6 +859,25 @@ for quote in quotes_list:
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (quote['text'], quote['author'], quote['author_url'], "N/A", "N/A", ", ".join(quote['tags']), quote['scrape_time'], quote['sentiment'], quote['length'], quote['word_count'], quote['popularity_score'], quote['source'], quote['category']))
     conn.commit()
+def is_inspirational(text):
+    """Check if a quote is inspirational based on keywords and sentiment."""
+    keywords = {"dream", "believe", "achieve", "success", "goal", "inspire", "motivate", "determination", "never give up", "overcome"}
+    words = set(text.lower().split())
+
+    sentiment = TextBlob(text).sentiment.polarity
+    if words & keywords or sentiment > 0.2:  # If contains keyword or has positive sentiment
+        return True
+    return False
+
+# Update data collection
+for quote in quotes_list:
+    quote['is_inspirational'] = is_inspirational(quote['text'])
+
+    cursor.execute("""
+        INSERT INTO quotes (text, author, author_url, birth_date, birth_place, tags, scrape_time, sentiment, length, word_count, popularity_score, source, is_inspirational)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (quote['text'], quote['author'], quote['author_url'], "N/A", "N/A", ", ".join(quote['tags']), quote['scrape_time'], quote['sentiment'], quote['length'], quote['word_count'], quote['popularity_score'], quote['source'], quote['is_inspirational']))
+    conn.commit()
 
 
 # End time tracking and display execution time
