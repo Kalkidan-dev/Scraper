@@ -910,6 +910,16 @@ def get_author_details(author_url):
     except Exception as e:
         log_error(f"Error fetching author details: {e}")
         return "Unknown", "Unknown"
+# Categorize quotes based on sentiment
+categorized_quotes = {"Positive": [], "Negative": [], "Neutral": []}
+
+for quote in quotes_list:
+    categorized_quotes[quote["sentiment"]].append(quote)
+
+# Save categorized quotes to separate JSON files
+for sentiment, quotes in categorized_quotes.items():
+    with open(f"{sentiment.lower()}_quotes.json", "w", encoding="utf-8") as jsonfile:
+        json.dump(quotes, jsonfile, indent=4, ensure_ascii=False)
 
 # Update data collection
 for quote in quotes_list:
