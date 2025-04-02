@@ -896,6 +896,34 @@ for quote in quotes_list:
     """, (quote['text'], quote['author'], quote['author_url'], "N/A", "N/A", ", ".join(quote['tags']), quote['scrape_time'], quote['sentiment'], quote['length'], quote['word_count'], quote['popularity_score'], quote['source'], quote['language']))
     conn.commit()
 
+def get_author_details(author_url):
+    """Fetch author's birth date and birth place from their profile page."""
+    try:
+        response = requests.get(author_url, timeout=10)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.text, "html.parser")
+
+        birth_date = soup.find("span", class_="author-born-date")
+        birth_place = soup.find("span", class_="author-born-location")
+
+        return birth_date.get_text() if birth_date else "Unknown", birth_place.get_text() if birth_place else "Unknown"
+    except Exception as e:
+        log_error(f"Error fetching author details: {e}")
+        return "Unknown", "Unknown"
+
+# Update data collection
+for quote in quotes_list:
+    birth_date, birth_place = get_author_details(quote['author_url'])
+    quote['birth_date'] = birth_date
+    quote['birth_place'] = birth_place
+
+    cursor.execute("""
+        INSERT INTO quotes (text, author, author_url, birth_date, birth_place, tags, scrape_time, sentiment, length, word_count, popularity_score, source)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (quote['text'], quote['author'], quote['author_url'], quote['birth_date'], quote['birth_place'], ", ".join(quote['tags']), quote['scrape_time'], quote['sentiment'], quote['length'], quote['word_count'], quote['popularity_score'], quote['source']))
+    conn.commit()
+
+
 def is_duplicate(text):
     """Check if the quote already exists in the database."""
     cursor.execute("SELECT COUNT(*) FROM quotes WHERE text = ?", (text,))
