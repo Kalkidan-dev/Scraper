@@ -1028,6 +1028,24 @@ with open("similar_quotes.txt", "w") as sim_file:
         for sim in sims:
             sim_file.write(f"- {sim}\n")
 
+def detect_language(text):
+    """Detect the language of a quote."""
+    try:
+        return detect(text)
+    except Exception as e:
+        log_error(f"Error detecting language for '{text}': {e}")
+        return "Unknown"
+
+# Update data collection
+for quote in quotes_list:
+    quote['language'] = detect_language(quote['text'])
+
+    cursor.execute("""
+        INSERT INTO quotes (text, author, author_url, birth_date, birth_place, tags, scrape_time, sentiment, length, word_count, popularity_score, source, language)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (quote['text'], quote['author'], quote['author_url'], "N/A", "N/A", ", ".join(quote['tags']), quote['scrape_time'], quote['sentiment'], quote['length'], quote['word_count'], quote['popularity_score'], quote['source'], quote['language']))
+    conn.commit()
+
 # End time tracking and display execution time
 end_time = time.time()
 execution_time = end_time - start_time
