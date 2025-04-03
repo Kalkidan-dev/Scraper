@@ -959,6 +959,22 @@ with open("top_authors.txt", "w") as report_file:
     for author, count in top_authors:
         report_file.write(f"{author}: {count} quotes\n")
 
+def detect_language(text):
+    """Detect the language of a quote."""
+    try:
+        return detect(text)
+    except Exception:
+        return "Unknown"
+
+# Update data collection
+for quote in quotes_list:
+    quote['language'] = detect_language(quote['text'])
+
+    cursor.execute("""
+        INSERT INTO quotes (text, author, author_url, birth_date, birth_place, tags, scrape_time, sentiment, length, word_count, popularity_score, source, language)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (quote['text'], quote['author'], quote['author_url'], quote['birth_date'], quote['birth_place'], ", ".join(quote['tags']), quote['scrape_time'], quote['sentiment'], quote['length'], quote['word_count'], quote['popularity_score'], quote['source'], quote['language']))
+    conn.commit()
 
 # End time tracking and display execution time
 end_time = time.time()
