@@ -950,6 +950,16 @@ for quote in quotes_list:
     """, (quote['text'], quote['author'], quote['author_url'], "N/A", "N/A", ", ".join(quote['tags']), quote['scrape_time'], quote['sentiment'], quote['length'], quote['word_count'], quote['popularity_score'], quote['source']))
     conn.commit()
 
+# Generate a report of the top 5 most quoted authors
+top_authors = author_counter.most_common(5)
+
+# Save report to a text file
+with open("top_authors.txt", "w") as report_file:
+    report_file.write("Top 5 Most Quoted Authors:\n")
+    for author, count in top_authors:
+        report_file.write(f"{author}: {count} quotes\n")
+
+
 # End time tracking and display execution time
 end_time = time.time()
 execution_time = end_time - start_time
