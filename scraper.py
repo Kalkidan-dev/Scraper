@@ -976,6 +976,29 @@ for quote in quotes_list:
     """, (quote['text'], quote['author'], quote['author_url'], quote['birth_date'], quote['birth_place'], ", ".join(quote['tags']), quote['scrape_time'], quote['sentiment'], quote['length'], quote['word_count'], quote['popularity_score'], quote['source'], quote['language']))
     conn.commit()
 
+def get_author_biography(author_url):
+    """Fetch the biography of an author from their profile page."""
+    try:
+        response = requests.get(author_url, timeout=10)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.text, "html.parser")
+        bio_section = soup.find("div", class_="author-description")
+        return bio_section.get_text(strip=True) if bio_section else "Biography not available"
+    except Exception as e:
+        log_error(f"Error fetching biography from {author_url}: {e}")
+        return "Biography not available"
+
+# Update data collection
+for quote in quotes_list:
+    quote['biography'] = get_author_biography(quote['author_url'])
+
+    cursor.execute("""
+        INSERT INTO quotes (text, author, author_url, birth_date, birth_place, tags, scrape_time, sentiment, length, word_count, popularity_score, source, language, biography)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (quote['text'], quote['author'], quote['author_url'], quote['birth_date'], quote['birth_place'], ", ".join(quote['tags']), quote['scrape_time'], quote['sentiment'], quote['length'], quote['word_count'], quote['popularity_score'], quote['source'], quote['language'], quote['biography']))
+    conn.commit()
+
+
 # End time tracking and display execution time
 end_time = time.time()
 execution_time = end_time - start_time
