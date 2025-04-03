@@ -1046,6 +1046,29 @@ for quote in quotes_list:
     """, (quote['text'], quote['author'], quote['author_url'], "N/A", "N/A", ", ".join(quote['tags']), quote['scrape_time'], quote['sentiment'], quote['length'], quote['word_count'], quote['popularity_score'], quote['source'], quote['language']))
     conn.commit()
 
+def analyze_quote_length_distribution(quotes_list):
+    """Analyze the distribution of quote character lengths."""
+    lengths = [quote['length'] for quote in quotes_list]
+    
+    # Generate histogram plot
+    plt.figure(figsize=(8, 5))
+    plt.hist(lengths, bins=10, color='skyblue', edgecolor='black')
+    plt.xlabel("Quote Length (characters)")
+    plt.ylabel("Frequency")
+    plt.title("Distribution of Quote Lengths")
+    plt.savefig("quote_length_distribution.png")
+
+    # Save text-based summary
+    with open("quote_length_analysis.txt", "w") as file:
+        file.write(f"Total Quotes Analyzed: {len(lengths)}\n")
+        file.write(f"Shortest Quote Length: {min(lengths)} characters\n")
+        file.write(f"Longest Quote Length: {max(lengths)} characters\n")
+        file.write(f"Average Quote Length: {sum(lengths) / len(lengths):.2f} characters\n")
+
+# Run the analysis
+analyze_quote_length_distribution(quotes_list)
+
+
 # End time tracking and display execution time
 end_time = time.time()
 execution_time = end_time - start_time
