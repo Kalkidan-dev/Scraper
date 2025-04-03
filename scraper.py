@@ -998,6 +998,35 @@ for quote in quotes_list:
     """, (quote['text'], quote['author'], quote['author_url'], quote['birth_date'], quote['birth_place'], ", ".join(quote['tags']), quote['scrape_time'], quote['sentiment'], quote['length'], quote['word_count'], quote['popularity_score'], quote['source'], quote['language'], quote['biography']))
     conn.commit()
 
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+import numpy as np
+
+def find_similar_quotes(quotes_list):
+    """Find similar quotes using TF-IDF vectorization and cosine similarity."""
+    texts = [quote['text'] for quote in quotes_list]
+    vectorizer = TfidfVectorizer().fit_transform(texts)
+    similarity_matrix = cosine_similarity(vectorizer)
+
+    similar_quotes = {}
+    threshold = 0.7  # Adjust for stricter or looser matching
+    for i in range(len(texts)):
+        for j in range(i + 1, len(texts)):
+            if similarity_matrix[i, j] > threshold:
+                similar_quotes.setdefault(texts[i], []).append(texts[j])
+
+    return similar_quotes
+
+# Compute similar quotes
+similar_quotes = find_similar_quotes(quotes_list)
+
+# Save similar quotes report
+with open("similar_quotes.txt", "w") as sim_file:
+    sim_file.write("Similar Quotes Found:\n")
+    for quote, sims in similar_quotes.items():
+        sim_file.write(f"\nOriginal: {quote}\nSimilar:\n")
+        for sim in sims:
+            sim_file.write(f"- {sim}\n")
 
 # End time tracking and display execution time
 end_time = time.time()
