@@ -467,8 +467,7 @@ with open("all_quotes.csv", "w", newline="", encoding="utf-8") as csvfile:
     for quote in quotes_list:
         writer.writerow(quote)
 
-from langdetect import detect, DetectorFactory
-DetectorFactory.seed = 0  # Ensures consistent results
+
 
 def get_quote_language(text):
     """Detect the language of the quote."""
