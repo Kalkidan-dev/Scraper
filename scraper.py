@@ -7,6 +7,8 @@ import time
 from textblob import TextBlob
 from collections import Counter
 import tweepy
+from langdetect import detect, DetectorFactory
+DetectorFactory.seed = 0  # Ensures consistent results
 
 # Start time tracking
 start_time = time.time()
@@ -545,8 +547,6 @@ with open("character_count_analysis.txt", "w") as analysis_file:
     for length, count in most_common_lengths:
         analysis_file.write(f"{length} characters: {count} occurrences\n")
 
-from langdetect import detect, DetectorFactory
-DetectorFactory.seed = 0  # Ensures consistent language detection results
 
 def get_language(text):
     """Detect the language of the quote."""
