@@ -643,7 +643,6 @@ with open("misattributed_quotes.txt", "w") as misattr_file:
     misattr_file.write("Misattributed Quotes Detected:\n")
     for text, author in misattributed_quotes:
         misattr_file.write(f'"{text}" - {author} (Possibly Misattributed)\n')
-from textblob import TextBlob
 
 def detect_language(text):
     """Detect the language of a quote."""
