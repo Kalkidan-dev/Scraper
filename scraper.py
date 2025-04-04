@@ -6,6 +6,7 @@ import sqlite3
 import time
 from textblob import TextBlob
 from collections import Counter
+import tweepy
 
 # Start time tracking
 start_time = time.time()
