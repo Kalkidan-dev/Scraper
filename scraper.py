@@ -376,8 +376,6 @@ with open("all_quotes.csv", "w", newline="", encoding="utf-8") as csvfile:
     for quote in quotes_list:
         writer.writerow(quote)
 
-import tweepy
-
 # Set up Twitter API client
 def get_twitter_api():
     auth = tweepy.OAuthHandler("consumer_key", "consumer_secret")
