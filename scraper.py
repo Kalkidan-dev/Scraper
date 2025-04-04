@@ -761,7 +761,7 @@ for quote in quotes_list:
     """, (quote['text'], quote['author'], quote['author_url'], "N/A", "N/A", ", ".join(quote['tags']), quote['scrape_time'], quote['sentiment'], quote['length'], quote['word_count'], quote['popularity_score'], quote['source'], quote['complexity_score']))
     conn.commit()
 
-from rake_nltk import Rake
+
 
 def extract_keywords(text):
     """Extract important keywords from the quote using RAKE (Rapid Automatic Keyword Extraction)."""
