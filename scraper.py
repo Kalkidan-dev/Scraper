@@ -709,19 +709,7 @@ for quote in quotes_list:
     conn.commit()
 
 
-def get_readability_score(text):
-    """Calculate Flesch Reading Ease score for the quote."""
-    return round(textstat.flesch_reading_ease(text), 2)
 
-# Update data collection
-for quote in quotes_list:
-    quote['readability_score'] = get_readability_score(quote['text'])
-
-    cursor.execute("""
-        INSERT INTO quotes (text, author, author_url, birth_date, birth_place, tags, scrape_time, sentiment, length, word_count, popularity_score, source, readability_score)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (quote['text'], quote['author'], quote['author_url'], "N/A", "N/A", ", ".join(quote['tags']), quote['scrape_time'], quote['sentiment'], quote['length'], quote['word_count'], quote['popularity_score'], quote['source'], quote['readability_score']))
-    conn.commit()
 def detect_language(text):
     """Detect the language of the quote."""
     try:
