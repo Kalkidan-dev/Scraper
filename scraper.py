@@ -706,7 +706,7 @@ for quote in quotes_list:
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (quote['text'], quote['author'], quote['author_url'], "N/A", "N/A", ", ".join(quote['tags']), quote['scrape_time'], quote['sentiment'], quote['length'], quote['word_count'], quote['popularity_score'], quote['source'], quote['first_letter_capitalized']))
     conn.commit()
-import textstat
+
 
 def get_readability_score(text):
     """Calculate Flesch Reading Ease score for the quote."""
