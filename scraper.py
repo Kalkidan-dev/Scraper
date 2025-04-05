@@ -7,7 +7,7 @@ import time
 from textblob import TextBlob
 from collections import Counter
 import tweepy
-import textstat
+
 from langdetect import detect, DetectorFactory
 DetectorFactory.seed = 0  # Ensures consistent results
 
