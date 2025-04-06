@@ -8,7 +8,7 @@ from textblob import TextBlob
 from collections import Counter
 import tweepy
 
-from langdetect import detect, DetectorFactory
+from langdetect import detect, DetectorFactory 
 DetectorFactory.seed = 0  # Ensures consistent results
 
 # Start time tracking
