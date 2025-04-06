@@ -747,35 +747,6 @@ for quote in quotes_list:
     """, (quote['text'], quote['author'], quote['author_url'], "N/A", "N/A", ", ".join(quote['tags']), quote['scrape_time'], quote['sentiment'], quote['length'], quote['word_count'], quote['popularity_score'], quote['source'], quote['complexity_score']))
     conn.commit()
 
-
-
-def extract_keywords(text):
-    """Extract important keywords from the quote using RAKE (Rapid Automatic Keyword Extraction)."""
-    rake = Rake()
-    rake.extract_keywords_from_text(text)
-    keywords = rake.get_ranked_phrases()
-    return ", ".join(keywords[:5])  # Return top 5 keywords
-
-# Update data collection
-for quote in quotes_list:
-    quote['keywords'] = extract_keywords(quote['text'])
-
-    cursor.execute("""
-        INSERT INTO quotes (text, author, author_url, birth_date, birth_place, tags, scrape_time, sentiment, length, word_count, popularity_score, source, keywords)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (quote['text'], quote['author'], quote['author_url'], "N/A", "N/A", ", ".join(quote['tags']), quote['scrape_time'], quote['sentiment'], quote['length'], quote['word_count'], quote['popularity_score'], quote['source'], quote['keywords']))
-    conn.commit()
-def is_inspirational(text):
-    """Determine if a quote is inspirational based on sentiment and keywords."""
-    positive_words = {"success", "dream", "hope", "believe", "achieve", "inspire", "motivate", "courage", "strength", "perseverance"}
-    sentiment = get_sentiment(text)
-    keywords = extract_keywords(text).split(", ")
-
-    # A quote is considered inspirational if it's positive and contains key motivational words
-    if sentiment == "Positive" and any(word in positive_words for word in keywords):
-        return True
-    return False
-
 # Update data collection
 for quote in quotes_list:
     quote['is_inspirational'] = is_inspirational(quote['text'])
