@@ -18,7 +18,7 @@ def fetch_url(url):
         print(f"An error occurred: {e}")
         return None
 
-# Function to extract specific information from the webpage
+# Function to extract specific information from the webpage (paragraphs and links)
 def extract_data(soup):
     if soup:
         # Extract all paragraph text from the webpage
@@ -26,10 +26,17 @@ def extract_data(soup):
         text_content = ""
         for para in paragraphs:
             text_content += para.get_text() + "\n"
-        return text_content
+        
+        # Extract all links from the webpage
+        links = soup.find_all('a', href=True)
+        link_content = "\nLinks Found:\n"
+        for link in links:
+            link_content += link['href'] + "\n"
+        
+        return text_content, link_content
     else:
         print("No content to extract.")
-        return None
+        return None, None
 
 # Function to save extracted content to a file
 def save_to_file(content, filename):
@@ -41,12 +48,13 @@ def save_to_file(content, filename):
 def main():
     url = input("Enter the URL to scrape: ")
     soup = fetch_url(url)
-    content = extract_data(soup)
+    text_content, link_content = extract_data(soup)
     
-    if content:
-        # Save the content to a file
+    if text_content or link_content:
+        # Save the text content and links to a file
         filename = input("Enter the filename to save the content (e.g., output.txt): ")
-        save_to_file(content, filename)
+        full_content = text_content + "\n" + link_content
+        save_to_file(full_content, filename)
 
 if __name__ == "__main__":
     main()
