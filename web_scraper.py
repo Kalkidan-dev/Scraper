@@ -18,9 +18,16 @@ def fetch_url(url):
         print(f"An error occurred: {e}")
         return None
 
-# Function to extract specific information from the webpage (paragraphs, links, and images)
+# Function to extract specific information from the webpage (title, meta description, paragraphs, links, and images)
 def extract_data(soup):
     if soup:
+        # Extract the page title
+        title = soup.title.string if soup.title else "No Title Found"
+        
+        # Extract the meta description
+        meta_description = soup.find('meta', attrs={'name': 'description'})
+        meta_description_content = meta_description['content'] if meta_description else "No Meta Description Found"
+        
         # Extract all paragraph text from the webpage
         paragraphs = soup.find_all('p')
         text_content = ""
@@ -39,10 +46,10 @@ def extract_data(soup):
         for img in images:
             image_content += img['src'] + "\n"
         
-        return text_content, link_content, image_content
+        return title, meta_description_content, text_content, link_content, image_content
     else:
         print("No content to extract.")
-        return None, None, None
+        return None, None, None, None, None
 
 # Function to save extracted content to a file
 def save_to_file(content, filename):
@@ -54,12 +61,13 @@ def save_to_file(content, filename):
 def main():
     url = input("Enter the URL to scrape: ")
     soup = fetch_url(url)
-    text_content, link_content, image_content = extract_data(soup)
+    title, meta_description, text_content, link_content, image_content = extract_data(soup)
     
-    if text_content or link_content or image_content:
-        # Save the text content, links, and images to a file
+    if title or meta_description or text_content or link_content or image_content:
+        # Save the title, meta description, text content, links, and images to a file
         filename = input("Enter the filename to save the content (e.g., output.txt): ")
-        full_content = text_content + "\n" + link_content + "\n" + image_content
+        full_content = f"Title: {title}\nMeta Description: {meta_description}\n\n"
+        full_content += text_content + "\n" + link_content + "\n" + image_content
         save_to_file(full_content, filename)
 
 if __name__ == "__main__":
