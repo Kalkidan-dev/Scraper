@@ -18,7 +18,14 @@ def fetch_url(url):
         print(f"An error occurred: {e}")
         return None
 
-# Function to extract specific information from the webpage (title, meta description, paragraphs, links, and images)
+# Function to find and follow the "Next" page link
+def get_next_page(soup):
+    next_page = soup.find('a', text='Next')
+    if next_page:
+        return next_page['href']
+    return None
+
+# Function to extract specific information from the webpage (title, meta description, paragraphs, links, images)
 def extract_data(soup):
     if soup:
         # Extract the page title
@@ -61,14 +68,31 @@ def save_to_file(content, filename):
 def main():
     url = input("Enter the URL to scrape: ")
     soup = fetch_url(url)
-    title, meta_description, text_content, link_content, image_content = extract_data(soup)
     
-    if title or meta_description or text_content or link_content or image_content:
-        # Save the title, meta description, text content, links, and images to a file
-        filename = input("Enter the filename to save the content (e.g., output.txt): ")
-        full_content = f"Title: {title}\nMeta Description: {meta_description}\n\n"
-        full_content += text_content + "\n" + link_content + "\n" + image_content
-        save_to_file(full_content, filename)
+    if not soup:
+        return
+    
+    all_content = ""
+    while soup:
+        # Extract content from the current page
+        title, meta_description, text_content, link_content, image_content = extract_data(soup)
+        
+        if title or meta_description or text_content or link_content or image_content:
+            # Save the content from the current page
+            all_content += f"Title: {title}\nMeta Description: {meta_description}\n\n"
+            all_content += text_content + "\n" + link_content + "\n" + image_content
+        
+        # Check for the next page link
+        next_page_url = get_next_page(soup)
+        if next_page_url:
+            print(f"Following the next page: {next_page_url}")
+            soup = fetch_url(next_page_url)  # Get the next page's content
+        else:
+            break
+    
+    # Save the full content from all pages
+    filename = input("Enter the filename to save the content (e.g., output.txt): ")
+    save_to_file(all_content, filename)
 
 if __name__ == "__main__":
     main()
