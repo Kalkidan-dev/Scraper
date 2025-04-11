@@ -2,6 +2,16 @@ import requests
 from bs4 import BeautifulSoup
 import re
 
+# Function to extract list items (ul and ol)
+def extract_lists(soup):
+    list_text = ""
+    for list_tag in soup.find_all(['ul', 'ol']):
+        items = list_tag.find_all('li')
+        for item in items:
+            list_text += f"- {item.get_text(strip=True)}\n"
+        list_text += "\n"
+    return list_text.strip()
+
 # Function to extract all email addresses from the page
 def extract_emails(soup):
     text = soup.get_text()
