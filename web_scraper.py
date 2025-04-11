@@ -1,5 +1,12 @@
 import requests
 from bs4 import BeautifulSoup
+import re
+
+# Function to extract all email addresses from the page
+def extract_emails(soup):
+    text = soup.get_text()
+    emails = re.findall(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', text)
+    return list(set(emails))  # remove duplicates
 
 # Function to fetch content from a URL
 def fetch_url(url):
@@ -79,6 +86,10 @@ def main():
         # 🆕 Add extracted headings
         headings = extract_headings(soup)
         all_content += "\nHeadings:\n" + headings + "\n"
+
+        emails = extract_emails(soup)
+        if emails:
+            all_content += "\nEmail Addresses Found:\n" + "\n".join(emails) + "\n"
 
         if title or meta_description or text_content or link_content or image_content:
             all_content += f"Title: {title}\nMeta Description: {meta_description}\n\n"
