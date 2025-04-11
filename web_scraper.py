@@ -2,6 +2,20 @@ import requests
 from bs4 import BeautifulSoup
 import re
 
+# Function to extract data from all tables
+def extract_tables(soup):
+    tables_content = ""
+    tables = soup.find_all('table')
+    for idx, table in enumerate(tables, start=1):
+        tables_content += f"\nTable {idx}:\n"
+        rows = table.find_all('tr')
+        for row in rows:
+            cells = row.find_all(['th', 'td'])
+            row_text = " | ".join(cell.get_text(strip=True) for cell in cells)
+            tables_content += row_text + "\n"
+    return tables_content.strip()
+
+
 # Function to extract list items (ul and ol)
 def extract_lists(soup):
     list_text = ""
@@ -100,6 +114,15 @@ def main():
         emails = extract_emails(soup)
         if emails:
             all_content += "\nEmail Addresses Found:\n" + "\n".join(emails) + "\n"
+
+        lists = extract_lists(soup)
+        if lists:
+            all_content += "\nLists Found:\n" + lists + "\n"
+
+        tables = extract_tables(soup)
+        if tables:
+            all_content += "\nTables Found:\n" + tables + "\n"
+
 
         if title or meta_description or text_content or link_content or image_content:
             all_content += f"Title: {title}\nMeta Description: {meta_description}\n\n"
