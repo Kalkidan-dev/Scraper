@@ -1,6 +1,8 @@
 import requests
 from bs4 import BeautifulSoup
 import re
+from collections import Counter
+
 
 # Function to detect page language from the <html lang="..."> tag
 def detect_page_language(soup):
@@ -8,6 +10,16 @@ def detect_page_language(soup):
     if html_tag and html_tag.has_attr('lang'):
         return html_tag['lang']
     return "Language not specified"
+
+
+
+# Function to count word frequency from visible text
+def get_word_frequency(soup):
+    text = soup.get_text().lower()
+    words = re.findall(r'\b[a-z]{3,}\b', text)  # Only words with 3+ letters
+    word_counts = Counter(words)
+    common_words = word_counts.most_common(10)  # Top 10
+    return "\n".join([f"{word}: {count}" for word, count in common_words])
 
 # Function to extract data from all tables
 def extract_tables(soup):
