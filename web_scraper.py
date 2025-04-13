@@ -2,6 +2,13 @@ import requests
 from bs4 import BeautifulSoup
 import re
 
+# Function to detect page language from the <html lang="..."> tag
+def detect_page_language(soup):
+    html_tag = soup.find('html')
+    if html_tag and html_tag.has_attr('lang'):
+        return html_tag['lang']
+    return "Language not specified"
+
 # Function to extract data from all tables
 def extract_tables(soup):
     tables_content = ""
@@ -122,6 +129,8 @@ def main():
         tables = extract_tables(soup)
         if tables:
             all_content += "\nTables Found:\n" + tables + "\n"
+            language = detect_page_language(soup)
+        all_content += f"\nPage Language: {language}\n"
 
 
         if title or meta_description or text_content or link_content or image_content:
