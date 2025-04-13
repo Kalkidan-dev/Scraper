@@ -144,6 +144,9 @@ def main():
             language = detect_page_language(soup)
         all_content += f"\nPage Language: {language}\n"
 
+        word_freq = get_word_frequency(soup)
+        all_content += "\nTop 10 Word Frequencies:\n" + word_freq + "\n"
+
 
         if title or meta_description or text_content or link_content or image_content:
             all_content += f"Title: {title}\nMeta Description: {meta_description}\n\n"
