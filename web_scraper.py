@@ -11,6 +11,16 @@ def detect_page_language(soup):
         return html_tag['lang']
     return "Language not specified"
 
+# Function to extract Twitter Card meta tags
+def extract_twitter_meta_tags(soup):
+    twitter_tags = soup.find_all('meta', attrs={'name': re.compile(r'^twitter:')})
+    content = ""
+    for tag in twitter_tags:
+        name = tag.get('name', '')
+        tag_content = tag.get('content', '')
+        content += f"{name}: {tag_content}\n"
+    return content.strip() if content else "No Twitter Card tags found"
+
 
 
 # Function to count word frequency from visible text
@@ -147,6 +157,8 @@ def main():
         word_freq = get_word_frequency(soup)
         all_content += "\nTop 10 Word Frequencies:\n" + word_freq + "\n"
 
+        twitter_meta = extract_twitter_meta_tags(soup)
+        all_content += "\nTwitter Card Tags:\n" + twitter_meta + "\n"
 
         if title or meta_description or text_content or link_content or image_content:
             all_content += f"Title: {title}\nMeta Description: {meta_description}\n\n"
