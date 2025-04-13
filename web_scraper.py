@@ -109,6 +109,14 @@ def extract_data(soup):
         print("No content to extract.")
         return None, None, None, None, None
 
+# Function to extract the canonical URL
+def extract_canonical_url(soup):
+    link_tag = soup.find('link', rel='canonical')
+    if link_tag and link_tag.has_attr('href'):
+        return link_tag['href']
+    return "No canonical URL found"
+
+
 # 🆕 New function to extract headings
 def extract_headings(soup):
     headings = []
@@ -159,6 +167,9 @@ def main():
 
         twitter_meta = extract_twitter_meta_tags(soup)
         all_content += "\nTwitter Card Tags:\n" + twitter_meta + "\n"
+
+        canonical_url = extract_canonical_url(soup)
+        all_content += f"\nCanonical URL: {canonical_url}\n"
 
         if title or meta_description or text_content or link_content or image_content:
             all_content += f"Title: {title}\nMeta Description: {meta_description}\n\n"
