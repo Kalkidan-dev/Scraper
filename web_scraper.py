@@ -126,6 +126,14 @@ def extract_headings(soup):
             headings.append(f"{tag.upper()}: {item.get_text(strip=True)}")
     return "\n".join(headings)
 
+# Function to extract all inline CSS styles
+def extract_inline_styles(soup):
+    styles = []
+    elements_with_style = soup.find_all(style=True)
+    for element in elements_with_style:
+        styles.append(element['style'])
+    return "\n".join(styles) if styles else "No inline styles found"
+
 # Function to save extracted content to a file
 def save_to_file(content, filename):
     with open(filename, 'w', encoding='utf-8') as file:
@@ -171,6 +179,9 @@ def main():
 
         word_freq = get_word_frequency(soup)
         all_content += "\nTop 10 Word Frequencies:\n" + word_freq + "\n"
+
+        inline_styles = extract_inline_styles(soup)
+        all_content += "\nInline CSS Styles:\n" + inline_styles + "\n"
 
         twitter_meta = extract_twitter_meta_tags(soup)
         all_content += "\nTwitter Card Tags:\n" + twitter_meta + "\n"
