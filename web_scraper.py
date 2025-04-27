@@ -146,6 +146,14 @@ def extract_favicon(soup):
         return icon_link['href']
     return "No favicon found"
 
+# Function to extract JSON-LD structured data
+def extract_json_ld(soup):
+    scripts = soup.find_all('script', type='application/ld+json')
+    json_ld_data = ""
+    for script in scripts:
+        json_ld_data += script.string.strip() + "\n\n" if script.string else ""
+    return json_ld_data.strip() if json_ld_data else "No JSON-LD structured data found"
+
 
 # Main function to run the scraper
 def main():
@@ -182,6 +190,9 @@ def main():
 
         inline_styles = extract_inline_styles(soup)
         all_content += "\nInline CSS Styles:\n" + inline_styles + "\n"
+
+        json_ld = extract_json_ld(soup)
+        all_content += "\nStructured Data (JSON-LD):\n" + json_ld + "\n"
 
         twitter_meta = extract_twitter_meta_tags(soup)
         all_content += "\nTwitter Card Tags:\n" + twitter_meta + "\n"
