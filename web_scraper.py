@@ -131,6 +131,13 @@ def save_to_file(content, filename):
     with open(filename, 'w', encoding='utf-8') as file:
         file.write(content)
         print(f"Content saved to {filename}")
+# Function to extract favicon URL
+def extract_favicon(soup):
+    icon_link = soup.find('link', rel=lambda x: x and 'icon' in x.lower())
+    if icon_link and icon_link.has_attr('href'):
+        return icon_link['href']
+    return "No favicon found"
+
 
 # Main function to run the scraper
 def main():
@@ -170,6 +177,9 @@ def main():
 
         canonical_url = extract_canonical_url(soup)
         all_content += f"\nCanonical URL: {canonical_url}\n"
+
+        favicon_url = extract_favicon(soup)
+        all_content += f"\nFavicon URL: {favicon_url}\n"
 
         if title or meta_description or text_content or link_content or image_content:
             all_content += f"Title: {title}\nMeta Description: {meta_description}\n\n"
