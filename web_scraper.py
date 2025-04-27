@@ -154,6 +154,15 @@ def extract_json_ld(soup):
         json_ld_data += script.string.strip() + "\n\n" if script.string else ""
     return json_ld_data.strip() if json_ld_data else "No JSON-LD structured data found"
 
+# Function to extract embedded YouTube video links
+def extract_youtube_embeds(soup):
+    youtube_links = []
+    iframes = soup.find_all('iframe')
+    for iframe in iframes:
+        src = iframe.get('src', '')
+        if 'youtube.com' in src or 'youtu.be' in src:
+            youtube_links.append(src)
+    return "\n".join(youtube_links) if youtube_links else "No YouTube embeds found"
 
 # Main function to run the scraper
 def main():
@@ -193,6 +202,9 @@ def main():
 
         json_ld = extract_json_ld(soup)
         all_content += "\nStructured Data (JSON-LD):\n" + json_ld + "\n"
+
+        youtube_embeds = extract_youtube_embeds(soup)
+        all_content += "\nEmbedded YouTube Videos:\n" + youtube_embeds + "\n"
 
         twitter_meta = extract_twitter_meta_tags(soup)
         all_content += "\nTwitter Card Tags:\n" + twitter_meta + "\n"
