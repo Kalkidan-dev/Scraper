@@ -173,14 +173,6 @@ def extract_document_links(soup):
             doc_links.append(href)
     return "\n".join(doc_links) if doc_links else "No document links found"
 
-# Function to extract PDF and document links
-def extract_document_links(soup):
-    doc_links = []
-    for link in soup.find_all('a', href=True):
-        href = link['href']
-        if any(href.lower().endswith(ext) for ext in ['.pdf', '.docx', '.pptx', '.xlsx']):
-            doc_links.append(href)
-    return "\n".join(doc_links) if doc_links else "No document links found"
 
 # Main function to run the scraper
 def main():
@@ -221,8 +213,7 @@ def main():
         inline_styles = extract_inline_styles(soup)
         all_content += "\nInline CSS Styles:\n" + inline_styles + "\n"
 
-        document_links = extract_document_links(soup)
-        all_content += "\nDocument Links:\n" + document_links + "\n"
+        
 
         json_ld = extract_json_ld(soup)
         all_content += "\nStructured Data (JSON-LD):\n" + json_ld + "\n"
