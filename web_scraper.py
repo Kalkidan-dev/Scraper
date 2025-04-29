@@ -177,6 +177,12 @@ def extract_emails(soup):
     emails = re.findall(r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+", text)
     return "\n".join(set(emails)) if emails else "No email addresses found"
 
+# Function to extract phone numbers from the page
+def extract_phone_numbers(soup):
+    text = soup.get_text()
+    phone_numbers = re.findall(r'\+?\d[\d\-\(\) ]{7,}\d', text)
+    return "\n".join(set(phone_numbers)) if phone_numbers else "No phone numbers found"
+
 # Main function to run the scraper
 def main():
     url = input("Enter the URL to scrape: ")
@@ -219,6 +225,8 @@ def main():
         emails = extract_emails(soup)
         all_content += "\nEmail Addresses Found:\n" + emails + "\n"
 
+        phone_numbers = extract_phone_numbers(soup)
+        all_content += "\nPhone Numbers Found:\n" + phone_numbers + "\n"
 
         json_ld = extract_json_ld(soup)
         all_content += "\nStructured Data (JSON-LD):\n" + json_ld + "\n"
