@@ -172,7 +172,10 @@ def extract_document_links(soup):
         if any(href.lower().endswith(ext) for ext in ['.pdf', '.docx', '.pptx', '.xlsx']):
             doc_links.append(href)
     return "\n".join(doc_links) if doc_links else "No document links found"
-
+def extract_emails(soup):
+    text = soup.get_text()
+    emails = re.findall(r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+", text)
+    return "\n".join(set(emails)) if emails else "No email addresses found"
 
 # Main function to run the scraper
 def main():
@@ -213,7 +216,9 @@ def main():
         inline_styles = extract_inline_styles(soup)
         all_content += "\nInline CSS Styles:\n" + inline_styles + "\n"
 
-        
+        emails = extract_emails(soup)
+        all_content += "\nEmail Addresses Found:\n" + emails + "\n"
+
 
         json_ld = extract_json_ld(soup)
         all_content += "\nStructured Data (JSON-LD):\n" + json_ld + "\n"
