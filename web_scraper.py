@@ -3,6 +3,17 @@ from bs4 import BeautifulSoup
 import re
 from collections import Counter
 from langdetect import detect, LangDetectException
+from urllib.parse import urlparse
+
+# Function to extract all external links
+def extract_external_links(soup, base_url):
+    external_links = []
+    base_domain = urlparse(base_url).netloc
+    for link in soup.find_all('a', href=True):
+        href = link['href']
+        if urlparse(href).netloc and urlparse(href).netloc != base_domain:
+            external_links.append(href)
+    return "\n".join(external_links) if external_links else "No external links found"
 
 # Function to detect the language of the page text
 def detect_language(soup):
@@ -244,7 +255,7 @@ def main():
         lists = extract_lists(soup)
         if lists:
             all_content += "\nLists Found:\n" + lists + "\n"
-            
+
         og_metadata = extract_og_metadata(soup)
         all_content += "\nOpen Graph Metadata:\n" + str(og_metadata) + "\n"
 
@@ -269,6 +280,9 @@ def main():
 
         emails = extract_emails(soup)
         all_content += "\nEmail Addresses Found:\n" + emails + "\n"
+
+        external_links = extract_external_links(soup, url)
+        all_content += "\nExternal Links:\n" + external_links + "\n"
 
         phone_numbers = extract_phone_numbers(soup)
         all_content += "\nPhone Numbers Found:\n" + phone_numbers + "\n"
