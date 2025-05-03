@@ -2,6 +2,16 @@ import requests
 from bs4 import BeautifulSoup
 import re
 from collections import Counter
+from langdetect import detect, LangDetectException
+
+# Function to detect the language of the page text
+def detect_language(soup):
+    try:
+        text = soup.get_text(strip=True)
+        language = detect(text)
+        return language
+    except LangDetectException:
+        return "Could not detect language"
 
 
 # Function to detect page language from the <html lang="..."> tag
@@ -99,6 +109,9 @@ def extract_data(soup):
         for link in links:
             link_content += link['href'] + "\n"
         
+        language = detect_language(soup)
+        all_content += "\nDetected Language:\n" + language + "\n"
+
         images = soup.find_all('img', src=True)
         image_content = "\nImage URLs Found:\n"
         for img in images:
