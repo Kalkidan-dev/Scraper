@@ -4,6 +4,19 @@ import re
 from collections import Counter
 from langdetect import detect, LangDetectException
 from urllib.parse import urlparse
+import json
+
+# Function to extract JSON-LD structured data
+def extract_json_ld(soup):
+    json_ld_data = []
+    scripts = soup.find_all('script', type='application/ld+json')
+    for script in scripts:
+        try:
+            data = json.loads(script.string)
+            json_ld_data.append(data)
+        except (json.JSONDecodeError, TypeError):
+            continue
+    return json.dumps(json_ld_data, indent=2) if json_ld_data else "No JSON-LD data found"
 
 # Function to extract all external links
 def extract_external_links(soup, base_url):
@@ -280,6 +293,9 @@ def main():
 
         emails = extract_emails(soup)
         all_content += "\nEmail Addresses Found:\n" + emails + "\n"
+        
+        json_ld = extract_json_ld(soup)
+        all_content += "\nStructured Data (JSON-LD):\n" + json_ld + "\n"
 
         external_links = extract_external_links(soup, url)
         all_content += "\nExternal Links:\n" + external_links + "\n"
