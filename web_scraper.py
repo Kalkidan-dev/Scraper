@@ -154,6 +154,22 @@ def extract_json_ld(soup):
         json_ld_data += script.string.strip() + "\n\n" if script.string else ""
     return json_ld_data.strip() if json_ld_data else "No JSON-LD structured data found"
 
+# Function to extract the main article content heuristically
+def extract_main_article(soup):
+    # Try common article container tags
+    article = soup.find('article')
+    if article:
+        return article.get_text(strip=True)
+
+    # Fallback: look for the largest <div> with a lot of text
+    divs = soup.find_all('div')
+    max_text = ''
+    for div in divs:
+        text = div.get_text(strip=True)
+        if len(text) > len(max_text):
+            max_text = text
+    return max_text if max_text else "No main article content found"
+
 # Function to extract embedded YouTube video links
 def extract_youtube_embeds(soup):
     youtube_links = []
@@ -212,6 +228,10 @@ def main():
             all_content += "\nTables Found:\n" + tables + "\n"
             language = detect_page_language(soup)
         all_content += f"\nPage Language: {language}\n"
+
+        main_article = extract_main_article(soup)
+        all_content += "\nMain Article Content:\n" + main_article + "\n"
+
 
         word_freq = get_word_frequency(soup)
         all_content += "\nTop 10 Word Frequencies:\n" + word_freq + "\n"
