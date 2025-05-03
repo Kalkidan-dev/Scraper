@@ -12,6 +12,15 @@ def detect_language(soup):
         return language
     except LangDetectException:
         return "Could not detect language"
+# Function to extract Open Graph (OG) metadata
+def extract_og_metadata(soup):
+    og_metadata = {}
+    og_tags = soup.find_all('meta', property=lambda x: x and x.startswith('og:'))
+    for tag in og_tags:
+        property_name = tag.get('property', '').replace('og:', '')
+        content = tag.get('content', 'No content')
+        og_metadata[property_name] = content
+    return og_metadata if og_metadata else "No Open Graph metadata found"
 
 
 # Function to detect page language from the <html lang="..."> tag
@@ -235,6 +244,9 @@ def main():
         lists = extract_lists(soup)
         if lists:
             all_content += "\nLists Found:\n" + lists + "\n"
+            
+        og_metadata = extract_og_metadata(soup)
+        all_content += "\nOpen Graph Metadata:\n" + str(og_metadata) + "\n"
 
         tables = extract_tables(soup)
         if tables:
