@@ -6,7 +6,15 @@ from langdetect import detect, LangDetectException
 from urllib.parse import urlparse
 import json
 
-import requests
+
+# Function to count word frequency on the page
+def count_word_frequency(soup):
+    text = soup.get_text()
+    words = re.findall(r'\b\w+\b', text.lower())  # Lowercase and extract words
+    word_counts = Counter(words)
+    most_common = word_counts.most_common(10)  # Top 10 frequent words
+    return "\n".join([f"{word}: {count}" for word, count in most_common])
+
 
 # Function to detect broken links
 def detect_broken_links(soup):
