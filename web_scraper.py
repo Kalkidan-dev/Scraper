@@ -6,6 +6,27 @@ from langdetect import detect, LangDetectException
 from urllib.parse import urlparse
 import json
 
+import requests
+
+# Function to detect broken links
+def detect_broken_links(soup):
+    broken_links = []
+    links = soup.find_all('a', href=True)
+    
+    for link in links:
+        url = link['href']
+        if not url.startswith('http'):
+            continue  # Skip relative links for simplicity
+        
+        try:
+            response = requests.head(url, allow_redirects=True, timeout=5)
+            if response.status_code >= 400:
+                broken_links.append(f"{url} -> {response.status_code}")
+        except requests.RequestException as e:
+            broken_links.append(f"{url} -> Failed ({e})")
+    
+    return "\n".join(broken_links) if broken_links else "No broken links detected"
+
 # Function to extract JSON-LD structured data
 def extract_json_ld(soup):
     json_ld_data = []
@@ -271,6 +292,9 @@ def main():
 
         og_metadata = extract_og_metadata(soup)
         all_content += "\nOpen Graph Metadata:\n" + str(og_metadata) + "\n"
+
+        broken_links = detect_broken_links(soup)
+        all_content += "\nBroken Links:\n" + broken_links + "\n"
 
         tables = extract_tables(soup)
         if tables:
