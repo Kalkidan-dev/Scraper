@@ -313,6 +313,9 @@ def main():
         main_article = extract_main_article(soup)
         all_content += "\nMain Article Content:\n" + main_article + "\n"
 
+        word_freq = count_word_frequency(soup)
+        all_content += "\nTop 10 Word Frequencies:\n" + word_freq + "\n"
+
 
         word_freq = get_word_frequency(soup)
         all_content += "\nTop 10 Word Frequencies:\n" + word_freq + "\n"
