@@ -127,6 +127,24 @@ def extract_lists(soup):
         list_text += "\n"
     return list_text.strip()
 
+def extract_tables(soup):
+    tables = soup.find_all('table')
+    if not tables:
+        return "No tables found on the page."
+
+    table_texts = []
+    for idx, table in enumerate(tables, start=1):
+        rows = table.find_all('tr')
+        table_data = [f"Table {idx}:"]
+        for row in rows:
+            cols = row.find_all(['td', 'th'])
+            col_text = [col.get_text(strip=True) for col in cols]
+            table_data.append(" | ".join(col_text))
+        table_texts.append("\n".join(table_data))
+    
+    return "\n\n".join(table_texts)
+
+
 # Function to extract all email addresses from the page
 def extract_emails(soup):
     text = soup.get_text()
@@ -303,6 +321,10 @@ def main():
 
         broken_links = detect_broken_links(soup)
         all_content += "\nBroken Links:\n" + broken_links + "\n"
+
+        tables = extract_tables(soup)
+        all_content += "\nExtracted Tables:\n" + tables + "\n"
+
 
         tables = extract_tables(soup)
         if tables:
