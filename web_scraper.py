@@ -373,6 +373,9 @@ def main():
         social_links = extract_social_links(soup)
         all_content += "\nSocial Media Links:\n" + social_links + "\n"
 
+        emails = extract_emails(soup)
+        all_content += "\nEmail Addresses Found:\n" + emails + "\n"
+
 
         og_metadata = extract_og_metadata(soup)
         all_content += "\nOpen Graph Metadata:\n" + str(og_metadata) + "\n"
