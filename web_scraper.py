@@ -346,6 +346,9 @@ def main():
         if lists:
             all_content += "\nLists Found:\n" + lists + "\n"
 
+        all_content += f"\nPage Load Time: {load_time:.2f} seconds\n"
+
+
         og_metadata = extract_og_metadata(soup)
         all_content += "\nOpen Graph Metadata:\n" + str(og_metadata) + "\n"
 
