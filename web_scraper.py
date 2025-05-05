@@ -327,6 +327,16 @@ def extract_emails(soup):
     emails = re.findall(r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+", text)
     return "\n".join(set(emails)) if emails else "No email addresses found"
 
+
+
+# Function to extract email addresses from the page
+def extract_emails(soup):
+    text = soup.get_text()
+    email_pattern = r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+'
+    emails = re.findall(email_pattern, text)
+    return "\n".join(set(emails)) if emails else "No email addresses found."
+
+
 # Function to extract phone numbers from the page
 def extract_phone_numbers(soup):
     text = soup.get_text()
