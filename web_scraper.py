@@ -388,6 +388,9 @@ def main():
         emails = extract_emails(soup)
         all_content += "\nEmail Addresses Found:\n" + emails + "\n"
 
+        og_metadata = extract_open_graph_data(soup)
+        all_content += "\nOpen Graph Metadata:\n" + og_metadata + "\n"
+
 
         og_metadata = extract_og_metadata(soup)
         all_content += "\nOpen Graph Metadata:\n" + str(og_metadata) + "\n"
