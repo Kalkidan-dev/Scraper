@@ -302,6 +302,18 @@ def extract_youtube_embeds(soup):
             youtube_links.append(src)
     return "\n".join(youtube_links) if youtube_links else "No YouTube embeds found"
 
+def extract_social_links(soup):
+    social_domains = ['facebook.com', 'twitter.com', 'linkedin.com', 'instagram.com', 'youtube.com', 'tiktok.com']
+    links = soup.find_all('a', href=True)
+    social_links = []
+
+    for link in links:
+        href = link['href']
+        if any(domain in href for domain in social_domains):
+            social_links.append(href)
+
+    return "\n".join(social_links) if social_links else "No social media links found."
+
 # Function to extract PDF and document links
 def extract_document_links(soup):
     doc_links = []
@@ -347,6 +359,9 @@ def main():
             all_content += "\nLists Found:\n" + lists + "\n"
 
         all_content += f"\nPage Load Time: {load_time:.2f} seconds\n"
+
+        social_links = extract_social_links(soup)
+        all_content += "\nSocial Media Links:\n" + social_links + "\n"
 
 
         og_metadata = extract_og_metadata(soup)
