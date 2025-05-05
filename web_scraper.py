@@ -5,7 +5,7 @@ from collections import Counter
 from langdetect import detect, LangDetectException
 from urllib.parse import urlparse
 import json
-
+from langdetect import detect, DetectorFactory
 
 # Function to count word frequency on the page
 def count_word_frequency(soup):
@@ -262,6 +262,17 @@ def extract_main_article(soup):
         if len(text) > len(max_text):
             max_text = text
     return max_text if max_text else "No main article content found"
+
+DetectorFactory.seed = 0  # Make detection consistent
+
+# Function to detect the language of the page
+def detect_language(soup):
+    text = soup.get_text()
+    try:
+        language = detect(text)
+        return f"Detected Language: {language}"
+    except:
+        return "Language detection failed"
 
 # Function to extract embedded YouTube video links
 def extract_youtube_embeds(soup):
