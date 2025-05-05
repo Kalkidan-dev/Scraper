@@ -6,6 +6,24 @@ from langdetect import detect, LangDetectException
 from urllib.parse import urlparse
 import json
 from langdetect import detect, DetectorFactory
+import time
+
+# Function to fetch a URL and measure load time
+def fetch_url_with_timing(url):
+    try:
+        start_time = time.time()
+        response = requests.get(url)
+        elapsed_time = time.time() - start_time
+
+        if response.status_code == 200:
+            soup = BeautifulSoup(response.text, 'html.parser')
+            return soup, elapsed_time
+        else:
+            print(f"Failed to retrieve the webpage: {response.status_code}")
+            return None, elapsed_time
+    except requests.exceptions.RequestException as e:
+        print(f"An error occurred: {e}")
+        return None, 0
 
 # Function to count word frequency on the page
 def count_word_frequency(soup):
@@ -306,7 +324,8 @@ def extract_phone_numbers(soup):
 # Main function to run the scraper
 def main():
     url = input("Enter the URL to scrape: ")
-    soup = fetch_url(url)
+    soup, load_time = fetch_url_with_timing(url)
+
     
     if not soup:
         return
