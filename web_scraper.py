@@ -350,7 +350,31 @@ def main():
         all_content += "\nTop 10 Word Frequencies:\n" + word_freq + "\n"
 
 
+
+        broken_links = detect_broken_links(soup)
+
+        all_content += "\nBroken Links:\n" + broken_links + "\n"
+        tables = extract_tables(soup)
+        all_content += "\nExtracted Tables:\n" + tables + "\n"
+        lists = extract_lists(soup)
+        all_content += "\nLists Found:\n" + lists + "\n"
+        headings = extract_headings(soup)
+
+
+        all_content += "\nHeadings:\n" + headings + "\n"
+        og_metadata = extract_og_metadata(soup)
+        all_content += "\nOpen Graph Metadata:\n" + str(og_metadata) + "\n"
+        language = detect_page_language(soup)
+        all_content += f"\nPage Language: {language}\n"
+        main_article = extract_main_article(soup)
+        all_content += "\nMain Article Content:\n" + main_article + "\n"
+        word_freq = count_word_frequency(soup)
         word_freq = get_word_frequency(soup)
+
+
+        language = detect_language(soup)
+        all_content += "\n" + language + "\n"
+
         all_content += "\nTop 10 Word Frequencies:\n" + word_freq + "\n"
 
         document_links = extract_document_links(soup)
