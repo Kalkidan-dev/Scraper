@@ -349,6 +349,19 @@ def extract_open_graph_data(soup):
     
     return "\n".join(og_data)
 
+def extract_open_graph_data(soup):
+    og_tags = soup.find_all('meta', property=lambda x: x and x.startswith('og:'))
+    if not og_tags:
+        return "No Open Graph metadata found."
+
+    og_data = []
+    for tag in og_tags:
+        property_name = tag.get('property')
+        content = tag.get('content', '')
+        og_data.append(f"{property_name}: {content}")
+    
+    return "\n".join(og_data)
+
 # Function to extract phone numbers from the page
 def extract_phone_numbers(soup):
     text = soup.get_text()
@@ -391,6 +404,8 @@ def main():
         og_metadata = extract_open_graph_data(soup)
         all_content += "\nOpen Graph Metadata:\n" + og_metadata + "\n"
 
+        og_metadata = extract_open_graph_data(soup)
+        all_content += "\nOpen Graph Metadata:\n" + og_metadata + "\n"
 
         og_metadata = extract_og_metadata(soup)
         all_content += "\nOpen Graph Metadata:\n" + str(og_metadata) + "\n"
