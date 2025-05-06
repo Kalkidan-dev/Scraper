@@ -368,6 +368,13 @@ def extract_phone_numbers(soup):
     phone_numbers = re.findall(r'\+?\d[\d\-\(\) ]{7,}\d', text)
     return "\n".join(set(phone_numbers)) if phone_numbers else "No phone numbers found"
 
+def detect_language(soup):
+    html_tag = soup.find('html')
+    if html_tag and html_tag.get('lang'):
+        return html_tag['lang']
+    return "Language not specified in HTML."
+
+
 def extract_canonical_url(soup):
     canonical_link = soup.find('link', rel='canonical')
     if canonical_link and canonical_link.get('href'):
