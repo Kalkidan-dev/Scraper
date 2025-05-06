@@ -368,6 +368,23 @@ def extract_phone_numbers(soup):
     phone_numbers = re.findall(r'\+?\d[\d\-\(\) ]{7,}\d', text)
     return "\n".join(set(phone_numbers)) if phone_numbers else "No phone numbers found"
 
+
+
+def extract_json_ld(soup):
+    scripts = soup.find_all('script', type='application/ld+json')
+    json_ld_data = []
+
+    for script in scripts:
+        try:
+            content = script.string.strip()
+            parsed = json.loads(content)
+            pretty_json = json.dumps(parsed, indent=2)
+            json_ld_data.append(pretty_json)
+        except (json.JSONDecodeError, AttributeError):
+            continue
+
+    return "\n\n".join(json_ld_data) if json_ld_data else "No JSON-LD data found."
+
 # Main function to run the scraper
 def main():
     url = input("Enter the URL to scrape: ")
