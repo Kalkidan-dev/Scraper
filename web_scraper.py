@@ -439,7 +439,8 @@ def main():
         canonical_url = extract_canonical_url(soup)
         all_content += "\nCanonical URL:\n" + canonical_url + "\n"
 
-       
+        language = detect_language(soup)
+        all_content += "\nDetected Language:\n" + language + "\n"
 
         
 
