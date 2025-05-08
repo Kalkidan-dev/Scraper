@@ -436,7 +436,9 @@ def main():
         og_metadata = extract_open_graph_data(soup)
         all_content += "\nOpen Graph Metadata:\n" + og_metadata + "\n"
 
-        
+        canonical_url = extract_canonical_url(soup)
+        all_content += "\nCanonical URL:\n" + canonical_url + "\n"
+
         language = detect_language(soup)
         all_content += "\nDetected Language:\n" + language + "\n"
 
