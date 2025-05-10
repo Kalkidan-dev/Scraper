@@ -446,7 +446,7 @@ def main():
         json_ld = extract_json_ld(soup)
         all_content += "\nJSON-LD Structured Data:\n" + json_ld + "\n"
 
-        
+        og_metadata = extract_og_metadata(soup)
         all_content += "\nOpen Graph Metadata:\n" + str(og_metadata) + "\n"
 
         broken_links = detect_broken_links(soup)
