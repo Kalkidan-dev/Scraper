@@ -453,7 +453,7 @@ def main():
         all_content += "\nBroken Links:\n" + broken_links + "\n"
 
         tables = extract_tables(soup)
-        a
+        all_content += "\nExtracted Tables:\n" + tables + "\n"
 
 
         tables = extract_tables(soup)
