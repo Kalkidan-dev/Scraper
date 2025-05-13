@@ -452,7 +452,8 @@ def main():
         broken_links = detect_broken_links(soup)
         all_content += "\nBroken Links:\n" + broken_links + "\n"
 
-        
+        tables = extract_tables(soup)
+        all_content += "\nExtracted Tables:\n" + tables + "\n"
 
 
         tables = extract_tables(soup)
