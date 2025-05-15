@@ -322,10 +322,6 @@ def extract_document_links(soup):
         if any(href.lower().endswith(ext) for ext in ['.pdf', '.docx', '.pptx', '.xlsx']):
             doc_links.append(href)
     return "\n".join(doc_links) if doc_links else "No document links found"
-def extract_emails(soup):
-    text = soup.get_text()
-    emails = re.findall(r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+", text)
-    return "\n".join(set(emails)) if emails else "No email addresses found"
 
 
 
@@ -489,8 +485,7 @@ def main():
         all_content += "\nMain Article Content:\n" + main_article + "\n"
         word_freq = count_word_frequency(soup)
         word_freq = get_word_frequency(soup)
-
-
+        
         language = detect_language(soup)
         all_content += "\n" + language + "\n"
 
