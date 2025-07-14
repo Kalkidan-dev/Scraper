@@ -314,35 +314,6 @@ def extract_social_links(soup):
 
     return "\n".join(social_links) if social_links else "No social media links found."
 
-# Function to extract PDF and document links
-def extract_document_links(soup):
-    doc_links = []
-    for link in soup.find_all('a', href=True):
-        href = link['href']
-        if any(href.lower().endswith(ext) for ext in ['.pdf', '.docx', '.pptx', '.xlsx']):
-            doc_links.append(href)
-    return "\n".join(doc_links) if doc_links else "No document links found"
-
-
-# Function to extract email addresses from the page
-def extract_emails(soup):
-    text = soup.get_text()
-    email_pattern = r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+'
-    emails = re.findall(email_pattern, text)
-    return "\n".join(set(emails)) if emails else "No email addresses found."
-
-def extract_open_graph_data(soup):
-    og_tags = soup.find_all('meta', property=lambda x: x and x.startswith('og:'))
-    if not og_tags:
-        return "No Open Graph metadata found."
-
-    og_data = []
-    for tag in og_tags:
-        property_name = tag.get('property')
-        content = tag.get('content', '')
-        og_data.append(f"{property_name}: {content}")
-    
-    return "\n".join(og_data)
 
 def extract_open_graph_data(soup):
     og_tags = soup.find_all('meta', property=lambda x: x and x.startswith('og:'))
