@@ -324,6 +324,7 @@ def extract_document_links(soup):
     return "\n".join(doc_links) if doc_links else "No document links found"
 
 
+
 # Function to extract email addresses from the page
 def extract_emails(soup):
     text = soup.get_text()
