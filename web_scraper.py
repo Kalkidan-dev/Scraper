@@ -325,12 +325,6 @@ def extract_document_links(soup):
 
 
 
-# Function to extract email addresses from the page
-def extract_emails(soup):
-    text = soup.get_text()
-    email_pattern = r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+'
-    emails = re.findall(email_pattern, text)
-    return "\n".join(set(emails)) if emails else "No email addresses found."
 
 def extract_open_graph_data(soup):
     og_tags = soup.find_all('meta', property=lambda x: x and x.startswith('og:'))
