@@ -480,9 +480,7 @@ def main():
 
         all_content += "\nTop 10 Word Frequencies:\n" + word_freq + "\n"
 
-        document_links = extract_document_links(soup)
-        all_content += "\nDocument Links:\n" + document_links + "\n"
-
+    
         inline_styles = extract_inline_styles(soup)
         all_content += "\nInline CSS Styles:\n" + inline_styles + "\n"
 
