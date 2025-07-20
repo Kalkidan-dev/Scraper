@@ -314,6 +314,15 @@ def extract_social_links(soup):
 
     return "\n".join(social_links) if social_links else "No social media links found."
 
+# Function to extract PDF and document links
+def extract_document_links(soup):
+    doc_links = []
+    for link in soup.find_all('a', href=True):
+        href = link['href']
+        if any(href.lower().endswith(ext) for ext in ['.pdf', '.docx', '.pptx', '.xlsx']):
+            doc_links.append(href)
+    return "\n".join(doc_links) if doc_links else "No document links found"
+
 
 
 # Function to extract email addresses from the page
