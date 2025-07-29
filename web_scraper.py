@@ -382,7 +382,7 @@ def extract_json_ld(soup):
 
     return "\n\n".join(json_ld_data) if json_ld_data else "No JSON-LD data found."
 
-# Main function to run the scraper
+
 def main():
     url = input("Enter the URL to scrape: ")
     soup, load_time = fetch_url_with_timing(url)
