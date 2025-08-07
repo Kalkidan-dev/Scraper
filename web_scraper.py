@@ -360,6 +360,12 @@ def detect_language(soup):
     return "Language not specified in HTML."
 
 
+def extract_canonical_url(soup):
+    canonical_link = soup.find('link', rel='canonical')
+    if canonical_link and canonical_link.get('href'):
+        return canonical_link['href']
+    return "No canonical URL found."
+
 
 
 def main():
