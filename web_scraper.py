@@ -348,6 +348,10 @@ def extract_open_graph_data(soup):
     return "\n".join(og_data)
 
 
+def extract_phone_numbers(soup):
+    text = soup.get_text()
+    phone_numbers = re.findall(r'\+?\d[\d\-\(\) ]{7,}\d', text)
+    return "\n".join(set(phone_numbers)) if phone_numbers else "No phone numbers found"
 
 def detect_language(soup):
     html_tag = soup.find('html')
