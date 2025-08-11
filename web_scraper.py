@@ -347,7 +347,7 @@ def extract_open_graph_data(soup):
     
     return "\n".join(og_data)
 
-# Function to extract phone numbers from the page
+
 def extract_phone_numbers(soup):
     text = soup.get_text()
     phone_numbers = re.findall(r'\+?\d[\d\-\(\) ]{7,}\d', text)
