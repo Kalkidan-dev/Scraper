@@ -353,6 +353,13 @@ def extract_phone_numbers(soup):
     phone_numbers = re.findall(r'\+?\d[\d\-\(\) ]{7,}\d', text)
     return "\n".join(set(phone_numbers)) if phone_numbers else "No phone numbers found"
 
+def detect_language(soup):
+    html_tag = soup.find('html')
+    if html_tag and html_tag.get('lang'):
+        return html_tag['lang']
+    return "Language not specified in HTML."
+
+
 def main():
     url = input("Enter the URL to scrape: ")
     soup, load_time = fetch_url_with_timing(url)
