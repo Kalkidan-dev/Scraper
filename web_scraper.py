@@ -292,6 +292,16 @@ def detect_language(soup):
     except:
         return "Language detection failed"
 
+# Function to extract embedded YouTube video links
+def extract_youtube_embeds(soup):
+    youtube_links = []
+    iframes = soup.find_all('iframe')
+    for iframe in iframes:
+        src = iframe.get('src', '')
+        if 'youtube.com' in src or 'youtu.be' in src:
+            youtube_links.append(src)
+    return "\n".join(youtube_links) if youtube_links else "No YouTube embeds found"
+
 def extract_social_links(soup):
     social_domains = ['facebook.com', 'twitter.com', 'linkedin.com', 'instagram.com', 'youtube.com', 'tiktok.com']
     links = soup.find_all('a', href=True)
