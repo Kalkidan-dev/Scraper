@@ -302,6 +302,7 @@ def extract_youtube_embeds(soup):
             youtube_links.append(src)
     return "\n".join(youtube_links) if youtube_links else "No YouTube embeds found"
 
+
 def extract_social_links(soup):
     social_domains = ['facebook.com', 'twitter.com', 'linkedin.com', 'instagram.com', 'youtube.com', 'tiktok.com']
     links = soup.find_all('a', href=True)
