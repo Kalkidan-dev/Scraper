@@ -283,14 +283,7 @@ def extract_main_article(soup):
 
 DetectorFactory.seed = 0  # Make detection consistent
 
-# Function to detect the language of the page
-def detect_language(soup):
-    text = soup.get_text()
-    try:
-        language = detect(text)
-        return f"Detected Language: {language}"
-    except:
-        return "Language detection failed"
+
 
 # Function to extract embedded YouTube video links
 def extract_youtube_embeds(soup):
