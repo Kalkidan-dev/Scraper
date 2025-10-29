@@ -292,7 +292,7 @@ def detect_language(soup):
     except:
         return "Language detection failed"
 
-x
+
 def extract_social_links(soup):
     social_domains = ['facebook.com', 'twitter.com', 'linkedin.com', 'instagram.com', 'youtube.com', 'tiktok.com']
     links = soup.find_all('a', href=True)
