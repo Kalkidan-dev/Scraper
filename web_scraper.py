@@ -322,7 +322,18 @@ def extract_emails(soup):
     emails = re.findall(email_pattern, text)
     return "\n".join(set(emails)) if emails else "No email addresses found."
 
+def extract_open_graph_data(soup):
+    og_tags = soup.find_all('meta', property=lambda x: x and x.startswith('og:'))
+    if not og_tags:
+        return "No Open Graph metadata found."
 
+    og_data = []
+    for tag in og_tags:
+        property_name = tag.get('property')
+        content = tag.get('content', '')
+        og_data.append(f"{property_name}: {content}")
+    
+    return "\n".join(og_data)
 
 def extract_open_graph_data(soup):
     og_tags = soup.find_all('meta', property=lambda x: x and x.startswith('og:'))
