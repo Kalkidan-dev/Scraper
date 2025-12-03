@@ -303,17 +303,7 @@ def extract_youtube_embeds(soup):
     return "\n".join(youtube_links) if youtube_links else "No YouTube embeds found"
 
 
-def extract_social_links(soup):
-    social_domains = ['facebook.com', 'twitter.com', 'linkedin.com', 'instagram.com', 'youtube.com', 'tiktok.com']
-    links = soup.find_all('a', href=True)
-    social_links = []
 
-    for link in links:
-        href = link['href']
-        if any(domain in href for domain in social_domains):
-            social_links.append(href)
-
-    return "\n".join(social_links) if social_links else "No social media links found."
 
 
 def extract_emails(soup):
