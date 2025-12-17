@@ -257,7 +257,13 @@ def extract_favicon(soup):
         return icon_link['href']
     return "No favicon found"
 
-#
+# Function to extract JSON-LD structured data
+def extract_json_ld(soup):
+    scripts = soup.find_all('script', type='application/ld+json')
+    json_ld_data = ""
+    for script in scripts:
+        json_ld_data += script.string.strip() + "\n\n" if script.string else ""
+    return json_ld_data.strip() if json_ld_data else "No JSON-LD structured data found"
 
 # Function to extract the main article content heuristically
 def extract_main_article(soup):
