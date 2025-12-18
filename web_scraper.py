@@ -267,12 +267,11 @@ def extract_json_ld(soup):
 
 # Function to extract the main article content heuristically
 def extract_main_article(soup):
-    # Try common article container tags
+    
     article = soup.find('article')
     if article:
         return article.get_text(strip=True)
 
-    # Fallback: look for the largest <div> with a lot of text
     divs = soup.find_all('div')
     max_text = ''
     for div in divs:
