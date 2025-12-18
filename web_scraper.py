@@ -265,7 +265,22 @@ def extract_json_ld(soup):
         json_ld_data += script.string.strip() + "\n\n" if script.string else ""
     return json_ld_data.strip() if json_ld_data else "No JSON-LD structured data found"
 
-#
+# Function to extract the main article content heuristically
+def extract_main_article(soup):
+    
+    article = soup.find('article')
+    if article:
+        return article.get_text(strip=True)
+
+    divs = soup.find_all('div')
+    max_text = ''
+    for div in divs:
+        text = div.get_text(strip=True)
+        if len(text) > len(max_text):
+            max_text = text
+    return max_text if max_text else "No main article content found"
+
+DetectorFactory.seed = 0  # Make detection consistent
 
 # Function to detect the language of the page
 def detect_language(soup):
