@@ -291,16 +291,6 @@ def detect_language(soup):
     except:
         return "Language detection failed"
 
-# Function to extract embedded YouTube video links
-def extract_youtube_embeds(soup):
-    youtube_links = []
-    iframes = soup.find_all('iframe')
-    for iframe in iframes:
-        src = iframe.get('src', '')
-        if 'youtube.com' in src or 'youtu.be' in src:
-            youtube_links.append(src)
-    return "\n".join(youtube_links) if youtube_links else "No YouTube embeds found"
-
 
 def extract_social_links(soup):
     social_domains = ['facebook.com', 'twitter.com', 'linkedin.com', 'instagram.com', 'youtube.com', 'tiktok.com']
@@ -321,18 +311,6 @@ def extract_emails(soup):
     emails = re.findall(email_pattern, text)
     return "\n".join(set(emails)) if emails else "No email addresses found."
 
-def extract_open_graph_data(soup):
-    og_tags = soup.find_all('meta', property=lambda x: x and x.startswith('og:'))
-    if not og_tags:
-        return "No Open Graph metadata found."
-
-    og_data = []
-    for tag in og_tags:
-        property_name = tag.get('property')
-        content = tag.get('content', '')
-        og_data.append(f"{property_name}: {content}")
-    
-    return "\n".join(og_data)
 
 def extract_open_graph_data(soup):
     og_tags = soup.find_all('meta', property=lambda x: x and x.startswith('og:'))
