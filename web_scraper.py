@@ -237,6 +237,7 @@ def extract_headings(soup):
             headings.append(f"{tag.upper()}: {item.get_text(strip=True)}")
     return "\n".join(headings)
 
+
 # Function to save extracted content to a file
 def save_to_file(content, filename):
     with open(filename, 'w', encoding='utf-8') as file:
