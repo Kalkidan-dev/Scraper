@@ -228,14 +228,7 @@ def extract_canonical_url(soup):
     return "No canonical URL found"
 
 
-# 🆕 New function to extract headings
-def extract_headings(soup):
-    headings = []
-    for tag in ['h1', 'h2', 'h3']:
-        found = soup.find_all(tag)
-        for item in found:
-            headings.append(f"{tag.upper()}: {item.get_text(strip=True)}")
-    return "\n".join(headings)
+
 
 # Function to extract all inline CSS styles
 def extract_inline_styles(soup):
