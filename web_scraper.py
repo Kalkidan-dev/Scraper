@@ -251,12 +251,7 @@ def save_to_file(content, filename):
         file.write(content)
         print(f"Content saved to {filename}")
         
-# Function to extract favicon URL
-def extract_favicon(soup):
-    icon_link = soup.find('link', rel=lambda x: x and 'icon' in x.lower())
-    if icon_link and icon_link.has_attr('href'):
-        return icon_link['href']
-    return "No favicon found"
+
 
 # Function to extract JSON-LD structured data
 def extract_json_ld(soup):
