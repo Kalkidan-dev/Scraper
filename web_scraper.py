@@ -322,7 +322,6 @@ def extract_emails(soup):
     emails = re.findall(email_pattern, text)
     return "\n".join(set(emails)) if emails else "No email addresses found."
 
-
 def extract_open_graph_data(soup):
     og_tags = soup.find_all('meta', property=lambda x: x and x.startswith('og:'))
     if not og_tags:
